@@ -1,0 +1,44 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Telegraf input plugins are used with the InfluxData time series platform
+/// to collect metrics from the system, services, or third party APIs.
+///
+/// All metrics are gathered from the inputs you enable and configure in the configuration file.
+@ModuleInfo { minPklVersion = "0.25.0" }
+abstract module com.influxdata.telegraf.plugins.inputs.Input
+
+extends "../Plugin.pkl"
+
+/// How often to gather this metric.
+///
+/// Normal plugins use a single global interval,
+/// but if one particular input should be run less or more often,
+/// you can configure that here.
+interval: Duration?
+
+/// Override the base name of the measurement.
+///
+/// Default: name of the input
+name_override: String?
+
+/// Specifies a prefix to attach to the measurement name.
+name_prefix: String?
+
+/// Specifies a suffix to attach to the measurement name.
+name_suffix: String?
+
+/// A map of tags to apply to a specific input’s measurements.
+tags: Mapping<String, String>?

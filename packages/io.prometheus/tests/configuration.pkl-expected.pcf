@@ -1,0 +1,19 @@
+examples {
+  ["basic configuration"] {
+    """
+    global:
+      scrape_timeout: 10s
+    scrape_configs:
+    - job_name: my-job
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - regex: .*?
+    remote_write:
+    - url: https://example.com/remote_write
+      sigv4:
+        region: us-west-2
+
+    """
+  }
+}

@@ -1,0 +1,132 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Nodes with curly braces, e.g. { foo = "bar" }.
+///
+/// Objects can have properties, entries, and elements.
+/// ```
+/// myObj = new {
+///    // property
+///    foo = "bar"
+///
+///    // entry
+///    ["baz"] = "biz"
+///
+///    // element
+///    5
+/// }
+/// ```
+///
+/// To do: For generators, when generators, object spread, member predicate
+@Unlisted
+module pkl.experimental.syntax.ObjectBodyNode
+
+extends "Node.pkl"
+
+import "IdentifierNode.pkl"
+import "Node.pkl"
+import "ObjectBodyNode.pkl"
+import "ExpressionNode.pkl"
+import "DocCommentNode.pkl"
+import "ParameterNode.pkl"
+
+members: Listing<MemberNode>
+
+/// Renders all members inline instead of on newlines
+renderInline: Boolean = false
+
+typealias MemberNode = PropertyMemberNode|ElementMemberNode|EntryMemberNode|ForGeneratorNode|WhenGeneratorNode
+
+class PropertyMemberNode extends Node {
+  docComment: DocCommentNode?
+
+  modifiers: Listing<"local">(isDistinct)?
+
+  propertyName: IdentifierNode
+
+  body: ObjectBodyNode?
+
+  // The right hand side of a property cannot be both an assignment and an object body (e.g. `foo = { ... }` is illegal)
+  assignment: ExpressionNode(body == null)?
+
+  local function renderRhs(currentIndent: String) = if (body != null) body.render(currentIndent) else "= " + assignment.render(currentIndent)
+
+  local function renderPropertyLine(currentIndent: String) = new Listing {
+    ...?modifiers
+    propertyName.render(currentIndent)
+    renderRhs(currentIndent)
+  }.join(" ")
+
+  function render(currentIndent: String) = List(
+    docComment?.render(currentIndent),
+    renderPropertyLine(currentIndent)
+  )
+    .filterNonNull()
+    .join("\n")
+}
+
+class ElementMemberNode extends Node {
+  value: ExpressionNode
+
+  function render(currentIndent: String) = value.render(currentIndent)
+}
+
+class EntryMemberNode extends Node {
+  keyValue: ExpressionNode
+
+  body: ObjectBodyNode?
+
+  // The right hand side of an entry cannot be both an assignment and an object body (e.g. `foo = { ... }` is illegal)
+  propertyValue: ExpressionNode(body == null)?
+
+  local function renderRhs(currentIndent: String) = if (body != null) body.render(currentIndent) else "= " + propertyValue.render(currentIndent)
+
+  function render(currentIndent: String) = "[\(keyValue.render(currentIndent))] \(renderRhs(currentIndent))"
+}
+
+class ForGeneratorNode extends Node {
+  keyParameter: ParameterNode?
+
+  valueParameter: ParameterNode
+
+  collection: ExpressionNode
+
+  body: ObjectBodyNode?
+
+  function doRenderLoopControl(currentIndent: String): String = List(
+    keyParameter?.render(currentIndent)?.ifNonNull((it) -> it + ","),
+    valueParameter.render(currentIndent),
+    "in",
+    collection.render(currentIndent)
+  ).filterNonNull().join(" ")
+
+  function render(currentIndent: String): String = "for (\(doRenderLoopControl(currentIndent))) \(body.render(currentIndent))"
+}
+
+class WhenGeneratorNode extends Node {
+  condition: ExpressionNode
+
+  body: ObjectBodyNode?
+
+  function render(currentIndent: String): String = "when (\(condition.render(currentIndent))) \(body.render(currentIndent))"
+}
+
+local function doRenderInline(currentIndent: String) = "{ " + members.toList().map((m) -> m.render(currentIndent)).join("; ") + " }"
+
+local function doRenderMultiline(currentIndent: String) =
+  let (innerIndent = currentIndent + indent)
+    "{\n" + members.toList().map((m) -> innerIndent + m.render(innerIndent)).join("\n") + "\n\(currentIndent)}"
+
+function render(currentIndent: String) = if (renderInline) doRenderInline(currentIndent) else doRenderMultiline(currentIndent)

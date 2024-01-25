@@ -1,0 +1,128 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.toml.examples.basic
+
+import "../toml.pkl"
+
+title = "TOML Example"
+
+owner {
+  name = "Tom Preston-Werner"
+  organization = "Github"
+  bio = """
+    GitHub Cofounder & CEO
+    Likes tater tots and beer
+    """
+  dob = new toml.DateTime { value = "1979-05-27T07:32:00Z" }
+}
+
+database {
+  server = "192.168.1.1"
+  ports {
+    8001
+    8001
+    8002
+  }
+  connection_max = 5000
+  enabled = true
+}
+
+servers {
+  alpha {
+    ip = "10.0.0.1"
+    dc = "eqdc10"
+  }
+  beta {
+    ip = "10.0.0.2"
+    dc = "eqdc10"
+    country = "中国"
+  }
+}
+
+clients {
+  data {
+    new {
+      "gamma"
+      "delta"
+    }
+    new {
+      1
+      2
+    }
+  }
+  hosts {
+    "alpha"
+    "omega"
+  }
+}
+
+
+products {
+  new {
+    name = "Hammer Bro"
+    sku = 738594937
+  }
+  new {}
+  new {
+    name = "Nail"
+    sku = 284758393
+    color = "gray"
+    `1-1` = "〇😀"
+  }
+}
+
+fruits {
+  new {
+    name = "apple"
+    physical {
+      color = "red"
+      shape = "round"
+    }
+    varieties {
+      new { name = "red delicious" }
+      new { name = "granny smith" }
+    }
+  }
+  new {
+    name = "banana"
+    varieties {
+      new { name = "plantain" }
+    }
+  }
+}
+
+contributors {
+  "Foo Bar <foo@example.com>"
+  new {
+    name = "Baz Qux"
+    email = "bazqux@example.com"
+    url = "https://example.com/bazqux"
+  }
+}
+
+dog {
+  `tater.man` {
+    type {
+      name = "pug"
+    }
+    age = NaN
+    maxAge = Infinity
+  }
+}
+
+output {
+  renderer = new toml.Renderer {}
+}

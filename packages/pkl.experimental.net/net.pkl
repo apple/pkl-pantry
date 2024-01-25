@@ -1,0 +1,305 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// We sell IP addresses and IP address accessories
+/// This module contains types and functions for handling network (IP and MAC) addresses
+@ModuleInfo { minPklVersion = "0.25.0" }
+module pkl.experimental.net.net
+
+import "pkl:math"
+import "./u128.pkl"
+import "./net.pkl"
+
+// language=RegExp
+const hidden hex: String = "[0-9a-fA-F]"
+// language=RegExp
+const hidden decByte: String = #"(25[0-5]|2[0-4]\d|[01]?\d\d?)"#
+// language=RegExp
+const hidden ipv4String = #"(\#(decByte)\.){3}\#(decByte)"#
+// language=RegExp
+const hidden ipv6String = #"((\#(hex){1,4}:){7}\#(hex){1,4}|(\#(hex){1,4}:){1,7}:|(\#(hex){1,4}:){1,6}:\#(hex){1,4}|(\#(hex){1,4}:){1,5}(:\#(hex){1,4}){1,2}|(\#(hex){1,4}:){1,4}(:\#(hex){1,4}){1,3}|(\#(hex){1,4}:){1,3}(:\#(hex){1,4}){1,4}|(\#(hex){1,4}:){1,2}(:\#(hex){1,4}){1,5}|\#(hex){1,4}:((:\#(hex){1,4}){1,6})|:((:\#(hex){1,4}){1,7}|:)|fe80:(:\#(hex){0,4}){0,4}%\#(hex){1,}|::(ffff(:0{1,4}){0,1}:){0,1}(\#(decByte)\.){3,3}\#(decByte)|(\#(hex){1,4}:){1,4}:(\#(decByte)\.){3,3}\#(decByte))"#
+
+///	A string that contains a MAC address
+// language=RegExp
+typealias MACAddressString = String(matches(Regex(#"(\#(net.hex){1,2}[\.:-]){5}(\#(net.hex){1,2})"#)))
+
+/// A string that contains either an IPv4 or IPv6 address.
+typealias IPAddressString = IPv4AddressString|IPv6AddressString
+/// A string that contains either an IPv4 or IPv6 address and port.
+typealias IPAddressPortString = IPv4AddressPortString|IPv6AddressPortString
+/// A string that contains either an IPv4 or IPv6 CIDR range.
+typealias IPCIDRString = IPv4CIDRString|IPv6CIDRString
+/// An IPv4 or IPv6 address.
+typealias IPAddress = IPv4Address|IPv6Address
+/// An IPv4 or IPv6 network.
+typealias IPNetwork = IPv4Network|IPv6Network
+
+/// A string that contains an IPv4 address.
+// language=RegExp
+typealias IPv4AddressString = String(matches(Regex(net.ipv4String)))
+/// A string that contains an IPv6 address.
+// language=RegExp
+typealias IPv6AddressString = String(matches(Regex(net.ipv6String)))
+
+/// A string that contains an IPv4 address and port.
+// language=RegExp
+typealias IPv4AddressPortString = String(matches(Regex(#"\#(net.ipv4String):\d{1,5}"#)))
+/// A string that contains an IPv6 address and port.
+// language=RegExp
+typealias IPv6AddressPortString = String(matches(Regex(#"\[\#(net.ipv6String)\]:\d{1,5}"#)))
+
+/// A string that contains an IPv4 address.
+// language=RegExp
+typealias IPv4CIDRString = String(matches(Regex(#"\#(net.ipv4String)/\d{1,2}"#)))
+/// A string that contains an IPv6 address.
+// language=RegExp
+typealias IPv6CIDRString = String(matches(Regex(#"\#(net.ipv6String)/\d{1,3}"#)))
+
+/// Creates an [IPAddress] from an [IPAddressString].
+const function IP(ip: IPAddressString): IPAddress =
+  if (ip is IPv6AddressString) IPv6Address(ip)
+  else if (ip is IPv4AddressString) IPv4Address(ip)
+  else throw("Invalid IP: \(ip)")
+
+/// Creates an [IPv4Address] from an [IPv4AddressString].
+const function IPv4Address(ip: IPv4AddressString): IPv4Address = new {
+  local parts = ip.split(".")
+  repr = parts[0].toInt().shl(24)
+    .or(parts[1].toInt().shl(16))
+    .or(parts[2].toInt().shl(8))
+    .or(parts[3].toInt())
+}
+
+/// An IPv4 address.
+class IPv4Address {
+  hidden repr: UInt32
+  const hidden bitWidth: UInt = 32
+
+  local self = this
+
+  /// maskHi generates a mask of 1s in the top [prefix] bits of a [UInt32].
+  function maskHi(prefix: UInt(isBetween(0, bitWidth))): UInt32 = mask32Hi(prefix)
+  /// maskLo generates a mask of 1s in the bottom [suffix] bits of a [UInt32].
+  function maskLo(suffix: UInt(isBetween(0, bitWidth))): UInt32 = mask32Lo(suffix)
+
+  /// reverse returns the PTR record name for this address.
+  function reverse(): String = new IPv4Network { base = self; prefix = self.bitWidth }.reverse()
+
+  /// return the ip address immediately after this one
+  function next(): IPv4Address = new { repr = self.repr + 1 }
+
+  function toString(): IPv4AddressString = new Listing<String> {
+    repr.ushr(24).and(math.maxUInt8).toString()
+    repr.ushr(16).and(math.maxUInt8).toString()
+    repr.ushr(8).and(math.maxUInt8).toString()
+    repr.and(math.maxUInt8).toString()
+  }.join(".")
+}
+
+/// Creates an [IPv6Address] from an [IPv6AddressString].
+const function IPv6Address(ip: IPv6AddressString): IPv6Address =
+  let (_ip = expandIPv6AddressString(ip).toLowerCase().split(":"))
+    new {
+      repr = u128.UInt128(
+        parseHex32(_ip[0] + _ip[1]),
+        parseHex32(_ip[2] + _ip[3]),
+        parseHex32(_ip[4] + _ip[5]),
+        parseHex32(_ip[6] + _ip[7])
+      )
+    }
+
+/// An IPv6 address.
+class IPv6Address {
+  hidden repr: u128.UInt128
+  const hidden bitWidth: UInt = 128
+
+  local self = this
+
+  /// maskHi generates a mask of 1s in the top [prefix] bits of a [u128.UInt128].
+  function maskHi(prefix: UInt(isBetween(0, bitWidth))): u128.UInt128 =
+    if (prefix <= 32) u128.UInt128(mask32Hi(prefix), 0, 0, 0)
+    else if (prefix <= 64) u128.UInt128(math.maxUInt32, mask32Hi(prefix - 32), 0, 0)
+    else if (prefix <= 96) u128.UInt128(math.maxUInt32, math.maxUInt32, mask32Hi(prefix - 64), 0)
+    else u128.UInt128(math.maxUInt32, math.maxUInt32, math.maxUInt32, mask32Hi(prefix - 96))
+  /// maskLo generates a mask of 1s in the bottom [suffix] bits of a [u128.UInt128].
+  function maskLo(suffix: UInt(isBetween(0, bitWidth))): u128.UInt128 =
+    if (suffix <= 32) u128.UInt128(0, 0, 0, mask32Lo(suffix))
+    else if (suffix <= 64) u128.UInt128(0, 0, mask32Lo(suffix - 32), math.maxUInt32)
+    else if (suffix <= 96) u128.UInt128(0, mask32Lo(suffix - 64), math.maxUInt32, math.maxUInt32)
+    else u128.UInt128(mask32Lo(suffix - 96), math.maxUInt32, math.maxUInt32, math.maxUInt32)
+
+  /// reverse returns the PTR record name for this address.
+  function reverse(): String = new IPv6Network { base = self; prefix = self.bitWidth }.reverse()
+
+  /// return the ip address immediately after this one
+  function next(): IPv6Address = new { repr = self.repr.add(u128.one) }
+
+  function toString(): IPv6AddressString = expandIPv6AddressString(new Listing {
+    repr.hihi.ushr(16).toRadixString(16)
+    repr.hihi.and(math.maxUInt16).toRadixString(16)
+    repr.hilo.ushr(16).toRadixString(16)
+    repr.hilo.and(math.maxUInt16).toRadixString(16)
+    repr.lohi.ushr(16).toRadixString(16)
+    repr.lohi.and(math.maxUInt16).toRadixString(16)
+    repr.lolo.ushr(16).toRadixString(16)
+    repr.lolo.and(math.maxUInt16).toRadixString(16)
+  }.join(":"))
+}
+
+/// Creates an [IPNetwork] from an IPv4 or IPv6 CIDR block string
+const function IPNetwork(cidr: String): IPNetwork =
+  if (cidr.split("/").first is IPv4AddressString) IPv4Network(cidr)
+  else if (cidr.split("/").first is IPv6AddressString) IPv6Network(cidr)
+  else throw("Invalid network CIDR: \(cidr)")
+
+/// Creates an [IPv4Network] from an IPv4 CIDR block string
+const function IPv4Network(cidr: String): IPv4Network = new {
+  base = IPv4Address(cidr.split("/").first)
+  prefix = cidr.split("/").last.toInt()
+}
+
+/// An IPv4 network.
+class IPv4Network {
+  /// The base address of this network
+  base: IPv4Address
+  /// The CIDR prefix of this network
+  prefix: UInt(isBetween(0, bitWidth))
+  fixed hidden bitWidth = base.bitWidth
+  const hidden reverseBitResolution: UInt = 8
+
+  local self = this
+
+  /// The first address in this network.
+  /// Will be equivalent to [lastAddress] when [prefix] is equal to [bitWidth].
+  fixed firstAddress: IPv4Address = new { repr = base.repr.and(base.maskHi(prefix)) }
+  /// The last address in this network.
+  /// Will be equivalent to [firstAddress] when [prefix] is equal to [bitWidth].
+  fixed lastAddress: IPv4Address = new { repr = base.repr.or(base.maskLo(bitWidth - prefix)) }
+
+  /// Return the subnet-mask for this network.
+  function getSubnetMask(): IPv4AddressString = new IPv4Address { repr = base.maskHi(prefix) }.toString()
+
+  /// Return true if this network contains [ip].
+  function contains(ip: IPv4Address): Boolean = firstAddress.repr <= ip.repr && ip.repr <= lastAddress.repr
+  /// Generate the name of the reverse DNS zone for this network.
+  function reverse(): String = base.toString().split(".").take(prefix ~/ reverseBitResolution).reverse().join(".") + ".in-addr.arpa"
+
+  /// Calculate all subnets of this network with prefix [target].
+  /// For example, given IPv4Network("10.53.120.0/21").subdivideTo(24), it outputs 8 /24 networks
+  function subdivideTo(target: UInt(isBetween(0, bitWidth) && this >= prefix)): Listing<IPv4Network> =
+    if (prefix == target) new { self }
+    else new {
+      ...new IPv4Network { base = self.base; prefix = self.prefix + 1 }.subdivideTo(target)
+      ...new IPv4Network { base = new { repr = self.base.repr + 1.shl(bitWidth - self.prefix - 1) }; prefix = self.prefix + 1 }.subdivideTo(target)
+    }
+
+  function toString(): String = "\(base.toString())/\(prefix)"
+}
+
+/// Produces a listing of IPv4 addresses between [start] and [end], inclusive.
+const function IPv4Range(start: IPv4Address, end: IPv4Address): Listing<IPv4Address> = new {
+  for (ipu in IntSeq(start.repr, end.repr)) {
+    new { repr = ipu }
+  }
+}
+
+/// Creates an [IPv6Network] from an IPv6 CIDR block string
+const function IPv6Network(cidr: String): IPv6Network = new {
+  base = IPv6Address(cidr.split("/").first)
+  prefix = cidr.split("/").last.toInt()
+}
+
+/// An IPv6 network.
+class IPv6Network {
+  /// The base address of this network
+  base: IPv6Address
+  /// The CIDR prefix of this network
+  prefix: UInt(isBetween(0, bitWidth))
+  fixed hidden bitWidth = base.bitWidth
+  const hidden reverseBitResolution: UInt = 4
+
+  local self = this
+
+  /// The first address in this network.
+  /// Will be equivalent to [lastAddress] when [prefix] is equal to [bitWidth].
+  fixed firstAddress: IPv6Address = new { repr = base.repr.and(base.maskHi(prefix)) }
+  /// The last address in this network.
+  /// Will be equivalent to [firstAddress] when [prefix] is equal to [bitWidth].
+  fixed lastAddress: IPv6Address = new { repr = base.repr.or(base.maskLo(bitWidth - prefix)) }
+
+  /// Return true if this network contains [ip].
+  function contains(ip: IPv6Address): Boolean = firstAddress.repr.le(ip.repr) && ip.repr.le(lastAddress.repr)
+  /// Generate the name of the reverse DNS zone for this network.
+  function reverse(): String = expandIPv6AddressString(base.toString()).replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
+
+  /// Calculate all subnets of this network with prefix [target].
+  /// For example, given IPv6Network("2620:149:a:960::/61").subdivideTo(64), it outputs 8 /64 networks
+  function subdivideTo(target: UInt(isBetween(0, bitWidth) && this >= prefix)): Listing<IPv6Network> =
+    if (prefix == target) new { self }
+    else new {
+      ...new IPv6Network { base = self.base; prefix = self.prefix + 1 }.subdivideTo(target)
+      ...new IPv6Network { base = new { repr = self.base.repr.add(u128.one.shl(bitWidth - self.prefix - 1)) }; prefix = self.prefix + 1 }.subdivideTo(target)
+    }
+
+  function toString(): String = "\(compressIPv6AddressString(base.toString()))/\(prefix)"
+}
+
+/// Produces a listing of IPv6 addresses between [start] and [end], inclusive.
+const function IPv6Range(start: IPv6Address, end: IPv6Address): Listing<IPv6Address> = new {
+  for (ipu in start.repr.seq(end.repr)) {
+    new { repr = ipu }
+  }
+}
+
+/// Canonicalizes IPv6 addresses by expanding each component to be 4 digits (zero-padded) and expanding ::
+/// Given input "123:45:6::7890", the output is "0123:0045:0006:0000:0000:0000:0000:7890"
+const function expandIPv6AddressString(_ip: IPv6AddressString): IPv6AddressString =
+  if (_ip.length == 39) _ip // assume it's already canonicalized
+  else
+    let (ip = if (_ip.endsWith("::")) _ip + "0" else _ip)
+      let (stuff = ip.split("::").map((half) -> half.split(":").map((octet) -> octet.padStart(4, "0"))))
+        if (stuff.length == 1) stuff.first.join(":")
+        else if (stuff.length == 2) (stuff.first + List("0000").repeat(8 - stuff.first.length - stuff.last.length) + stuff.last).join(":")
+        else throw("unintelligible IPv6 address: " + ip)
+
+/// Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to ::
+/// Given input "0123:0045:0006:0000:0000:0000:0000:7890", the output is "123:45:6::7890"
+/// Note that this may not produce optimally compressed addresses if there are multiple spans of repeated zero components
+const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressString =
+  let (trimmed = ip.split(":").map((octet) ->
+    if (octet == "0000") "0"
+    else octet.dropWhile((c) -> c == "0")
+  ).join(":"))
+    trimmed.replaceFirst(Regex("(:|^)(0:)+0(:|$)"), "::")
+
+/// parseHex tranforms a single hexadecimal character into its unsigned integer representation.
+const function parseHex(digit: Char): UInt8 =
+  let (d = digit.toLowerCase())
+    "0123456789abcdef".chars.findIndexOrNull((it) -> it == d) ??
+      throw("Unrecognized hex digit: \(d)")
+
+/// parseHex32 transforms an 8 character hexidecimal string into its UInt32 representation.
+const function parseHex32(s: String(this.length == 8)): UInt32 =
+  IntSeq(0, 7)
+    .step(2)
+    .map((it) -> s.substring(it, it + 2))
+    .fold(0, (acc, it) -> acc.shl(8) + byteLut[it.toLowerCase()])
+
+const local byteLut = IntSeq(0, 255).map((it) -> it).toMap((it) -> it.toRadixString(16).padStart(2, "0"), (it) -> it)
+
+/// mask32Hi generates a mask of 1s in the top [prefix] bits of a [UInt32].
+const function mask32Hi(prefix: UInt(this.isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-prefix).shl(32-prefix)
+/// mask32Lo generates a mask of 1s in the bottom [suffix] bits of a [UInt32].
+const function mask32Lo(suffix: UInt(this.isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-suffix)

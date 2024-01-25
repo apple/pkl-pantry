@@ -1,0 +1,52 @@
+:uri-github-issue-pkl: https://github.com/apple/pkl-pantry/issues/new
+:uri-seven-rules: https://cbea.ms/git-commit/#seven-rules
+
+= Pkl Pantry Contributors Guide
+
+Welcome to the Pkl community, and thank you for contributing!
+This guide explains how to get involved.
+
+* <<Licensing>>
+* <<Issue Tracking>>
+* <<Pull Requests>>
+
+== Licensing
+
+Pkl Pantry is released under the Apache 2.0 license.
+This is why we require that, by submitting a pull request, you acknowledge that you have the right to license your contribution to Apple and the community, and agree that your contribution is licensed under the Apache 2.0 license.
+
+== Issue Tracking
+
+To file a bug or feature request, use {uri-github-issue-pkl}[GitHub].
+Be sure to include the following information:
+
+* Context
+** What are/were you trying to achieve?
+** What's the impact of this bug/feature?
+
+For bug reports, additionally include the following information:
+
+* The output of `pkl --version`.
+* The complete error message.
+* The simplest possible steps to reproduce.
+* Output produced from the template.
+* Error messages from the target system.
+
+== Pull Requests
+
+When preparing a pull request, follow this checklist:
+
+* Imitate the conventions of surrounding code.
+* Format the files in your PR with the JetBrains IDE formatter.
+* Follow the {uri-seven-rules}[seven rules] of great Git commit messages:
+** Separate subject from body with a blank line.
+** Limit the subject line to 50 characters.
+** Capitalize the subject line.
+** Do not end the subject line with a period.
+** Use the imperative mood in the subject line.
+** Wrap the body at 72 characters.
+** Use the body to explain what and why vs. how.
+
+== Maintainers
+
+The project’s maintainers (those with write access to the upstream repository) are listed in link:MAINTAINERS.adoc[].

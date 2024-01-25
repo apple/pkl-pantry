@@ -1,0 +1,90 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Telegraf is a plugin-driven agent that collects, processes, aggregates, and writes metrics.
+///
+/// Telegraf supports four categories of plugins including input, output, aggregator, and processor.
+///
+/// Docs: <https://docs.influxdata.com/telegraf/v1.17/plugins/>
+///
+/// Filters can be configured per input, output, processor, or aggregator.
+///
+/// Docs: <https://docs.influxdata.com/telegraf/v1.17/administration/configuration/#measurement-filtering>
+@ModuleInfo { minPklVersion = "0.25.0" }
+abstract module com.influxdata.telegraf.plugins.Plugin
+
+import "@toml/toml.pkl"
+
+/// An array of glob pattern strings.
+///
+/// Only metrics whose measurement name matches a pattern in this list are emitted.
+namepass: Listing<String>?
+
+/// The inverse of [namepass].
+///
+/// If a match is found the metric is discarded.
+/// This is tested on metrics after they have passed the [namepass] test.
+namedrop: Listing<String>?
+
+/// A table mapping tag keys to arrays of glob pattern strings.
+///
+/// Only metrics that contain a tag key in the table and a tag value matching one of its patterns is emitted.
+tagpass: Mapping<String, Listing<String>>?
+
+/// The inverse of [tagpass].
+///
+/// If a match is found the metric is discarded.
+/// This is tested on metrics after they have passed the [tagpass] test.
+tagdrop: Mapping<String, Listing<String>>?
+
+/// An array of glob pattern strings.
+///
+/// Only fields whose field key matches a pattern in this list are emitted.
+fieldpass: Listing<String>?
+
+/// The inverse of [fieldpass].
+///
+/// Fields with a field key matching one of the patterns will be discarded from the metric.
+/// This is tested on metrics after they have passed the [fieldpass] test.
+fielddrop: Listing<String>?
+
+/// An array of glob pattern strings.
+///
+/// Only tags with a tag key matching one of the patterns are emitted.
+/// In contrast to [tagpass], which will pass an entire metric based on its tag,
+/// [taginclude] removes all non matching tags from the metric.
+/// Any tag can be filtered including global tags and the agent `host` tag.
+taginclude: Listing<String>?
+
+/// The inverse of [taginclude].
+///
+/// Tags with a tag key matching one of the patterns will be discarded from the metric.
+/// Any tag can be filtered including global tags and the agent `host` tag
+tagexclude: Listing<String>?
+
+output {
+  renderer = new toml.Renderer {
+    converters {
+      // The Pkl config defines data formats as a nested object.
+      // Telegraf defines this as a flat object,
+      // so we inline the data format into the top-level plugin.
+      ["*"] = (value) ->
+        if (value is module)
+          let (m = value.toMap())
+            m.remove("data_format") + ((m.getOrNull("data_format") as Typed?)?.toMap() ?? Map())
+        else value
+    }
+  }
+}

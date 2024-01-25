@@ -1,0 +1,16 @@
+examples {
+  ["convertIndexedProperty"] {
+    Map("foo.bar.1.biz.11", "eleven", "foo.bar.1.biz.12", "twelve", "foo.bar.2.biz.22", "two")
+    Map("foo.bar.1.biz", 1, "foo.bar.2.biz", 2)
+  }
+  ["flattenMapKeys"] {
+    Map(List(".1", ".11"), "eleven", List(".1", ".12"), "twelve", List(".2", ".22"), "two")
+  }
+  ["convertProperty"] {
+    Map("foo.bar.baz", 1)
+    Map("foo.env.FOO", "foo", "foo.env.BAR", "bar")
+    Map("foo.env.FOO.buz.BAR", "bar")
+    Map("spark.kubernetes.baz", "5Gi")
+    Map("spark.memory", "5g")
+  }
+}

@@ -1,0 +1,726 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Schema for CircleCI's `config.yml`.
+///
+/// This module is a work in progress, if you find some unsuported feature
+/// feel free to add it.
+module com.circleci.v2.Config
+
+/// Version of the `config.yml` schema to target.
+///
+/// Currently, only version 2.1 is supported by this template.
+version: "2.1"
+
+/// Designates the config.yaml for use of CircleCI’s
+/// [dynamic configuration](https://circleci.com/docs/dynamic-config/) feature.
+setup: Boolean?
+
+/// A map of user-selected names to either: orb references (strings) or orb definitions (maps).
+///
+/// Orb definitions must be the orb-relevant subset of 2.1 config.
+/// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
+orbs: Mapping<String, Orb|String>?
+
+/// A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
+/// a single command definition across multiple jobs.
+///
+/// For more information see the
+/// [Reusable Config Reference Guide](https://circleci.com/docs/reusing-config/).
+commands: Mapping<String, Command>?
+
+/// A Workflow is comprised of one or more uniquely named jobs.
+///
+/// Jobs are specified in the jobs map, see
+/// [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
+/// The name of the job is the key in the map, and the value is a map describing the job.
+jobs: Mapping<String, Job>?
+
+/// Used for orchestrating all jobs.
+///
+/// Each workflow consists of the workflow name as a key and a map as a value.
+/// A name should be unique within the current config.yml.
+/// The top-level keys for the Workflows configuration are version and jobs.
+/// For more information, see the
+/// [Using Workflows to Orchestrate Jobs](https://circleci.com/docs/workflows/) page.
+workflows: Mapping<String, Workflow>?
+
+/// Pipeline parameters declared for use in the configuration.
+///
+/// See [Pipeline Values and Parameters](https://circleci.com/docs/pipeline-variables/#pipeline-parameters-in-configuration)
+/// for usage details.
+parameters: Mapping<String, Parameter>?
+
+class Orb {
+  /// A map of user-selected names to either: orb references (strings) or orb definitions (maps).
+  ///
+  /// Orb definitions must be the orb-relevant subset of 2.1 config.
+  /// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
+  orbs: Mapping<String, Orb|String>?
+
+  /// A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
+  /// a single command definition across multiple jobs.
+  ///
+  /// For more information see the
+  /// [Reusable Config Reference Guide](https://circleci.com/docs/reusing-config/).
+  commands: Mapping<String, Command>?
+
+  /// A Workflow is comprised of one or more uniquely named jobs.
+  ///
+  /// Jobs are specified in the jobs map, see
+  /// [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
+  /// The name of the job is the key in the map, and the value is a map describing the job.
+  jobs: Mapping<String, Job>?
+}
+
+class Job {
+  /// Shell to use for execution command in all steps.
+  ///
+  /// Can be overridden by shell in each step (default: See Default Shell Options)
+  shell: String?
+
+  /// A list of [steps](https://circleci.com/docs/configuration-reference/#steps) to be performed
+  steps: Listing<Step>(!isEmpty)
+
+  /// In which directory to run the steps.
+  ///
+  /// Will be interpreted as an absolute path.
+  ///
+  /// Default: `~/project` (where project is a literal string, not the name of your specific project).
+  ///
+  /// Processes run during the job can use the `$CIRCLE_WORKING_DIRECTORY` environment variable to
+  /// refer to this directory.
+  ///
+  /// Note: Paths written in your YAML configuration file will not be expanded; if your
+  /// store_test_results.path is $CIRCLE_WORKING_DIRECTORY/tests, then CircleCI will attempt to
+  /// store the test subdirectory of the directory literally named $CIRCLE_WORKING_DIRECTORY,
+  /// dollar sign $ and all. working_directory will be created automatically if it doesn’t exist.
+  working_directory: String?
+
+  /// Number of parallel instances of this job to run (default: 1)
+  parallelism: Int?
+
+  /// A map of environment variable names and values.
+  environment: Mapping<String, String>?
+
+  /// The [resource_class](https://circleci.com/docs/resource-class-overview/) feature allows you to configure CPU and RAM resources for each job.
+  ///
+  /// Resource classes are available for each execution environment, as described in the tables below.
+  ///
+  /// We implement soft concurrency limits for each resource class to ensure our system remains
+  /// stable for all customers.
+  /// If you are on a Performance or custom plan and experience queuing for certain resource
+  /// classes, it is possible you are hitting these limits.
+  /// Contact [CircleCI support](https://support.circleci.com/hc/en-us/requests/new) to request a
+  /// raise on these limits for your account.
+  ///
+  /// If you do not specify a resource class, CircleCI will use a default value that is subject
+  /// to change.
+  /// It is best practice to specify a resource class as opposed to relying on a default.
+  resource_class: ResourceClass?
+
+  /// Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
+  docker: Listing<DockerImage>(!isEmpty)?(onlyOneSet(List(this, macos, machine)))
+
+  /// CircleCI supports running jobs on macOS, to allow you to build, test, and deploy apps for
+  /// macOS, iOS, tvOS and watchOS.
+  ///
+  /// To run a job in a macOS virtual machine, add the macos key to the top-level configuration
+  /// for your job and specify the version of Xcode you would like to use.
+  macos: MacOSExecutor?
+
+  /// Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
+  machine: Machine?
+}
+
+typealias ResourceClass =
+  "small"
+  |"medium"
+  |"medium+"
+  |"large"
+  |"xlarge"
+  |"2xlarge"
+  |"2xlarge+"
+  |"arm.medium"
+  |"arm.large"
+  |"arm.xlarge"
+  |"arm.2xlarge"
+  |"macos.m1.medium.gen1"
+  |"macos.m1.large.gen1"
+
+class MacOSExecutor {
+  /// The version of Xcode that is installed on the virtual machine, see the
+  /// [Supported Xcode Versions section of the Testing iOS document](https://circleci.com/docs/using-macos/#supported-xcode-versions)
+  /// for the complete list.
+  xcode: String
+}
+
+class Machine {
+  /// The virtual machine image to use.
+  ///
+  /// View [available images](https://circleci.com/developer/images?imageType=machine).
+  ///
+  /// Note: This key is *not* supported for Linux VMs on installations of CircleCI server.
+  /// For information about customizing `machine` executor images on CircleCI installed on your
+  /// servers, see our [VM Service documentation](https://circleci.com/docs/server/v4.1/operator/manage-virtual-machines-with-vm-service/)
+  image: String
+
+  /// Set this to `true` to enable [Docker Layer Caching](https://circleci.com/docs/docker-layer-caching/).
+  docker_layer_caching: Boolean?
+}
+
+class DockerImage {
+  /// The name of a custom docker image to use.
+  ///
+  /// The first `image` listed under a job defines the job’s own primary container image where all
+  /// steps will run.
+  image: String
+
+  /// `name` defines the the hostname for the container (the default is `localhost`), which is used
+  /// for reaching secondary (service) containers.
+  ///
+  /// By default, all services are exposed directly on `localhost`.
+  /// This field is useful if you would rather have a different hostname instead of `localhost`,
+  /// for example, if you are starting multiple versions of the same service.
+  name: String?
+
+  /// The command used as executable when launching the container.
+  ///
+  /// [entrypoint] overrides the image’s `ENTRYPOINT`
+  entrypoint: (*Listing<String>|String)?
+
+  /// The command used as pid 1 (or args for entrypoint) when launching the container.
+  ///
+  /// [command] overrides the image’s `COMMAND`.
+  /// It will be used as arguments to the image `ENTRYPOINT` if it has one, or as the executable
+  /// if the image has no `ENTRYPOINT`.
+  command: (*Listing<String>|String)?
+
+  /// Which user to run commands as within the Docker container
+  user: String?
+
+  /// environment variable names and values.
+  ///
+  /// The [environment] settings apply to the entrypoint/command run by the docker container, not
+  /// the job steps
+  environment: Mapping<String, String>?
+
+  /// Authentication for registries using standard docker login credentials
+  auth: Mapping<String, String>?
+
+  /// Authentication for AWS Elastic Container Registry (ECR)
+  aws_auth: Mapping<String, String>?
+}
+
+class ScheduleTrigger {
+  /// The cron key is defined using POSIX crontab syntax
+  @SourceCode { language = "cronexp" }
+  cron: String
+
+  /// Trigger Filters can have the key branches.
+  filters: ScheduleTriggerFilter
+}
+
+class ScheduleTriggerFilter {
+  /// The `branches` key controls whether the _current_ branch should have a schedule trigger
+  /// created for it, where _current_ branch is the branch containing the `config.yml` file with
+  /// the trigger stanza.
+  /// That is, a push on the `main` branch will only schedule a
+  /// [workflow](https://circleci.com/docs/workflows/#using-contexts-and-filtering-in-your-workflows)
+  /// for the `main` branch.
+  ///
+  /// Branches can have the keys only and ignore which each map to a single string naming a branch.
+  /// You may also use regular expressions to match against branches by enclosing them with `/`’s,
+  /// or map to a list of such strings. Regular expressions must match the **entire** string.
+  ///
+  /// * Any branches that match only will run the job.
+  /// * Any branches that match ignore will not run the job.
+  /// * If neither only nor ignore are specified then all branches will run the job.
+  ///   If both only and ignore are specified, the only is used and ignore will have no effect.
+  branches: ScheduleTriggerFilterBranches
+}
+
+class ScheduleTriggerFilterBranches {
+  /// Either a single branch specifier, or a list of branch specifiers
+  only: *Listing<String>|String
+
+  /// Either a single branch specifier, or a list of branch specifiers
+  ignore: (*Listing<String>|String)?
+}
+
+class Workflow {
+  /// A job can have the keys `requires`, `name`, `context`, `type`, and `filters`.
+  jobs: Listing<*Mapping<String, WorkflowJob>(length == 1)|String>(!isEmpty)
+
+  /// Specifies which triggers will cause this workflow to be executed.
+  ///
+  /// Default behavior is to trigger the workflow when pushing to a branch
+  triggers: Listing<ScheduleTrigger>?
+
+  `when`: (*LogicStatement|Boolean|String)?
+
+  `unless`: (*LogicStatement|Boolean|String)?
+}
+
+class WorkflowJob {
+  /// The name key can be used to invoke reusable jobs across any number of workflows.
+  ///
+  /// Using the name key ensures numbers are not appended to your job name (i.e. sayhello-1,
+  /// sayhello-2, etc.).
+  /// The name you assign to the name key needs to be unique, otherwise the numbers will still be
+  /// appended to the job name.
+  name: String?
+
+  /// A list of jobs that must succeed for the job to start.
+  ///
+  /// Note: When jobs in the current workflow that are listed as dependencies are not executed
+  /// (due to a filter function for example), their requirement as a dependency for other jobs will
+  /// be ignored by the requires option.
+  /// However, if all dependencies of a job are filtered, then that job will not be executed either.
+  requires: Listing<String>?
+
+  /// The name of the context(s).
+  ///
+  /// Jobs may be configured to use global environment variables set for an organization, see the
+  /// [Contexts](https://circleci.com/docs/contexts/) document for adding a context in the
+  /// application settings.
+  ///
+  /// The initial default name is org-global.
+  /// Each context name must be unique.
+  /// If using CircleCI Server, only a single Context per workflow is supported.
+  /// Note: A maximum of 100 unique contexts across all workflows is allowed
+  context: (*Listing<String>|String)?
+
+  /// A job may have a type of `approval` indicating it must be manually approved before downstream
+  /// jobs may proceed.
+  ///
+  /// For more information see the Using Workflows to Orchestrate Jobs page.
+  type: "approval"?
+
+  /// Job Filters can have the key branches or tags
+  filters: JobFilters?
+}
+
+class JobFilters {
+  /// Branches can have the keys only and ignore which either map to a single string naming a branch.
+  /// You may also use regular expressions to match against branches by enclosing them with slashes,
+  /// or map to a list of such strings.
+  /// Regular expressions must match the *entire* string.
+  ///
+  /// Any branches that match `only` will run the job.
+  /// Any branches that match `ignore` will not run the job.
+  /// If neither `only` nor `ignore` are specified then all branches will run the job.
+  /// If both `only` and `ignore` are specified the `only` is considered before `ignore`.
+  branches: FilterSpec?
+
+  /// CircleCI does not run workflows for tags unless you explicitly specify tag filters.
+  /// Additionally, if a job requires any other jobs (directly or indirectly), you must specify tag
+  /// filters for those jobs.
+  ///
+  /// Tags can have the keys only and ignore.
+  /// You may also use regular expressions to match against tags by enclosing them with slashes,
+  /// or map to a list of such strings.
+  /// Regular expressions must match the entire string.
+  /// Both lightweight and annotated tags are supported.
+  ///
+  /// Any tags that match only will run the job.
+  /// Any tags that match ignore will not run the job.
+  /// If neither only nor ignore are specified then the job is skipped for all tags.
+  /// If both only and ignore are specified the only is considered before ignore.
+  tags: FilterSpec?
+}
+
+class FilterSpec {
+  /// Either a single branch specifier, or a list of branch specifiers
+  only: (String|Listing<String>)?(this != null || ignore != null)
+
+  /// Either a single branch specifier, or a list of branch specifiers
+  ignore: (String|Listing<String>)?
+}
+
+typealias Step = AbstractStep|SimpleStepName
+
+typealias SimpleStepName = "checkout"|"setup_remote_docker"|"add_ssh_keyes"|String
+
+local abstract class AbstractStep {
+  fixed hidden __name__: String
+}
+
+function run(_command: String): RunStep = new {
+  command = _command
+}
+
+/// Used for invoking all command-line programs.
+///
+/// Run commands are executed using non-login shells by default, so you must explicitly source any
+/// dotfiles as part of the command.
+class RunStep extends AbstractStep {
+  fixed hidden __name__ = "run"
+
+  /// Command to run via the shell
+  command: String(!isEmpty)
+
+  /// Title of the step to be shown in the CircleCI UI (default: full [command])
+  name: String?
+
+  /// Shell to use for execution command (default: See [Default Shell Options](https://circleci.com/docs/configuration-reference/#default-shell-options))
+  shell: String?
+
+  /// Additional environmental variables, locally scoped to command
+  environment: Mapping<String, String>?
+
+  /// Whether or not this step should run in the background (default: [false])
+  background: Boolean?
+
+  /// In which directory to run this step.
+  ///
+  /// Will be interpreted relative to the working_directory
+  /// of the job. (default: `.`)
+  working_directory: String?
+
+  /// Elapsed time the command can run without output.
+  ///
+  /// The default is 10 minutes and the maximum is governed by the maximum time a job is allowed to run.
+  no_output_timeout: Duration?
+
+  /// Specify when to enable or disable the step.
+  ///
+  /// Takes the following values: `always`, `on_success`, `on_fail` (default: on_success)
+  `when`: ("always"|"on_success"|"on_fail")?
+}
+
+/// Generates and stores a cache of a file or directory of files such as dependencies or source
+/// code in our object storage.
+///
+/// Later jobs can [restore this cache](https://circleci.com/docs/configuration-reference/#restore_cache).
+/// Learn more on the [Caching Dependencies](https://circleci.com/docs/caching/) page.
+///
+/// Cache retention can be customized on the [CircleCI web app](https://app.circleci.com/) by
+/// navigating to Plan > Usage Controls.
+class SaveCacheStep extends AbstractStep {
+  fixed hidden __name__ = "save_cache"
+
+  /// List of directories which should be added to the cache
+  paths: Listing<String>
+
+  /// Unique identifier for this cache
+  key: String
+
+  /// Title of the step to be shown in the CircleCI UI (default: “Saving Cache”)
+  name: String?
+
+  /// [Specify when to enable or disable the step](https://circleci.com/docs/configuration-reference/#the-when-attribute).
+  ///
+  /// Takes the following values: always, on_success, on_fail (default: on_success)
+  `when`: ("always"|"on_success"|"on_fail")?
+}
+
+/// Restores a previously saved cache based on a key.
+///
+/// Cache needs to have been saved first for this key using the [save_cache] step.
+///
+/// Learn more in [the caching documentation](https://circleci.com/docs/caching/).
+class RestoreCacheStep extends AbstractStep {
+  fixed hidden __name__ = "restore_cache"
+
+  /// Single cache key to restore
+  key: String?(this != null || keys != null)
+
+  /// List of cache keys to lookup for a cache to restore.
+  ///
+  /// Only first existing key will be restored.
+  keys: Listing<String>?
+
+  /// Title of the step to be shown in the CircleCI UI (default: “Restoring Cache”)
+  name: String?
+}
+
+/// Allows Docker commands to be run locally.
+///
+/// See [Running Docker Commands](https://circleci.com/docs/building-docker-images/) for details.
+class SetupRemoteDockerStep extends AbstractStep {
+  fixed hidden __name__ = "setup_remote_docker"
+
+  /// Version string of Docker you would like to use (default: 20.10.17).
+  ///
+  /// View the list of supported docker versions
+  /// [here](https://circleci.com/docs/building-docker-images/#docker-version).
+  version: String
+
+  /// Set this to true to enable [Docker Layer Caching](https://circleci.com/docs/docker-layer-caching/)
+  /// in the Remote Docker Environment (default: false)
+  docker_layer_cacheing: Boolean
+}
+
+/// Special step used to persist a temporary file to be used by another job in the workflow.
+/// For more information on using workspaces, see the
+/// [Using Workspaces to Share Data Between Jobs](https://circleci.com/docs/workspaces/) page.
+///
+/// `persist_to_workspace` adopts the storage settings from the storage customization controls on
+/// the CircleCI web app.
+/// If no custom setting is provided, `persist_to_workspace` defaults to 15 days.
+///
+/// Workspace storage retention can be customized on the CircleCI web app by navigating to Plan > Usage Controls.
+class PersistToWorkspaceStep extends AbstractStep {
+  fixed hidden __name__ = "persist_to_workspace"
+
+  /// Either an absolute path or a path relative to `working_directory`
+  root: String
+
+  /// Glob identifying file(s), or a non-glob path to a directory to add to the shared workspace.
+  ///
+  /// Interpreted as relative to the workspace root.
+  /// Must not be the workspace root itself
+  paths: Listing<String>
+}
+
+/// Special step used to attach the workflow’s workspace to the current container.
+///
+/// The full contents of the workspace are downloaded and copied into the directory the workspace
+/// is being attached at.
+/// For more information on using workspaces, see the
+/// [Using Workspaces to Share Data Between Jobs](https://circleci.com/docs/workspaces/) page.
+class AttachWorkspaceStep extends AbstractStep {
+  fixed hidden __name__ = "attach_workspace"
+
+  /// Directory to attach the workspace to.
+  at: String
+}
+
+/// A conditional step consists of a step with the key `when`.
+///
+/// Under the `when` key are the subkeys `condition` and `steps`.
+/// The purpose of the `when` step is customizing commands and job configuration to run on custom
+/// conditions (determined at config-compile time) that are checked before a workflow runs.
+/// See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
+/// document for more details.
+class WhenStep {
+  fixed hidden __name__ = "when"
+
+  /// The logic statement that determines whether to execute.
+  condition: (*LogicStatement|Boolean|String)?
+
+  /// A list of steps to execute when the condition is true
+  steps: Listing<AbstractStep|SimpleStepName>?
+}
+
+/// A conditional step consists of a step with the key `unless`.
+///
+/// Under the `unless` key are the subkeys `condition` and `steps`.
+/// The purpose of the `unless` step is customizing commands and job configuration to run on custom
+/// conditions (determined at config-compile time) that are checked before a workflow runs.
+/// See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
+/// document for more details.
+class UnlessStep {
+  fixed hidden __name__ = "unless"
+
+  /// The logic statement that determines whether to execute.
+  condition: (*LogicStatement|Boolean|String)?
+
+  /// A list of steps to execute when the condition is true
+  steps: Listing<AbstractStep|SimpleStepName>?
+}
+
+class Command {
+  /// A sequence of steps run inside the calling job of the command.
+  steps: Listing<Step>(!isEmpty)
+
+  /// A map of parameter keys.
+  ///
+  /// See the [Parameter Syntax](https://circleci.com/docs/reusing-config/#parameter-syntax)
+  /// section of the [Reusing Config](https://circleci.com/docs/reusing-config/) document for details.
+  parameters: Mapping<String, Parameter>?
+
+  /// A string that describes the purpose of the command.
+  description: String?
+}
+
+class Parameter {
+  /// Optional. Used to generate documentation for your orb.
+  description: String?
+
+  /// The default value for the parameter. If not present, the parameter is implied to be required.
+  default: (String|Number|Boolean)?
+
+  /// Required. See [Parameter Types](https://circleci.com/docs/reusing-config/#parameter-types)
+  /// for details.
+  type: "string"|"boolean"|"integer"|"enum"|"executor"|"steps"|"env_var_name"
+}
+
+/// Special step used to upload and store test results for a build.
+///
+/// Test results are visible on the CircleCI web application under each build’s *Test Summary*
+/// section.
+/// Storing test results is useful for timing analysis of your test suites.
+/// For more information on storing test results, see the
+/// [Collecting Test Data](https://circleci.com/docs/collect-test-data/) page.
+///
+/// It is also possible to store test results as a build artifact; to do so, please refer to the
+/// [store_artifacts] step.
+class StoreTestResults extends AbstractStep {
+  fixed hidden __name__ = "store_test_results"
+
+  /// Path (absolute, or relative to your `working_directory`) to directory containing JUnit XML
+  /// test metadata files, or to a single test file.
+  path: String
+}
+
+/// Step to store artifacts (for example logs, binaries, etc) to be available in the web app
+/// or through the API.
+///
+/// See the [Uploading Artifacts](https://circleci.com/docs/artifacts/) document for more information.
+class StoreArtifacts extends AbstractStep {
+  fixed hidden __name__ = "store_artifacts"
+
+  /// Directory in the primary container to save as job artifacts
+  path: String
+
+  /// Prefix added to the artifact paths in the artifacts API (default: the directory of the file
+  /// specified in path)
+  destination: String?
+}
+
+/// Certain dynamic configuration features accept logic statements as arguments.
+///
+/// Logic statements are evaluated to boolean values at configuration compilation time, that is,
+/// before the workflow is run.
+class LogicStatement {
+  /// True if all arguments are truthy.
+  and: Listing<*LogicStatement|Boolean|String>?(onlyOneSet(List(this, or, not, equal, matches)))
+
+  /// True if any arguments are truthy.
+  or: Listing<*LogicStatement|Boolean|String>?
+
+  /// True if the argument is not truthy.
+  not: (*LogicStatement|Boolean|String)?
+
+  /// True if all arguments evaluate to equal values.
+  equal: Listing<Boolean|String|Number>?
+
+  /// True if [value][Match.value] matches the [pattern][Match.pattern].
+  matches: Match?
+}
+
+/// Tells if only one of the values is not null.
+local const function onlyOneSet(values: List<Any>): Boolean =
+  values.filter((it) -> it != null).length == 1
+
+class Match {
+  /// The value to match against
+  value: String
+
+  /// A [Java regular expression](https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html)
+  /// used to test against the value.
+  ///
+  /// A full match pattern must be provided, prefix matching is not an option.
+  /// Though, it is recommended to enclose a pattern in `^` and `$` to avoid accidental partial matches.
+  @SourceCode { language = "RegExp" }
+  pattern: String
+}
+
+typealias CalledCommand = Mapping<String, CommandCall>(length == 1)
+
+typealias CommandCall = Mapping<String, String|Number|Boolean>
+
+class PipelineValues {
+  /// A globally unique id representing for the pipeline.
+  ///
+  /// Type: string
+  `pipeline.id`: "<< pipeline.id >>"
+
+  /// A project unique integer id for the pipeline.
+  ///
+  /// Type: integer
+  `pipeline.number`: "<< pipeline.number >>"
+
+  /// The URL where the current project is hosted.
+  ///
+  /// For example, `https://github.com/circleci/circleci-docs`.
+  `pipeline.project.git_url`: "<< pipeline.project.git_url >>"
+  `pipeline.project.type`: "<< pipeline.project.type >>"
+  `pipeline.git.tag`: "<< pipeline.git.tag >>"
+  `pipeline.git.branch`: "<< pipeline.git.branch >>"
+  `pipeline.git.revision`: "<< pipeline.git.revision >>"
+  `pipeline.git.base_revision`: "<< pipeline.git.base_revision >>"
+  `pipeline.in_setup`: "<< pipeline.in_setup >>"
+  `pipeline.trigger_source`: "<< pipeline.trigger_source >>"
+  `pipeline.schedule.name`: "<< pipeline.schedule.name >>"
+  `pipeline.schedule.id`: "<< pipeline.schedule.id >>"
+  `pipeline.trigger_parameters.circleci.trigger_type`: "<< pipeline.trigger_parameters.circleci.trigger_type >>"
+  `pipeline.trigger_parameters.circleci.event_time`: "<< pipeline.trigger_parameters.circleci.event_time >>"
+  `pipeline.trigger_parameters.circleci.event_type`: "<< pipeline.trigger_parameters.circleci.event_type >>"
+  `pipeline.trigger_parameters.circleci.project_id`: "<< pipeline.trigger_parameters.circleci.project_id >>"
+  `pipeline.trigger_parameters.circleci.actor_id`: "<< pipeline.trigger_parameters.circleci.actor_id >>"
+  `pipeline.trigger_parameters.gitlab.type`: "<< pipeline.trigger_parameters.gitlab.type >>"
+  `pipeline.trigger_parameters.github_app.type`: "<< pipeline.trigger_parameters.github_app.type >>"
+  `pipeline.trigger_parameters.gitlab.project_id`: "<< pipeline.trigger_parameters.gitlab.project_id >>"
+  `pipeline.trigger_parameters.github_app.project_id`: "<< pipeline.trigger_parameters.github_app.project_id >>"
+  `pipeline.trigger_parameters.gitlab.ref`: "<< pipeline.trigger_parameters.gitlab.ref >>"
+  `pipeline.trigger_parameters.github_app.ref`: "<< pipeline.trigger_parameters.github_app.ref >>"
+  `pipeline.trigger_parameters.gitlab.checkout_sha`: "<< pipeline.trigger_parameters.gitlab.checkout_sha >>"
+  `pipeline.trigger_parameters.github_app.checkout_sha`: "<< pipeline.trigger_parameters.github_app.checkout_sha >>"
+  `pipeline.trigger_parameters.gitlab.user_id`: "<< pipeline.trigger_parameters.gitlab.user_id >>"
+  `pipeline.trigger_parameters.github_app.user_id`: "<< pipeline.trigger_parameters.github_app.user_id >>"
+  `pipeline.trigger_parameters.gitlab.user_name`: "<< pipeline.trigger_parameters.gitlab.user_name >>"
+  `pipeline.trigger_parameters.github_app.user_name`: "<< pipeline.trigger_parameters.github_app.user_name >>"
+  `pipeline.trigger_parameters.gitlab.user_username`: "<< pipeline.trigger_parameters.gitlab.user_username >>"
+  `pipeline.trigger_parameters.github_app.user_username`: "<< pipeline.trigger_parameters.github_app.user_username >>"
+  `pipeline.trigger_parameters.gitlab.user_avatar`: "<< pipeline.trigger_parameters.gitlab.user_avatar >>"
+  `pipeline.trigger_parameters.github_app.user_avatar`: "<< pipeline.trigger_parameters.github_app.user_avatar >>"
+  `pipeline.trigger_parameters.gitlab.repo_name`: "<< pipeline.trigger_parameters.gitlab.repo_name >>"
+  `pipeline.trigger_parameters.github_app.repo_name`: "<< pipeline.trigger_parameters.github_app.repo_name >>"
+  `pipeline.trigger_parameters.gitlab.repo_url`: "<< pipeline.trigger_parameters.gitlab.repo_url >>"
+  `pipeline.trigger_parameters.github_app.repo_url`: "<< pipeline.trigger_parameters.github_app.repo_url >>"
+  `pipeline.trigger_parameters.gitlab.web_url`: "<< pipeline.trigger_parameters.gitlab.web_url >>"
+  `pipeline.trigger_parameters.github_app.web_url`: "<< pipeline.trigger_parameters.github_app.web_url >>"
+  `pipeline.trigger_parameters.gitlab.commit_sha`: "<< pipeline.trigger_parameters.gitlab.commit_sha >>"
+  `pipeline.trigger_parameters.github_app.commit_sha`: "<< pipeline.trigger_parameters.github_app.commit_sha >>"
+  `pipeline.trigger_parameters.gitlab.commit_title`: "<< pipeline.trigger_parameters.gitlab.commit_title >>"
+  `pipeline.trigger_parameters.github_app.commit_title`: "<< pipeline.trigger_parameters.github_app.commit_title >>"
+  `pipeline.trigger_parameters.gitlab.commit_message`: "<< pipeline.trigger_parameters.gitlab.commit_message >>"
+  `pipeline.trigger_parameters.github_app.commit_message`: "<< pipeline.trigger_parameters.github_app.commit_message >>"
+  `pipeline.trigger_parameters.gitlab.commit_timestamp`: "<< pipeline.trigger_parameters.gitlab.commit_timestamp >>"
+  `pipeline.trigger_parameters.github_app.commit_timestamp`: "<< pipeline.trigger_parameters.github_app.commit_timestamp >>"
+  `pipeline.trigger_parameters.gitlab.commit_author_name`: "<< pipeline.trigger_parameters.gitlab.commit_author_name >>"
+  `pipeline.trigger_parameters.github_app.commit_author_name`: "<< pipeline.trigger_parameters.github_app.commit_author_name >>"
+  `pipeline.trigger_parameters.gitlab.commit_author_email`: "<< pipeline.trigger_parameters.gitlab.commit_author_email >>"
+  `pipeline.trigger_parameters.github_app.commit_author_email`: "<< pipeline.trigger_parameters.github_app.commit_author_email >>"
+  `pipeline.trigger_parameters.gitlab.total_commits_count`: "<< pipeline.trigger_parameters.gitlab.total_commits_count >>"
+  `pipeline.trigger_parameters.github_app.total_commits_count`: "<< pipeline.trigger_parameters.github_app.total_commits_count >>"
+  `pipeline.trigger_parameters.gitlab.branch`: "<< pipeline.trigger_parameters.gitlab.branch >>"
+  `pipeline.trigger_parameters.github_app.branch`: "<< pipeline.trigger_parameters.github_app.branch >>"
+  `pipeline.trigger_parameters.gitlab.default_branch`: "<< pipeline.trigger_parameters.gitlab.default_branch >>"
+  `pipeline.trigger_parameters.github_app.default_branch`: "<< pipeline.trigger_parameters.github_app.default_branch >>"
+  `pipeline.trigger_parameters.gitlab.x_gitlab_event_id`: "<< pipeline.trigger_parameters.gitlab.x_gitlab_event_id >>"
+  `pipeline.trigger_parameters.gitlab.is_fork_merge_request`: "<< pipeline.trigger_parameters.gitlab.is_fork_merge_request >>"
+}
+
+/// Pipeline values are available to all pipeline configurations and can be used without previous
+/// declaration.
+///
+/// For a full list of values and built-in environment variables, see the
+/// [Project values and variables guide](https://circleci.com/docs/variables/).
+///
+/// For more reference: <https://circleci.com/docs/pipeline-variables/#pipeline-values>
+hidden pipelineValues: PipelineValues
+
+output {
+  text = "# Generated from CircleCI.pkl. DO NOT EDIT.\n" + super.text
+  renderer = new YamlRenderer {
+    converters {
+      [AbstractStep] = (it) -> Map(it.__name__, it.toMap())
+    }
+  }
+}

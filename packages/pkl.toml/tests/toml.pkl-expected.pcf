@@ -1,0 +1,101 @@
+examples {
+  ["basic.pkl"] {
+    """
+    title = "TOML Example"
+    contributors = [ "Foo Bar <foo@example.com>", { name = "Baz Qux", email = "bazqux@example.com", url = "https://example.com/bazqux" } ]
+    
+    [owner]
+    name = "Tom Preston-Werner"
+    organization = "Github"
+    bio = ""\"
+    GitHub Cofounder & CEO
+    Likes tater tots and beer""\"
+    dob = 1979-05-27T07:32:00Z
+    
+    [database]
+    server = "192.168.1.1"
+    ports = [ 8001, 8001, 8002 ]
+    connection_max = 5000
+    enabled = true
+    
+    [servers.alpha]
+    ip = "10.0.0.1"
+    dc = "eqdc10"
+    
+    [servers.beta]
+    ip = "10.0.0.2"
+    dc = "eqdc10"
+    country = "中国"
+    
+    [clients]
+    data = [ [ "gamma", "delta" ], [ 1, 2 ] ]
+    hosts = [ "alpha", "omega" ]
+    
+    [[products]]
+    name = "Hammer Bro"
+    sku = 738594937
+    
+    [[products]]
+    
+    [[products]]
+    name = "Nail"
+    sku = 284758393
+    color = "gray"
+    1-1 = "〇😀"
+    
+    [[fruits]]
+    name = "apple"
+    
+    [fruits.physical]
+    color = "red"
+    shape = "round"
+    
+    [[fruits.varieties]]
+    name = "red delicious"
+    
+    [[fruits.varieties]]
+    name = "granny smith"
+    
+    [[fruits]]
+    name = "banana"
+    
+    [[fruits.varieties]]
+    name = "plantain"
+    
+    [dog."tater.man"]
+    age = nan
+    maxAge = inf
+    
+    [dog."tater.man".type]
+    name = "pug"
+    """
+  }
+  ["converters.pkl"] {
+    """
+    [[dogs]]
+    breed = "golden retreiver"
+    sleepTime = "12h"
+    
+    [[dogs]]
+    breed = "german shepherd"
+    sleepTime = "10h"
+    
+    [[dogs]]
+    breed = "greyhound"
+    sleepTime = "18h"
+    """
+  }
+  ["dates.pkl"] {
+    """
+    odt1 = 1979-05-27T07:32:00Z
+    odt2 = 1979-05-27T00:32:00-07:00
+    odt3 = 1979-05-27T00:32:00.999999-07:00
+    odt4 = 1979-05-27 07:32:00Z
+    ldt1 = 1979-05-27T07:32:00
+    ldt2 = 1979-05-27T00:32:00.999999
+    ld1 = 1979-05-27
+    lt1 = 07:32:00
+    lt2 = 00:32:00.999999
+    """
+  }
+}

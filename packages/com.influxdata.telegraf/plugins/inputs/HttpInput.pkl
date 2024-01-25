@@ -1,0 +1,73 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The HTTP input plugin collects metrics from one or more HTTP(S) endpoints.
+///
+/// The endpoint should have metrics formatted in one of the supported
+/// [input data formats](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md).
+/// Each data format has its own unique set of configuration options which can be added to the input configuration.
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.plugins.inputs.HttpInput
+
+extends "./Input.pkl"
+
+import "../parsers/InputDataFormat.pkl"
+
+/// One or more URLs from which to read formatted metrics.
+urls: List<String>
+
+/// HTTP method.
+method: "GET"|"POST"|"PUT"|"PATCH"
+
+/// Optional HTTP headers.
+headers: Mapping<String, String>?
+
+/// HTTP entity-body to send with POST/PUT requests.
+body: String?
+
+/// HTTP Content-Encoding for write request body.
+///
+/// Can be set to "gzip" to compress body or "identity" to apply no encoding.
+content_encoding: ("gzip"|"identity")?
+
+/// Optional file with Bearer token file content is added as an Authorization header.
+bearer_token: String?
+
+/// Optional HTTP Basic Auth Credentials.
+username: String?
+password: String?
+
+/// HTTP Proxy support.
+http_proxy_url: String?
+
+/// Optional TLS Config.
+tls_ca: String?
+tls_cert: String?
+tls_key: String?
+
+/// Use TLS but skip chain & host verification.
+insecure_skip_verify: Boolean?
+
+/// Amount of time allowed to complete the HTTP request.
+timeout: Duration?
+
+/// List of success status codes.
+success_status_codes: List<UInt>?
+
+/// Data format to consume.
+///
+/// Each data format has its own unique set of configuration options, read more about them here:
+/// <https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md>
+data_format: InputDataFormat?

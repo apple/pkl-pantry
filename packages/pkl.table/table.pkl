@@ -1,0 +1,251 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// [TableRenderer] generates pretty tables!
+@ModuleInfo { minPklVersion = "0.25.0" }
+module pkl.table.table
+
+import "pkl:math"
+
+typealias ColumnKey = String
+typealias ListLike = List|Listing|Dynamic(toMap().isEmpty)
+const local listLikeDescription = "`List`s, `Listing`s, or `Dynamic`s with only elements"
+
+typealias HorizontalPosition = "left"|"inner"|"right"
+typealias VerticalPosition = "top"|"inner"|"bottom"
+typealias Alignment = "left"|"right"
+
+const function Column(_key: String): Column = new { key = _key }
+class Column {
+  /// The key used to extract property values from rows
+  key: ColumnKey
+
+  /// The column header title
+  title: String = key
+
+  /// The direction to align and pad column contents within a cell
+  align: Alignment = "left"
+}
+
+/// Style options used to draw the table
+/// Default values produce a table consisting of simple ASCII characters
+class TableStyle {
+  /// Placeholder to use in place of null property values
+  nullPlaceholder: String = "null"
+
+  /// Include a header in the table
+  includeHeader: Boolean = true
+
+  /// Default character to use for horizontal rules
+  defaultHorizontal: Char = "-"
+
+  /// Characters to use for specific horizontal rules
+  horizontals: Mapping<VerticalPosition, Char?> = new {
+    ["top"] = defaultHorizontal
+    ["inner"] = defaultHorizontal
+    ["bottom"] = defaultHorizontal
+  }
+
+  /// Default character to use for vertical rules
+  defaultVertical: Char = "|"
+
+  /// Characters to use for specific horizontal rules
+  verticals: Mapping<HorizontalPosition, Char?> = new {
+    ["left"] = defaultVertical
+    ["inner"] = defaultVertical
+    ["right"] = defaultVertical
+  }
+
+  /// Default character to use for corners
+  defaultCorner: Char = "+"
+
+  /// Characters to use for specific corners
+  corners: Mapping<HorizontalPosition, Mapping<VerticalPosition, Char>> = new {
+    ["left"] {
+      ["top"] = defaultCorner
+      ["inner"] = defaultCorner
+      ["bottom"] = defaultCorner
+    }
+    ["inner"] {
+      ["top"] = defaultCorner
+      ["inner"] = defaultCorner
+      ["bottom"] = defaultCorner
+    }
+    ["right"] {
+      ["top"] = defaultCorner
+      ["inner"] = defaultCorner
+      ["bottom"] = defaultCorner
+    }
+  }
+}
+
+local class InterimTable {
+
+  style: TableStyle
+  converters: Mapping<Class|String, (unknown) -> Any>
+
+  columns: Listing<Column>
+  rows: List
+
+  columnWidths: Mapping<ColumnKey, UInt> = new {
+    for (column in columns) {
+      [column.key] = math.max(
+          column.title.length,
+          renderedCells.fold(0, (acc, it) ->
+            math.max(acc, it.getOrNull(column.key)?.length ?? 0)
+          )
+        ) as UInt
+    }
+  }
+
+  renderedCells: Listing<Mapping<ColumnKey, String>> = new {
+    for (row in rows) {
+      new {
+        for (column in columns) {
+          [column.key] = renderCell(column.key, row.getPropertyOrNull(column.key))
+        }
+      }
+    }
+  }
+
+  rendered = new Listing {
+      when (style.horizontals["top"] != null) {
+        renderHorizontalRule("top")
+      }
+      when (style.includeHeader) {
+        renderRow(columns.toList().toMap((col) -> col.key, (col) -> col.title))
+        when (style.horizontals["inner"] != null) {
+          renderHorizontalRule("inner")
+        }
+      }
+      for (row in renderedCells) {
+        renderRow(row.toMap())
+      }
+      when (style.horizontals["bottom"] != null) {
+        renderHorizontalRule("bottom")
+      }
+    }.join("\n") + "\n"
+
+  function renderCell(col: String, value: Any): String =
+    (converters.getOrNull(col)?.apply(value)?.toString()) ??
+      (converters.getOrNull(value.getClass())?.apply(value)?.toString()) ??
+        value?.toString() ??
+          style.nullPlaceholder
+
+  function renderRow(renderedCells: Map<ColumnKey, String>) = new Listing {
+    style.verticals["left"] ?? ""
+    for (i, col in columns) {
+      " "
+      if (col.align == "left")
+        renderedCells[col.key].padEnd(columnWidths[col.key], " ")
+      else if (col.align == "right")
+        renderedCells[col.key].padStart(columnWidths[col.key], " ")
+      else ""
+      " "
+      style.verticals[if (i == columns.length - 1) "right" else "inner"] ?? ""
+    }
+  }.join("")
+
+  function renderHorizontalRule(verticalPosition: VerticalPosition): String = new Listing {
+    style.corners["left"][verticalPosition]
+    for (i, col in columns) {
+      style.horizontals[verticalPosition].repeat(columnWidths[col.key] + 2)
+      style.corners[if (i == columns.length - 1) "right" else "inner"][verticalPosition]
+    }
+  }.join("")
+}
+
+/// [pkl.ValueRenderer] subclass used to render pretty-printed tables
+class TableRenderer extends ValueRenderer {
+  /// Style to use for table rendering
+  style: TableStyle
+
+  /// Listing of properties that should be rendered as table columns
+  columns: Listing<Column|String>(!isEmpty || throw("TableRenderer must be configured to render at least one column"))
+
+  local self = this
+
+  /// Renders [value] as a pretty-printed table.
+  function renderDocument(value: Any): String = new InterimTable {
+    columns {
+      for (col in self.columns) {
+        if (col is Column) col else Column(col)
+      }
+    }
+    rows =
+      if (value is ListLike?) value.toList()
+      else throw("Only \(listLikeDescription) values can be rendered as a table. Instead, found a \(value.getClass()).\n\nValue:\n\(value)")
+    style = self.style
+    converters = self.converters
+  }.rendered
+
+  /// Unsupported. [renderCell] is used instead as the column name must be known to look up the relevant converter
+  function renderValue(_): String = throw("TableRenderer can only render documents, not values")
+}
+
+/// [TableStyle] using unicode box drawing characters (light variants)
+const boxDrawingLightStyle: TableStyle = new {
+  defaultHorizontal = "─"
+  defaultVertical = "│"
+  corners {
+    ["left"] {
+      ["top"] = "┌"
+      ["inner"] = "├"
+      ["bottom"] = "└"
+    }
+    ["inner"] {
+      ["top"] = "┬"
+      ["inner"] = "┼"
+      ["bottom"] = "┴"
+    }
+    ["right"] {
+      ["top"] = "┐"
+      ["inner"] = "┤"
+      ["bottom"] = "┘"
+    }
+  }
+}
+
+/// [TableStyle] using unicode box drawing characters (heavy variants)
+const boxDrawingHeavyStyle: TableStyle = new {
+  defaultHorizontal = "━"
+  defaultVertical = "┃"
+  corners {
+    ["left"] {
+      ["top"] = "┏"
+      ["inner"] = "┣"
+      ["bottom"] = "┗"
+    }
+    ["inner"] {
+      ["top"] = "┳"
+      ["inner"] = "╋"
+      ["bottom"] = "┻"
+    }
+    ["right"] {
+      ["top"] = "┓"
+      ["inner"] = "┫"
+      ["bottom"] = "┛"
+    }
+  }
+}
+
+/// [TableStyle] that renders Markdown-compatible tables
+const markdownStyle: TableStyle = new {
+  defaultCorner = "|"
+  horizontals {
+    ["top"] = null
+    ["bottom"] = null
+  }
+}

@@ -1,0 +1,250 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.csv.tests.csv_test
+
+amends "pkl:test"
+
+import "../csv.pkl"
+
+// Rendering functions
+local renderer = new csv.Renderer {}
+local function value(val: csv.Value): String = renderer.renderValue(val)
+local function doc(val: csv.ListLike): String = renderer.renderDocument(val)
+local function anon(val: csv.ListLike): String = (renderer) { includeHeader = false }.renderDocument(val)
+local function pad(val: csv.ListLike) = (renderer) { unification = "pad" }.renderDocument(val)
+local function drop(val: csv.ListLike) = (renderer) { unification = "drop" }.renderDocument(val)
+local function error(val: csv.ListLike) = (renderer) { unification = "error" }.renderDocument(val)
+
+local parser = new csv.Parser {}
+local function pValue(_input: String): csv.Value =
+  let (lineBreak = "\r\n")
+    let (table = (parser) { input = _input + lineBreak }.parsed.toList())
+      if (table.length != 1 || table.first.toList().length != 1)
+        throw("When parsing '\(_input)', expecting a single row, with a single column, but found \(table.length) rows and \(table.firstOrNull?.toList()?.length) columns")
+      else
+        table.first.toList().first
+
+local values = new Mapping<String, Mapping<csv.Value, String>> {
+  ["string"] = new Mapping<String, String> {
+    ["some string"] = "some string"
+    [#"string with "quotes""#] = #""string with ""quotes""""#
+    ["a string, with a comma"] = #""a string, with a comma""#
+    ["a multiline\nstring"] = "a multiline\nstring"
+    ["a multiline\r\nstring with carriage return"] = #""a multiline\#r\#nstring with carriage return""#
+    ["\""] = "\"\"\"\""
+    ["\t\\\r"] = "\t\\\r"
+  }
+  ["number"] = new Mapping<Number, String> {
+    [0] = "0"
+    [42] = "42"
+    [-1] = "-1"
+    [0.42] = "0.42"
+    [-1.0] = "-1.0"
+  }
+  ["other"] = new Mapping<Boolean?, String> {
+    [true] = "true"
+    [false] = "false"
+    [null] = ""
+  }
+}
+
+local exampleTable = new Listing {
+  default = (i) -> new Dynamic { lineNumber = i description = "This is line \(i) of the table" }
+  for (_ in IntSeq(1, 5)) {
+    new {}
+  }
+}
+
+local typealias MyTypeAlias = *String|Int
+
+local open class Base {
+  hidden quoted: Boolean = false
+  local quote = if (quoted) "\"" else ""
+  foo: MyTypeAlias = "FOO!"
+  bar: String = "Just wanted to say \(quote)hello\(quote)"
+  baz: Int = -42
+  qux: Float = 0.1337
+}
+
+local class DerivedOne extends Base {
+  quux: Number = -0.42
+}
+
+local class DerivedTwo extends Base {
+  corge: Boolean = false
+}
+
+local homogeneousListing = new Listing<DerivedTwo> {
+  new { foo = "first row" }
+  new { foo = "second\nrow" }
+  new { baz = 0 }
+  new { qux = 1.337 }
+}
+
+local heterogeneousListing = new Listing<Base> {
+  new DerivedTwo {}
+  new Base { quoted = true }
+  new DerivedOne {}
+  new Base {}
+}
+
+facts {
+  for (category, cases in values) {
+    ["Rendering \(category) values"] {
+      for (value, rendered in cases) {
+        if (value(value) == rendered) true else let (_ = trace("\(value(value)) != \(rendered)")) false
+      }
+    }
+
+    ["Parsing \(category) values"] {
+      for (value, rendered in cases) {
+        pValue(rendered) == value?.toString() // because the parser does not have type information
+      }
+    }
+  }
+
+  ["Rendering list(like) values"] {
+    anon(new Dynamic { new Dynamic { "foo" 1 false "bar" } }) == """
+        foo,1,false,bar
+
+        """.replaceAll("\n", "\r\n")
+
+    doc(new Dynamic { new Dynamic { foo = 42 bar = false } }) == """
+        foo,bar
+        42,false
+
+        """.replaceAll("\n", "\r\n")
+
+    doc(exampleTable) == """
+        lineNumber,description
+        0,This is line 0 of the table
+        1,This is line 1 of the table
+        2,This is line 2 of the table
+        3,This is line 3 of the table
+        4,This is line 4 of the table
+
+        """.replaceAll("\n", "\r\n")
+
+    anon(exampleTable) == """
+        0,This is line 0 of the table
+        1,This is line 1 of the table
+        2,This is line 2 of the table
+        3,This is line 3 of the table
+        4,This is line 4 of the table
+
+        """.replaceAll("\n", "\r\n")
+  }
+
+  ["Rendering polymorphic lists; unifications"] {
+    pad(heterogeneousListing) == #"""
+        foo,bar,baz,qux,corge,quux
+        FOO!,Just wanted to say hello,-42,0.1337,false,
+        FOO!,"Just wanted to say ""hello""",-42,0.1337,,
+        FOO!,Just wanted to say hello,-42,0.1337,,-0.42
+        FOO!,Just wanted to say hello,-42,0.1337,,
+
+        """#.replaceAll("\n", "\r\n")
+
+    drop(heterogeneousListing) == #"""
+        foo,bar,baz,qux,corge
+        FOO!,Just wanted to say hello,-42,0.1337,false
+        FOO!,"Just wanted to say ""hello""",-42,0.1337,
+        FOO!,Just wanted to say hello,-42,0.1337,
+        FOO!,Just wanted to say hello,-42,0.1337,
+
+        """#.replaceAll("\n", "\r\n")
+
+    error(exampleTable) == doc(exampleTable)
+
+    module.catch(() -> error(heterogeneousListing))
+      .startsWith("Invalid input: CSV can only render rows with all the same properties.")
+  }
+
+  ["Rendering errors"] {
+    module.catch(() -> doc(new Dynamic { Map("foo", 1, "bar", 2) Map("foo", 1) }))
+      .startsWith("Invalid input: CSV can only render rows with all the same properties.")
+  }
+
+  ["Parsing with header information"] {
+    // A little finicky, but if the parser doesn't have type information, every _value_ comes out stringy.
+    new csv.Parser {
+      input = """
+        foo,bar,baz,qux,corge\r
+        first row,Just wanted to say hello,-42,0.1337,false\r
+        second
+        row,Just wanted to say hello,-42,0.1337,false\r
+        FOO!,Just wanted to say hello,0,0.1337,false\r
+        FOO!,Just wanted to say hello,-42,1.337,false\r
+
+        """
+      includeHeader = true
+    }.parsed == new Listing {
+        for (row in homogeneousListing) {
+          row.toDynamic().toMap().mapValues((_, v) -> v.toString()).toDynamic()
+        }
+      }.toList()
+
+    new csv.Parser {
+      input = """
+        foo,bar,baz,qux,corge\r
+        first row,Just wanted to say hello,-42,0.1337,false\r
+        second
+        row,Just wanted to say hello,-42,0.1337,false\r
+        FOO!,Just wanted to say hello,0,0.1337,false\r
+        FOO!,Just wanted to say hello,-42,1.337,false\r
+
+        """
+      rowClass = DerivedTwo
+      includeHeader = true
+    }.parsed == homogeneousListing.toList()
+  }
+
+  ["Parsing with class, without header information"] {
+    new csv.Parser {
+      input = anon(homogeneousListing)
+      rowClass = DerivedTwo
+      includeHeader = false
+    }.parsed == homogeneousListing.toList()
+  }
+
+  ["Rendering and parsing CRLF alternatives"] {
+    for (break in List("\n", "\r", "\t", "😀", "\r\r\n\n")) {
+      ...new Listing {
+        local quote = if (break == "\n") "\"" else ""
+        local source = """
+          foo,bar,baz,qux,corge\r
+          first row,Just wanted to say hello,-42,0.1337,false\r
+          \(quote)second
+          row\(quote),Just wanted to say hello,-42,0.1337,false\r
+          FOO!,Just wanted to say hello,0,0.1337,false\r
+          FOO!,Just wanted to say hello,-42,1.337,false\r
+
+          """.replaceAll("\r\n", break)
+
+        new csv.Renderer {
+          lineBreak = break
+        }.renderDocument(homogeneousListing) == source
+
+        new csv.Parser {
+          input = source
+          rowClass = DerivedTwo
+          includeHeader = true
+          lineBreak = break
+        }.parsed == homogeneousListing.toList()
+      }
+    }
+  }
+}

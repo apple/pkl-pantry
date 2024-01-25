@@ -1,0 +1,268 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// A renderer for Comma Separated Values (CSV) files, following [RFC 4180](https://www.ietf.org/rfc/rfc4180.txt).
+///
+/// Basic usage:
+/// ```
+/// import "package:<package_url>#/csv.pkl"
+///
+/// output {
+///   renderer = new csv.Renderer {}
+/// }
+/// ```
+@ModuleInfo { minPklVersion = "0.25.0" }
+module pkl.csv.csv
+
+import "pkl:reflect"
+
+typealias Value = Null|Number|String|Boolean
+
+typealias ListLike = List|Listing|Dynamic(toMap().isEmpty)
+
+const local listLikeDescription = "`List`s, `Listing`s, or `Dynamic`s with only elements"
+
+const local function mapOf(thing): Map =
+  if (thing is Map) thing else thing?.toMap() ?? Map()
+
+/// Renders values as CSV.
+class Renderer extends ValueRenderer {
+  /// Value converters to apply before values are rendered.
+  ///
+  /// For further information see [PcfRenderer.converters].
+  converters: Mapping<Class, (unknown) -> Any>
+
+  function renderValue(value: Any) =
+    if (value is Null|Number|String|Boolean)
+      new Mapping<Class, String> {
+        [Null] = ""
+        [String] =
+          if (value.contains(charactersToWrap))
+            #""\#(value.replaceAll("\"", "\"\""))""#
+          else
+            value as String
+      }.getOrNull(value.getClass()) ?? "\(value)"
+    else
+      throw("The CSV renderer only supports primitive values in `renderValue`.")
+
+function renderDocument(value: Any) =
+    let (table =
+      if (value is ListLike?)
+        (value as ListLike? ?? List()).toList()
+      else
+        throw("Only \(listLikeDescription) values can be rendered as CSV. Instead, found a \(value.getClass()).\n\nValue:\n\(value)")
+    )
+      let (violations = table.filter((it) -> !(if (table.firstOrNull is Value) it is Value else it is Typed|Dynamic|Mapping|Map)))
+        let (headerKeys =
+          if (unification == "pad")
+            table.fold(Set(), (acc: Set<String>, row) -> acc + row.toMap().keys)
+          else
+            mapOf(table.firstOrNull).keys
+        )
+          new Listing<String> {
+            when (!violations.isEmpty) {
+              throw("The CSV renderer only supports rows consisting of primitive values, or of type `Typed|Dynamic|Mapping`.\nValue: \(violations.first)")
+            }
+            when (includeHeader) {
+              headerKeys.map((it) -> renderValue(it)).join(",")
+            }
+            for (row in table) {
+              new Listing<String> {
+                when (unification == "error" && mapOf(row).keys != headerKeys) {
+                  throw("Invalid input: CSV can only render rows with all the same properties. Expecting keys: \(headerKeys.join(",")). Received: \(row).")
+                }
+                when (includeHeader) {
+                  for (column in headerKeys) {
+                    renderValue(mapOf(row).getOrNull(column))
+                  }
+                } else {
+                  for (column in if (row is ListLike) row.toList() else row.toMap().values) {
+                    renderValue(column)
+                  }
+                }
+              }.join(",")
+            }
+            ""
+          }.join(lineBreak)
+
+  /// The line break to use.
+  ///
+  /// [RFC 4180](https://www.ietf.org/rfc/rfc4180.txt) states that line breaks are carriage-return-line-feed, but also:
+  /// > As per section 4.1.1. of RFC 2046, this media type uses CRLF to denote line breaks.
+  /// > However, implementors should be aware that some implementations may use other values.
+  ///
+  /// This property can be used to define which encoding to use.
+  ///
+  /// (Default: `"\r\n"`)
+  lineBreak: String = "\r\n"
+
+  local charactersToWrap = Regex("[\",]|\(lineBreak)")
+
+  /// How to handle polymorphic rows.
+  ///
+  /// When rendering a table of `Listing<Base>`, which includes elements of type `DerivedX` and `DerivedY` (where both
+  /// `extends Base`), how should this table be rendered? There are three options:
+  ///  - `"error"` throws an error when any row has property names that are not in the header.
+  ///  - `"drop"` only renders properties with names in the header and ignores any other properties.
+  ///  - `"pad"` gathers property names from the entire table and inserts (pads) empty values when properties are missing.
+  ///
+  /// (Default: `"error"`)
+  unification: *"error"|"drop"|"pad"
+
+  /// Tells whether to include a (first) line with the names of the columns.
+  includeHeader: Boolean = true
+}
+
+class Parser {
+  /// The expected type of the rows to parse.
+  rowClass: Class?
+
+  /// The [String] to parse.
+  input: String
+
+  /// Tells whether the first row contains names of columns.
+  includeHeader: Boolean = false
+
+  /// The line break to use.
+  ///
+  /// [RFC 4180](https://www.ietf.org/rfc/rfc4180.txt) states that line breaks are carriage-return-line-feed, but also:
+  /// > As per section 4.1.1. of RFC 2046, this media type uses CRLF to denote line breaks.
+  /// > However, implementors should be aware that some implementations may use other values.
+  ///
+  /// This property can be used to define which encoding to use.
+  ///
+  /// (Default: `"\r\n"`)
+  lineBreak: String = "\r\n"
+
+  converters: Mapping<Class, (String) -> unknown> = new {
+    [Int] = (it) -> it.toInt()
+    [Float] = (it) -> it.toFloat()
+    [Number] = (it) -> it.toFloat()
+    [Boolean] = (it) -> it.toBoolean()
+  }
+
+  function parse(source: Resource|String):
+    List<Dynamic>(rowClass == null)|List<Typed(getClass() == rowClass)>(rowClass != null) =
+    (this) { input = if (source is String) source else source.text }.parsed
+
+  /// The result of parsing [input] as CSV.
+  ///
+  /// This is a "final" property, because it is derived from the input properties [input], [includeHeader] and [rowClass].
+  parsed: (*List<Dynamic>(rowClass == null)|List<Typed(getClass() == rowClass)>(rowClass != null))(this == _parsed) =
+    _parsed
+
+  local function convert(type: reflect.Type|Class|TypeAlias): (String) -> unknown =
+    new Mapping<Class, ((String) -> unknown)?> {
+      [reflect.DeclaredType] = convert((type as reflect.DeclaredType).referent.reflectee)
+      [Class] = converters.getOrNull(type)
+      [TypeAlias] = convert(reflect.TypeAlias(type as TypeAlias).referent)
+      // Support for (type aliases that are) union types is rather ad hoc; pick the first class for which there exists a converter.
+      // TODO: Improve this.
+      [reflect.UnionType] = (type as reflect.UnionType).members.fold(null, (acc, ty) -> acc ?? convert(ty))
+    }.getOrNull(type.getClass()) ?? (it) -> it
+
+  local function allProps(clazz: reflect.Class): Map<String, reflect.Property> =
+    (clazz.superclass.ifNonNull((zuper) -> allProps(zuper as reflect.Class)) ?? Map()) +
+      clazz.properties.filter((_, p) -> !p.modifiers.contains("hidden"))
+
+  local _parsed =
+    let (self = this)
+      let (stringyResult = new StringyTableParser {
+        rowClass = self.rowClass
+        input = self.input
+        lineBreak = self.lineBreak
+      }.parseResult.rows.toList())
+        let (properties: Map<String,reflect.Property>? = rowClass.ifNonNull((clazz) -> allProps(reflect.Class(clazz as Class))))
+          let (header: List<String>? = (if (includeHeader) stringyResult[0] else properties?.keys)?.toList() as List<String>?)
+            if (header == null) stringyResult.map((rawRow) -> rawRow.toDynamic()) else
+              stringyResult.toList().drop(if (includeHeader) 1 else 0).map((rawRow) ->
+                let (row =
+                  header
+                    .zip(rawRow.toList())
+                    .toMap((entry) -> entry.first, (entry) -> entry.second)
+                )
+                  if (properties == null) row.toDynamic() else
+                    let (spuriousKeys = row.keys.filter((key) -> !properties.containsKey(key)))
+                      let (_ = if (spuriousKeys.isEmpty) "ok" else throw("Unrecognized keys found in row: \(spuriousKeys.join(", "))"))
+                        properties
+                          .filter((name, _) -> row.containsKey(name))
+                          .mapValues((name, property) -> row[name].ifNonNull((value) -> convert(property.type).apply(value as String)))
+                          .toTyped(rowClass!!)
+              )
+}
+
+local class StringyTableParser {
+  rowClass: Class?
+  input: String
+
+  position: Int = 0
+  currentRow: Listing
+  rows: Listing<List<String?>>
+
+  lineBreak: String
+
+  local length: Int = input.length - position
+
+  parseResult: StringyTableParser = if (length <= 0) this else
+      let (isEscapedField = input.getOrNull(position) == "\"")
+
+        let (idxValueStart = if (isEscapedField) position + 1 else position)
+          let (idxValueEnd =
+            List(
+              input.length,
+              if (isEscapedField)
+                findValueEndIndex(idxValueStart)
+              else
+                position + (input.drop(position).indexOfOrNull(Regex(",|\(lineBreak)")) ?? length)
+            ).min
+          )
+            let (idxFieldEnd = idxValueEnd + if (isEscapedField) 1 else 0)
+              let (delimiter = input.getOrNull(idxFieldEnd))
+
+                // Ugly corner-case for CSV, if the input ends with a `,`, there is still a `null` value "after" that, but no `,` or lineBreak to signal as much.
+                let (nullEnd = delimiter == "," && idxFieldEnd == input.length - 1)
+
+                  let (value = input.substring(idxValueStart, idxValueEnd))
+                    let (newRow = (currentRow) {
+                      if (value.isEmpty) null else if (isEscapedField) value.replaceAll("\"\"", "\"") else value
+                      when (nullEnd) {
+                        null
+                      }
+                    })
+
+                      (this) {
+                        position = idxFieldEnd + if (delimiter == ",") 1 else lineBreak.length
+                        when (delimiter != "," || nullEnd) {
+                          rows {
+                            newRow.toList()
+                          }
+                          currentRow = new {}
+                        } else {
+                          currentRow = newRow
+                        }
+                      }.parseResult
+
+  function findValueEndIndex(position: UInt): UInt =
+    let (characterAtPosition = input.getOrNull(position))
+      if (characterAtPosition == "\"")
+        if (input.getOrNull(position + 1) == "\"")
+          findValueEndIndex(position + 2)
+        else
+          position
+      else if (characterAtPosition == null)
+        throw("Premature end of quoted field")
+      else
+        findValueEndIndex(position + 1)
+}

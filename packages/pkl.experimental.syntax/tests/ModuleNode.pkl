@@ -1,0 +1,170 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.syntax.tests.ModuleNode
+
+amends "pkl:test"
+
+import "../ModuleNode.pkl"
+import "../TypeNode.pkl"
+import "../ExpressionNode.pkl"
+import "../ObjectBodyNode.pkl"
+import "../operators.pkl"
+
+facts {
+  ["new line at the end"] {
+    new ModuleNode {
+      declaration {
+        moduleHeader {
+          name {
+            parts {
+              new { value = "modulename" }
+            }
+          }
+        }
+      }
+    }.output.text == """
+      module modulename
+
+      """
+  }
+}
+
+examples {
+  ["full declaration"] {
+    new ModuleNode {
+      declaration {
+        shebang = "/usr/bin/env pkl eval"
+        annotations {
+          new {
+            identifier { parts { new { value = "test" } } }
+            body {
+              renderInline = true
+              members {
+                new ObjectBodyNode.PropertyMemberNode {
+                  propertyName { value = "annotation" }
+                  assignment = new ExpressionNode.LiteralValueExpressionNode { value = true }
+                }
+              }
+            }
+          }
+        }
+        docComment {
+          value = """
+            This is a module doc comment!
+            """
+        }
+        moduleHeader {
+          modifiers { "open" }
+          name {
+            parts {
+              new { value = "pkl" }
+              new { value = "experimental" }
+              new { value = "syntax" }
+              new { value = "tests" }
+              new { value = "ModuleNode" }
+            }
+          }
+          moduleExtendsOrAmendsClause {
+            type = "amends"
+            extendedModule = "pkl:test"
+          }
+        }
+      }
+    }.output.text
+  }
+  ["short methods are rendered inline"] {
+    new ModuleNode {
+      methods {
+        new {
+          docComment { value = "Adds five to its argument." }
+          modifiers { "const"; "local" }
+          name { value = "addFive" }
+          parameters {
+            new {
+              name { value = "input" }
+              typeAnnotation {
+                type = new TypeNode.DeclaredTypeNode { name { parts { new { value = "Int" } } } }
+              }
+            }
+          }
+          body = new ExpressionNode.BinaryOperatorExpressionNode {
+            lhs = new ExpressionNode.MemberAccessExpressionNode { identifier { value = "input" } }
+            operator = operators.PLUS
+            rhs = new ExpressionNode.LiteralValueExpressionNode { value = 5 }
+          }
+        }
+      }
+    }.output.text
+  }
+  ["methods with long values are rendered indented"] {
+    new ModuleNode {
+      methods {
+        new {
+          docComment { value = "Adds five to its argument." }
+          modifiers { "const"; "local" }
+          name { value = "myReallyLongMethodForAddingFiveToAnInteger" }
+          parameters {
+            new {
+              name { value = "inputIntegerValue" }
+              typeAnnotation {
+                type = new TypeNode.DeclaredTypeNode { name { parts { new { value = "Int" } } } }
+              }
+            }
+          }
+          body = new ExpressionNode.BinaryOperatorExpressionNode {
+            lhs = new ExpressionNode.MemberAccessExpressionNode { identifier { value = "inputIntegerValue" } }
+            operator = operators.PLUS
+            rhs = new ExpressionNode.LiteralValueExpressionNode { value = 5 }
+          }
+        }
+      }
+    }.output.text
+  }
+  ["methods with long values but short first lines are rendered inline"] {
+    new ModuleNode {
+      methods {
+        new {
+          docComment { value = "Adds five to its argument and returns a dynamic object containing the result." }
+          modifiers { "const"; "local" }
+          name { value = "myLongMethodForReturningADynamicObject" }
+          parameters {
+            new {
+              name { value = "inputIntegerValue" }
+              typeAnnotation {
+                type = new TypeNode.DeclaredTypeNode { name { parts { new { value = "Int" } } } }
+              }
+            }
+          }
+          body = new ExpressionNode.ObjectExpressionNode {
+            type = new TypeNode.DeclaredTypeNode { name { parts { new { value = "Dynamic" } } } }
+            body {
+              members {
+                new ObjectBodyNode.PropertyMemberNode {
+                  propertyName { value = "value" }
+                  assignment = new ExpressionNode.BinaryOperatorExpressionNode {
+                    lhs = new ExpressionNode.MemberAccessExpressionNode { identifier { value = "inputIntegerValue" } }
+                    operator = operators.PLUS
+                    rhs = new ExpressionNode.LiteralValueExpressionNode { value = 5 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }.output.text
+  }
+}

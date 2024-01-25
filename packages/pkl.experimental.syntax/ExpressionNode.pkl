@@ -1,0 +1,261 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+abstract module pkl.experimental.syntax.ExpressionNode
+
+extends "Node.pkl"
+
+import "ExpressionNode.pkl"
+import "ObjectBodyNode.pkl"
+import "IdentifierNode.pkl"
+import "TypeNode.pkl"
+import "operators.pkl"
+
+typealias CompoundExpressionNode = BinaryOperatorExpressionNode|PrefixOperatorExpressionNode|IfElseExpressionNode
+
+class BinaryOperatorExpressionNode extends ExpressionNode {
+  local precedences: Mapping<operators.BinaryOperator, Int> = new {
+    [operators.MULTIPLY] = 1
+    [operators.DIVIDE] = 1
+    [operators.INTEGER_DIVIDE] = 1
+    [operators.MODULO] = 1
+    [operators.PLUS] = 2
+    [operators.BINARY_MINUS] = 2
+    [operators.GREATER_THAN] = 3
+    [operators.LESS_THAN] = 3
+    [operators.GREATER_THAN_OR_EQUALS] = 3
+    [operators.LESS_THAN_OR_EQUALS] = 3
+    [operators.IS] = 4
+    [operators.AS] = 4
+    [operators.EQUALS] = 5
+    [operators.NOT_EQUALS] = 5
+    [operators.AND] = 6
+    [operators.OR] = 7
+    [operators.PIPE] = 8
+  }
+
+  local function hasHigherPrecedence(a: String, b: String) = precedences[a] >= precedences[b]
+
+  operator: operators.BinaryOperator = Undefined()
+
+  /// The right hand side of the expression
+  lhs: ExpressionNode
+
+  /// The left hand side of the expression
+  rhs: ExpressionNode
+
+  local function renderChild(child: ExpressionNode, currentIndent: String) =
+    let (rendered = child.render(currentIndent))
+      if (
+        !(child is CompoundExpressionNode)
+        || child is BinaryOperatorExpressionNode && hasHigherPrecedence(operator, child.operator)
+      )
+        rendered
+      else
+        parenthesize(rendered)
+
+  function render(currentIndent: String) =
+    "\(renderChild(lhs, currentIndent)) \(operator) \(renderChild(rhs, currentIndent))"
+}
+
+class BuiltInKeywordExpressionNode extends ExpressionNode {
+  keyword: "this"|"outer"|"module" = Undefined()
+
+  function render(_) = keyword
+}
+
+/// Unary operators in the prefix position: "!" and "-".
+class PrefixOperatorExpressionNode extends ExpressionNode {
+  operator: operators.PrefixOperator = Undefined()
+
+  expression: ExpressionNode
+
+  function render(currentIndent: String) =
+    let (body = expression.render(currentIndent))
+      if (expression is CompoundExpressionNode) operator + parenthesize(body)
+      else operator + body
+}
+
+/// Unary operators in the postfix position: "!!"
+class PostfixOperatorExpressionNode extends ExpressionNode {
+  operator: operators.PostfixOperator = Undefined()
+
+  expression: ExpressionNode
+
+  function render(currentIndent: String) =
+    let (body = expression.render(currentIndent))
+      if (expression is CompoundExpressionNode) parenthesize(body) + operator
+      else body + operator
+}
+
+class MemberAccessExpressionNode extends ExpressionNode {
+  identifier: IdentifierNode
+
+  arguments: Listing<ExpressionNode>?
+
+  function renderArguments(currentIndent: String) =
+    if (arguments == null) ""
+    else
+      let (args = arguments.toList().map((arg) -> arg.render(currentIndent)))
+        parenthesize(args.join(", "))
+
+  function render(currentIndent: String) = "\(identifier.render(currentIndent))\(renderArguments(currentIndent))"
+}
+
+/// Can either be an identifer or a function call.
+///
+/// ```
+/// foo.bar
+/// foo.bar()
+/// ```
+class QualifiedMemberAccessExpressionNode extends ExpressionNode {
+  lhs: ExpressionNode
+
+  symbol: "."|"?." = "."
+
+  rhs: MemberAccessExpressionNode
+
+  local function renderLhs(currentIndent: String) =
+    if (lhs is CompoundExpressionNode)
+      parenthesize(lhs.render(currentIndent))
+    else lhs.render(currentIndent)
+
+  function render(currentIndent: String) = "\(renderLhs(currentIndent))\(symbol)\(rhs.render(currentIndent))"
+}
+
+class SuperAccessExpressionNode extends ExpressionNode {
+  rhs: MemberAccessExpressionNode
+
+  function render(currentIndent) = "super.\(rhs.render(currentIndent))"
+}
+
+class SuperSubscriptExpressionNode extends ExpressionNode {
+  subscript: ExpressionNode
+
+  function render(currentIndent) = "super[\(subscript.render(currentIndent))]"
+}
+
+class SubscriptExpressionNode extends ExpressionNode {
+  lhs: ExpressionNode
+
+  subscript: ExpressionNode
+
+  local function renderLhs(currentIndent: String) =
+    if (lhs is CompoundExpressionNode)
+      parenthesize(lhs.render(currentIndent))
+    else lhs.render(currentIndent)
+
+  function render(currentIndent: String): String = "\(renderLhs(currentIndent))[\(subscript.render(currentIndent))]"
+}
+
+/// Node representing a literal value; e.g. `true` and `"hello"`.
+class LiteralValueExpressionNode extends ExpressionNode {
+  value: String|Boolean|Number|Null
+
+  function render(_) = pcfRenderer.renderValue(value)
+}
+
+/// Node representing `new { ... }` or `new Type { ... }`.
+class ObjectExpressionNode extends ExpressionNode {
+  body: ObjectBodyNode
+
+  type: TypeNode?
+
+  function render(currentIndent: String) = List(
+    "new",
+    type?.render(currentIndent),
+    body.render(currentIndent)
+  ).filterNonNull().join(" ")
+}
+
+/// `if (...) ... else ...`
+///
+/// To express `else if`, [elseBranch] should also be an [IfElseExpressionNode].
+class IfElseExpressionNode extends ExpressionNode {
+  condition: ExpressionNode
+
+  ifBranch: ExpressionNode
+
+  elseBranch: ExpressionNode
+
+  function renderElseBranch(currentIndent: String) =
+    if (elseBranch is IfElseExpressionNode)
+      "\(currentIndent)else \(elseBranch.render(currentIndent))"
+    else
+      """
+      \(currentIndent)else
+      \(currentIndent + indent)\(elseBranch.render(currentIndent + indent))
+      """
+
+  function render(currentIndent: String) = """
+    if \(parenthesize(condition.render(currentIndent)))
+    \(currentIndent + indent)\(ifBranch.render(currentIndent))
+    \(renderElseBranch(currentIndent))
+    """
+}
+
+class ImportExpressionNode extends ExpressionNode {
+  value: String
+
+  keyword: "import"|"import*" = "import"
+
+  fixed stringLiteralNode: LiteralValueExpressionNode = new { value = outer.value }
+
+  function render(currentIndent: String) = "\(keyword)(\(stringLiteralNode.render(currentIndent)))"
+}
+
+class ReadExpressionNode extends ExpressionNode {
+  value: ExpressionNode
+
+  keyword: "read"|"read*"|"read?" = "read"
+
+  function render(currentIndent: String) = "\(keyword)(\(value.render(currentIndent)))"
+}
+
+class TraceExpressionNode extends ExpressionNode {
+  value: ExpressionNode
+
+  function render(currentIndent: String) = "trace(\(value.render(currentIndent)))"
+}
+
+/// Provides interpolation and multi-line strings that are not available using [LiteralValueExpressionNode].
+class StringExpressionNode extends ExpressionNode {
+  isMultiLine: Boolean = false
+
+  stringParts: Listing<String|ExpressionNode>
+
+  function renderStringContents(currentIndent: String) = new Listing {
+    for (part in stringParts) {
+      when (part is ExpressionNode) {
+        #"\("#
+        part.render(currentIndent)
+        ")"
+      } else {
+        if (isMultiLine) part.replaceAll("\n", "\n\(currentIndent)")
+        else part.replaceAll("\n", "\\n")
+      }
+    }
+  }.join("")
+
+  function render(currentIndent: String) =
+    if (!isMultiLine) #""\#(renderStringContents(currentIndent))""#
+    else
+      let (newIndent = currentIndent + indent)
+        new Listing {
+          "\"\"\""
+          newIndent + renderStringContents(newIndent)
+          "\(newIndent)\"\"\""
+        }.join("\n")
+}

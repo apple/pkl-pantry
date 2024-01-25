@@ -1,0 +1,75 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// This plugin starts a Prometheus Client, it exposes all metrics on /metrics (default) to be polled by a Prometheus server.
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.plugins.outputs.PrometheusClientOutput
+
+extends "Output.pkl"
+
+/// Address to listen on.
+listen: String?
+
+/// Metric version controls the mapping from Prometheus metrics into Telegraf metrics.
+///
+/// See "Metric Format Configuration" in plugins/inputs/prometheus/README.md for details.
+/// Defaults to `1`.
+metric_version: Int(isBetween(1,2))?
+
+/// Username for optional basic authentication.
+basic_username: String?
+
+/// Password for optional basic authentication.
+basic_password: String?
+
+/// If set, the IP Ranges which are allowed to access metrics.
+///
+/// Defaults to no restrictions.
+ip_range: Listing<String>?
+
+/// Path to publish the metrics on.
+///
+/// Defaults to `/metrics`.
+path: String?
+
+/// Expiration interval for each metric.
+///
+/// Set to `0` for no expiration.
+/// Defaults to 60 seconds.
+expiration_interval: Duration?
+
+/// Collectors to disable, valid entries are "gocollector" and "process".
+///
+/// Defaults to `gocollector' and `process' being enabled.
+collectors_exclude: Listing<"gocollector"|"process">(isDistinct)?
+
+/// Send string metrics as Prometheus labels.
+///
+/// Defaults to `true`.
+string_as_label: Boolean?
+
+/// Path to certificate for optional TLS.
+tls_cert: String?
+
+/// Path to key for optional TLS.
+tls_key: String?
+
+/// Path to CA Certificate files to enable optional mTLS.
+tls_allowed_cacerts: Listing<String>?
+
+/// Export metric collection time.
+///
+/// Defaults to `false`.
+export_timestamp: Boolean?

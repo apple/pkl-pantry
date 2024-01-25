@@ -1,0 +1,35 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The [disk input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/disk/README.md)
+/// gathers metrics about disk usage.
+///
+/// Note that `used_percent` is calculated by doing `used / (used + free)`,
+/// _not_ `used / total`, which is how the unix `df` command does it.
+/// See <https://en.wikipedia.org/wiki/Df_(Unix)> for more details.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.DiskInput
+
+extends "Input.pkl"
+
+/// By default stats will be gathered for all mount points.
+///
+/// Set mount_points will restrict the stats to only the specified mount points.
+mount_points: Listing<String>?
+
+typealias FsType = "tmpfs"|"devtmpfs"|"devfs"|"iso9660"|"overlay"|"aufs"|"squashfs"
+
+/// Ignore mount points by filesystem type.
+ignore_fs: Listing<FsType>?

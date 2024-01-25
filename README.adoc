@@ -1,0 +1,34 @@
+= Pkl Pantry
+
+This is a monorepo of packages that are maintained and published by the Pkl team.
+
+== Using packages
+
+Packages within this repository are published as `package://pkg.pkl-lang.org/pkl-pantry/<NAME>@<VERSION>`.
+
+=== Direct imports
+
+Modules from package can be imported directly. For example, the below line imports module `toml.pkl` from package link:packages/pkl.toml/[`pkl.toml`] at version `1.0.0`:
+
+[source,pkl]
+----
+import "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0#/toml.pkl"
+----
+
+=== In a project
+
+If using a link:https://pkl-lang.org/main/current/language-reference/index.html#projects[project], add a package as a dependency:
+
+[source,pkl]
+----
+amends "pkl:Project"
+
+dependencies {
+  ["toml"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0" }
+}
+----
+
+== Documentation
+
+The documentation for all packages published here can be found in our
+link:https://pkl-lang.org/package-docs[Package Docs] website.

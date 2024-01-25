@@ -1,0 +1,94 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.net.tests.u128
+
+amends "pkl:test"
+
+import "pkl:math"
+import "../u128.pkl"
+
+local someValue = u128.UInt128(0x74ab3ef8, 0x09bfce41, 0xab38bef1, 0x10efba83)
+
+facts {
+  ["le"] {
+    u128.zero.le(u128.zero)
+    u128.zero.le(u128.one)
+    u128.zero.le(u128.maxUInt128)
+    someValue.le(u128.maxUInt128)
+    !u128.maxUInt128.le(someValue)
+    u128.zero.le(someValue)
+    someValue.le(someValue)
+  }
+
+  ["lt"] {
+    !u128.zero.lt(u128.zero)
+    u128.zero.lt(u128.one)
+    u128.zero.lt(u128.maxUInt128)
+    someValue.lt(u128.maxUInt128)
+    !u128.maxUInt128.lt(someValue)
+    u128.zero.lt(someValue)
+    !someValue.lt(someValue)
+  }
+}
+
+examples {
+  ["toString"] {
+    u128.one.toString()
+    u128.maxUInt128.toString()
+    module.catch(() ->
+      u128.UInt128(math.maxUInt32 + 1, math.maxUInt32 + 2, math.maxUInt32 + 3, math.maxUInt32 + 4).toString()
+    )
+  }
+
+  ["and"] {
+    someValue.and(u128.zero).toString()
+    u128.zero.and(someValue).toString()
+    u128.maxUInt128.and(someValue).toString()
+    someValue.and(u128.maxUInt128).toString()
+  }
+
+  ["or"] {
+    someValue.or(u128.zero).toString()
+    u128.zero.or(someValue).toString()
+    u128.maxUInt128.or(someValue).toString()
+    someValue.or(u128.maxUInt128).toString()
+  }
+
+  ["shl"] {
+    u128.one.shl(0).toString()
+    u128.one.shl(1).toString()
+    u128.one.shl(19).toString()
+    u128.one.shl(32).toString()
+    u128.one.shl(33).toString()
+    u128.one.shl(51).toString()
+    u128.one.shl(64).toString()
+    u128.one.shl(65).toString()
+    u128.one.shl(84).toString()
+  }
+
+  ["add"] {
+    u128.one.add(u128.one).toString()
+    someValue.add(someValue).toString()
+    someValue.add(u128.zero).toString()
+  }
+
+  ["seq"] {
+    u128.zero.seq(u128.UInt128(0, 0, 0, 64)).length//
+    // u128.zero.seq(u128.UInt128(0, 0, 1, 64)).length
+    // womp womp
+    // java.lang.NegativeArraySizeException: -2147483648
+  }
+}

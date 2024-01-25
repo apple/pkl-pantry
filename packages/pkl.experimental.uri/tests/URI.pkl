@@ -1,0 +1,196 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.uri.tests.URI
+
+amends "pkl:test"
+
+import "../URI.pkl"
+
+local alphaLower = "abcdefghijklmnopqrstuvwxyz"
+local alphaUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+local nums = "0123456789"
+
+facts {
+  ["encode"] {
+    URI.encode("https://example.com/some path") == "https://example.com/some%20path"
+    URI.encode(alphaLower) == alphaLower
+    URI.encode(alphaUpper) == alphaUpper
+    URI.encode(nums) == nums
+
+    local safeChars = "!#$&'()*+,-./:;=?@_~"
+    URI.encode(safeChars) == safeChars
+    URI.encode("\u{ffff}") == "%EF%BF%BF"
+    URI.encode("🏀") == "%F0%9F%8F%80"
+  }
+  ["encodeComponent"] {
+    URI.encodeComponent("https://example.com/some path") == "https%3A%2F%2Fexample.com%2Fsome%20path"
+    URI.encode(alphaLower) == alphaLower
+    URI.encode(alphaUpper) == alphaUpper
+    URI.encode(nums) == nums
+    local safeChars = "-_.!~*'()"
+    URI.encode(safeChars) == safeChars
+  }
+  ["percentDecode"] {
+    URI.percentDecode("foo%20bar") == "foo bar"
+    URI.percentDecode("foo%20bar") == "foo bar"
+    URI.percentDecode("foo%20%20bar") == "foo  bar"
+    URI.percentDecode("%F0%9F%8F%80") == "🏀"
+    URI.percentDecode("%C2%A3") == "£"
+    URI.percentDecode("%EF%BF%BF") == "\u{ffff}"
+    URI.percentDecode("%2Fbar%2Fbaz") == "/bar/baz"
+  }
+  ["parse"] {
+    local uri1 = URI.parse("https://www.example.com")
+    uri1 == new URI {
+      scheme = "https"
+      host = "www.example.com"
+      path = ""
+    }
+    uri1.pathSegments == List("")
+
+    local uri2 = URI.parse("https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value")
+    uri2 == new URI {
+      scheme = "https"
+      userInfo = "bilbo"
+      host = "www.example.com"
+      port = 1234
+      path = "/my/path"
+      query = "search=mysearch"
+      fragment = "fragment-value"
+    }
+    uri2.pathSegments == List("my", "path")
+
+    local uri3 = URI.parse("pkl:base?mybase")
+    uri3 == new URI {
+      scheme = "pkl"
+      path = "base"
+      query = "mybase"
+    }
+    uri3.pathSegments == List("base")
+
+    local uri4 = URI.parse("pkl:base?mybase#fragment")
+    uri4 == new URI {
+      scheme = "pkl"
+      path = "base"
+      query = "mybase"
+      fragment = "fragment"
+    }
+    uri4.pathSegments == List("base")
+
+    local uri5 = URI.parse("https://www.example.com/my%20path")
+    uri5 == new URI {
+      scheme = "https"
+      host = "www.example.com"
+      path = "/my%20path"
+    }
+    uri5.pathSegments == List("my path")
+
+    local uri6 = URI.parse("https://www.example.com/search?q=%F0%9F%8F%80")
+    uri6 == new URI {
+      scheme = "https"
+      host = "www.example.com"
+      path = "/search"
+      query = "q=%F0%9F%8F%80"
+    }
+    uri6.pathSegments == List("search")
+
+    local uri7 = URI.parse("myscheme:%F0%9F%8F%80#myfragment")
+    uri7 == new URI {
+      scheme = "myscheme"
+      path = "%F0%9F%8F%80"
+      fragment = "myfragment"
+    }
+    uri7.pathSegments == List("🏀")
+
+    local uri8 = URI.parse("file:/my%20file.txt")
+    uri8 == new URI {
+      scheme = "file"
+      path = "/my%20file.txt"
+    }
+    uri8.pathSegments == List("my file.txt")
+
+    local uri9 = URI.parse("file:///my%20file.txt")
+    uri9 == new URI {
+      scheme = "file"
+      path = "/my%20file.txt"
+      host = ""
+    }
+    uri9.pathSegments == List("my file.txt")
+
+    local uri10 = URI.parse("schemey:///first%2Fsegment/second")
+    uri10 == new URI {
+      scheme = "schemey"
+      path = "/first%2Fsegment/second"
+      host = ""
+    }
+    uri10.pathSegments == List("first/segment", "second")
+
+    local uri11 = URI.parse("../bar/baz")
+    uri11 == new URI {
+      path = "../bar/baz"
+    }
+    uri11.pathSegments == List("..", "bar", "baz")
+
+    local uri12 = URI.parse("//www.example.com/foo")
+    uri12 == new URI {
+      host = "www.example.com"
+      path = "/foo"
+    }
+    uri12.pathSegments == List("foo")
+
+    local uri13 = URI.parse("#")
+    uri13 == new URI {
+      path = ""
+      fragment = ""
+    }
+    uri13.pathSegments == List("")
+  }
+  ["toString()"] {
+    URI.parse("https://www.example.com").toString() == "https://www.example.com"
+    URI.parse("https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value").toString() == "https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value"
+    URI.parse("pkl:base?mybase").toString() == "pkl:base?mybase"
+    URI.parse("pkl:base?mybase#fragment").toString() == "pkl:base?mybase#fragment"
+    URI.parse("https://www.example.com/my%20path").toString() == "https://www.example.com/my%20path"
+    URI.parse("https://www.example.com/search?q=%F0%9F%8F%80").toString() == "https://www.example.com/search?q=%F0%9F%8F%80"
+    URI.parse("pkl:%F0%9F%8F%80#myfragment").toString() == "pkl:%F0%9F%8F%80#myfragment"
+    URI.parse("file:/my%20file.txt").toString() == "file:/my%20file.txt"
+    URI.parse("file:///my%20file.txt").toString() == "file:///my%20file.txt"
+  }
+  ["resolve"] {
+    URI.parse("schemey:/first/second/").resolve("../third").toString()
+      == "schemey:/first/third"
+    URI.parse("schemey:/first/second/").resolve("../../third").toString()
+      == "schemey:/third"
+    URI.parse("schemey:/first/second/").resolve("./").toString()
+      == "schemey:/first/second/"
+    URI.parse("schemey:/first/second").resolve("./").toString()
+      == "schemey:/first/"
+    URI.parse("schemey:/first/second/").resolve("/some/other/path").toString()
+      == "schemey:/some/other/path"
+    URI.parse("schemey:/first/second/").resolve("otherscheme:/some/other/path").toString()
+      == "otherscheme:/some/other/path"
+    URI.parse("schemey:/first/leaf").resolve("./").toString()
+      == "schemey:/first/"
+    URI.parse("schemey:/first/leaf").resolve("./second").toString()
+      == "schemey:/first/second"
+    URI.parse("https://www.example.com").resolve("some/relative/path").toString()
+      == "https://www.example.com/some/relative/path"
+    URI.parse("https://www.example.com").resolve("some/relative/path").toString()
+      == "https://www.example.com/some/relative/path"
+    URI.parse("https://www.example.com").resolve("//foo.com/some/relative/path").toString()
+      == "https://foo.com/some/relative/path"
+  }
+}

@@ -1,0 +1,33 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The [JSON output data format](https://docs.influxdata.com/telegraf/v1.17/data_formats/output/json/)
+/// serializes Telegraf metrics into JSON documents.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.serializers.JsonOutputDataFormat
+
+extends "OutputDataFormat.pkl"
+
+data_format: "json"
+
+/// Files to write to.
+///
+/// `"stdout"` is a specially handled file.
+files: Listing<String>
+
+/// The resolution to use for the metric timestamp.
+///
+/// Durations are truncated to the power of 10 less than the specified units.
+json_timestamp_units: Duration
