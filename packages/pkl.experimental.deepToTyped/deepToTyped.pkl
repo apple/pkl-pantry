@@ -1,0 +1,225 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.deepToTyped.deepToTyped
+
+import "pkl:reflect"
+
+/// Takes a given structure `Any` and coerces it into a concrete type `Class|TypeAlias`.
+///
+/// Facts:
+/// ```
+/// local class Foo { x: Int }
+/// local class Bar { foo: Foo }
+/// local dynamicBar = new Dynamic { foo { x = 1 } }
+/// apply(Bar, dynamicBar) == new Bar { foo = new Foo { x = 1 } }
+/// ```
+function apply(type: Class|TypeAlias, value: Any) =
+  let (result =
+    if (type is Class)
+      applyClass(reflect.Class(type), List(), value)
+    else
+      applyType(reflect.TypeAlias(type).referent, value)
+  )
+    if (result is ConversionFailure) throw(result.message) else result
+
+local class ConversionFailure {
+  message: String
+
+  function toMapping(): ConversionFailure = this
+  function toListing(): ConversionFailure = this
+}
+
+function Fail(_message: String): ConversionFailure = new {
+  message = _message
+}
+
+function Unexpected(expected: String, actual: String): ConversionFailure =
+  Fail(#"Expected "\#(expected)" but got "\#(actual)""#)
+
+hidden classHandlers: Mapping<Class, (List<reflect.Type>, Any) -> Any|ConversionFailure> = new {
+  [Mapping] = (typeArguments, value) ->
+    if (value is Dynamic|Map|Mapping)
+      applyMapping(typeArguments.firstOrNull ?? reflect.unknownType, typeArguments.getOrNull(1) ?? reflect.unknownType, value)
+    else
+      Unexpected("Dynamic|Map|Mapping", value.getClass().simpleName)
+
+  [Map] = (typeArguments, value) ->
+    if (value is Dynamic|Map|Mapping)
+      applyMap(typeArguments.firstOrNull ?? reflect.unknownType, typeArguments.getOrNull(1) ?? reflect.unknownType, value)
+    else
+      Unexpected("Dynamic|Map|Mapping", value.getClass().simpleName)
+
+  [Listing] = (typeArguments, value) ->
+    if (value is Dynamic|Collection|Listing)
+      applyListing(typeArguments.firstOrNull ?? reflect.unknownType, value.toList())
+    else
+      Unexpected("Dynamic|Collection|Listing", value.getClass().simpleName)
+
+  [List] = (typeArguments, value) ->
+    if (value is Dynamic|Collection)
+      applyList(typeArguments.firstOrNull ?? reflect.unknownType, value)
+    else
+      Unexpected("Dynamic|Collection", value.getClass().simpleName)
+
+  [Set] = (typeArguments, value) ->
+    if (value is Dynamic|Collection)
+      applyList(typeArguments.firstOrNull ?? reflect.unknownType, value).toSet()
+    else
+      Unexpected("Dynamic|Collection", value.getClass().simpleName)
+
+  [Collection] = (typeArguments, value) ->
+    if (value is Dynamic|Collection)
+      applyList(typeArguments.firstOrNull ?? reflect.unknownType, value)
+    else
+      Unexpected("Dynamic|Collection", value.getClass().simpleName)
+
+  [Int] = (_, value) ->
+    if (value is Int) value else Unexpected("Int", value.getClass().simpleName)
+
+  [String] = (_, value) ->
+    if (value is String) value else Unexpected("String", value.getClass().simpleName)
+
+  [Float] = (_, value) ->
+    if (value is Number) value.toFloat() else Unexpected("Float", value.getClass().simpleName)
+
+  [Number] = (_, value) ->
+    if (value is Number) value else Unexpected("Number", value.getClass().simpleName)
+
+  [Boolean] = (_, value) ->
+    if (value is Boolean) value else Unexpected("Boolean", value.getClass().simpleName)
+}
+
+local function applyClass(type: reflect.Class, typeArguments: List<reflect.Type>, value: Any): Any|ConversionFailure =
+  let (clazz = type.reflectee)
+    if (classHandlers.containsKey(clazz))
+      classHandlers[clazz].apply(typeArguments, value)
+    else if (type.isSubclassOf(reflect.Class(Typed)))
+      applyTyped(type, value)
+    else
+      Fail("Unsupported type for conversion: \(type.reflectee.simpleName)")
+
+local function doesNotInherit(clazz: reflect.Class) =
+  clazz.superclass == null || clazz.superclass.reflectee == Module || clazz.superclass.reflectee == Typed
+
+local function getAllProperties(clazz: reflect.Class?): Map<String, reflect.Property> =
+  if (clazz == null) Map()
+  else if (doesNotInherit(clazz)) clazz.properties
+  else getAllProperties(clazz.superclass!!) + clazz.properties
+
+local function applyProperty(valueAsMap: Map, prop: reflect.Property) =
+  if (valueAsMap.containsKey(prop.name)) applyType(prop.type, valueAsMap[prop.name])
+  else if (!(prop.type is reflect.NullableType) && prop.defaultValue != null) prop.defaultValue
+  else null
+
+local function applyDynamicOrMapping(type: reflect.Class, value: Dynamic|Mapping): Typed|ConversionFailure =
+  let (valueAsMap = value.toMap())
+    let (converted = getAllProperties(type)
+      .fold(
+        Map(),
+        (acc: Map|ConversionFailure, name: String, prop: reflect.Property) ->
+          if (acc is ConversionFailure)
+            acc
+          else
+            let (result = applyProperty(valueAsMap, prop))
+              if (result is ConversionFailure) result else acc.put(name, result)
+      )
+    )
+      if (converted is ConversionFailure) converted else converted.toTyped(type.reflectee)
+
+local function applyTyped(type: reflect.Class, value: Any): Typed|ConversionFailure =
+  if (value is Dynamic|Mapping) applyDynamicOrMapping(type, value)
+  else if (value is Typed && value.getClass() == type.reflectee) value
+  else Unexpected(type.name, value.getClass().simpleName)
+
+hidden reflectTypeHandlers: Mapping<Class, (reflect.Type, Any) -> Any|ConversionFailure> = new Mapping {
+  [reflect.DeclaredType] = (type, value) ->
+      let (_type = type as reflect.DeclaredType)
+        let (reflectee = _type.referent.reflectee)
+          if (reflectee is Class)
+            applyClass(reflect.Class(reflectee), _type.typeArguments, value)
+          else
+            // TODO: Assert that typeParameters.isEmpty??
+            applyType(reflect.TypeAlias(reflectee).referent, value)
+
+  [reflect.StringLiteralType] = (type, value) ->
+      let (expected = (type as reflect.StringLiteralType).value)
+        if (value is String)
+          if (value == expected)
+            value
+          else
+            Unexpected(expected, value)
+        else
+          Unexpected(expected, value.getClass().simpleName)
+
+  [reflect.UnionType] = (type, value) ->
+    (type as reflect.UnionType).members.fold(
+      Fail("No member of union type matched value '\(value)'"),
+      (acc, _type) ->
+        if (acc is ConversionFailure)
+          let (attempt = applyType(_type, value))
+            if (attempt is ConversionFailure) acc else attempt
+        else
+          acc
+    )
+
+  [reflect.NullableType] = (type, value) ->
+    if (value == null) null else applyType((type as reflect.NullableType).member, value)
+
+  [reflect.FunctionType] = (_, _) ->
+    Fail("Cannot convert function types")
+
+  [reflect.ModuleType] = (_, _) ->
+    Fail("unimplmeneted")
+
+  [reflect.UnknownType] = (_, value) ->
+    value
+
+  [reflect.NothingType] = (_, _) ->
+    Fail("Cannot convert anything to `nothing`")
+
+  [reflect.TypeVariable] = (type, value) ->
+    Fail("The type variable `\(type)` is unbound when trying to convert `\(value)`")
+}
+
+local function applyType(type: reflect.Type, value: Any): Any|ConversionFailure =
+  let (clazz = type.getClass())
+    if (reflectTypeHandlers.containsKey(clazz))
+      reflectTypeHandlers[clazz].apply(type, value)
+    else
+      Fail("Unknown reflect.Type: \(type.getClass().simpleName)")
+
+local function applyMap(keyType: reflect.Type, valueType: reflect.Type, value: Dynamic|Map|Mapping): Map|ConversionFailure =
+  let (_value = if (value is Map) value else value.toMap())
+    _value.fold(Map(), (acc, k, v) -> if (acc is ConversionFailure) acc else
+      let (_k = applyType(keyType, k))
+        if (_k is ConversionFailure) _k else
+          let (_v = applyType(valueType, v))
+            if (_v is ConversionFailure) _v else
+              acc.put(_k, _v)
+    )
+
+local function applyMapping(keyType: reflect.Type, valueType: reflect.Type, value: Dynamic|Map|Mapping): Mapping|ConversionFailure =
+  applyMap(keyType, valueType, value).toMapping()
+
+local function applyList(type: reflect.Type, value: Dynamic|Collection): List|ConversionFailure =
+  value.toList().fold(List(), (acc: List|ConversionFailure, v) -> if (acc is ConversionFailure) acc else
+    let (_v = applyType(type, v))
+      if (_v is ConversionFailure) _v else
+        acc.add(_v)
+  )
+
+local function applyListing(type: reflect.Type, value: Dynamic|Collection): Listing|ConversionFailure =
+  applyList(type, value).toListing()

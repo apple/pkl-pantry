@@ -1,0 +1,80 @@
+# Generated from CircleCI.pkl. DO NOT EDIT.
+version: 2.1
+orbs:
+  pr-approval: apple/pr-approval@0.1.0
+jobs:
+  build:
+    steps:
+    - checkout
+    - run:
+        command: ./gradlew build
+        name: Build
+        environment: {}
+    - store_test_results:
+        path: build/test-results
+    - persist_to_workspace:
+        root: '.'
+        paths:
+        - build
+    docker:
+    - image: cimg/openjdk:17.0
+  release:
+    steps:
+    - checkout
+    - attach_workspace:
+        at: '.'
+    - run:
+        command: |-
+          if [[ -d build/releases && -n "$(ls -A build/releases)" ]]
+          then
+            export GH_DEBUG=1
+            REPO="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+            for dir in build/releases/*
+            do
+              if [[ -d "$dir" ]]
+              then
+                pkg=$(basename "$dir")
+                echo -n "> Releasing $pkg at SHA1 ${CIRCLE_SHA1}..."
+                gh release create "$pkg" \
+                  --title "$pkg" \
+                  --target "${CIRCLE_SHA1}" \
+                  --repo "$REPO" \
+                  --notes "Release of $pkg" \
+                  "$dir"/*
+                echo "DONE"
+              else
+                echo "> SKIPPING $dir; not a directory"
+              fi
+            done
+          else
+            echo "No new packages to release."
+          fi
+        name: Publish release on GitHub
+    docker:
+    - image: maniator/gh:v2.40.1
+workflows:
+  prb:
+    jobs:
+    - hold:
+        type: approval
+    - pr-approval/authenticate:
+        context: pkl-pr-approval
+    - build:
+        requires:
+        - hold
+        - pr-approval/authenticate
+    when:
+      matches:
+        value: << pipeline.git.branch >>
+        pattern: ^pull/\d+(/head)?$
+  main:
+    jobs:
+    - build
+    - release:
+        requires:
+        - build
+        context: pkl-github-release
+    when:
+      equal:
+      - main
+      - << pipeline.git.branch >>

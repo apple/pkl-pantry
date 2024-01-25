@@ -1,0 +1,300 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.deepToTyped.tests.deepToTyped
+
+amends "pkl:test"
+
+import "../deepToTyped.pkl" as t
+
+local class Foo {
+  x: Int
+}
+
+local class Bar {
+  foo: Foo
+}
+
+local class Baz {
+  y: Int
+  baz: Baz?
+}
+
+local dynamic: Dynamic = new Dynamic {
+  foo {
+    x = 1
+  }
+}
+
+local typealias FooBarMapping = Mapping<Foo, Bar>//|Listing<Bar>|Foo
+local exMapping: FooBarMapping = new {
+  [new Foo { x = 42 }] {
+    foo {
+      x = 1337
+    }
+  }
+}
+
+local typealias BarList = List<Bar>
+local typealias BarListing = Listing<Bar>
+local exListing: BarListing = new {
+  new Bar {
+    foo {
+      x = -1
+    }
+  }
+}
+
+local typealias BarSet = Set<Bar>
+local exSet: BarSet = Set(new Bar { foo { x = 1 } })
+
+local typealias BarUnionSetOrList = *BarSet|BarList
+
+local class MyService {
+  metadata: MyMetadata
+  spec: MySpec
+}
+
+local class MyMetadata {
+  name: String
+  namespace: String
+  labels: Mapping<String, String>
+}
+
+local class MySpec {
+  type: String
+  ports: Listing<Port>
+  selector: Mapping<String, String>
+}
+
+local class Port {
+  port: Int
+  targetPort: Int
+  protocol: String
+}
+
+local service: MyService = new {
+  metadata {
+    name = "example-service"
+    namespace = "example-namespace"
+    labels {
+      ["app"] = "example"
+      ["env"] = "prod"
+      ["prtn"] = "p102"
+    }
+  }
+  spec {
+    type = "ClusterIP"
+    ports {
+      new {
+        port = 8080
+        targetPort = 8080
+        protocol = "TCP"
+      }
+    }
+    selector {
+      ["app"] = "example"
+      ["env"] = "prod"
+      ["prtn"] = "p102"
+    }
+  }
+}
+
+local class OverConstrained {
+  // k8s Deployment refers to k8s Probe, which has a type constraint on `exec` that excludes the default value of
+  // the Probe class; only one field of three may be `null` and all are, by default.
+  foo: String?(this != null || bar != null)
+  bar: Int?
+}
+
+local typealias fooLiteral = "foo"
+local typealias enumType = *"foo"|"bar"|"baz"
+
+local class ClassWithDefaultAttribute {
+  what: String = "The default"
+  who: String?
+  where: String
+}
+
+local open class BaseClass {
+  a: String
+  b: String
+}
+
+local class SubClass extends BaseClass {
+  // purposefully override `b`'s type to make sure we are converting correctly.
+  b: Int
+  c: Int
+}
+
+local class Storage {
+  size: DataSize
+}
+
+// TODO (Pkl migrator): Unsafe property reference: https://pcl.apple.com/main/current/release-notes/0.24.html#class-and-annotation-scoping-changes
+facts {
+  ["Basic types"] {
+    t.apply(Int, 1) == 1
+    t.apply(Float, 1) == 1
+    t.apply(Float, 1.1) == 1.1
+    t.apply(Number, 1) == 1
+    t.apply(Boolean, true) == true
+    t.apply(String, "hello") == "hello"
+    t.apply(fooLiteral, "foo") == "foo"
+    t.apply(enumType, "bar") == "bar"
+  }
+
+  ["Listy types"] {
+    local list = new Listing {
+      "foo"
+      42
+    }.toList()
+    t.apply(List, list) == list
+    t.apply(Listing, list) == list.toListing()
+    t.apply(Set, list) == list.toSet()
+    // There is a choice here: Abstract (!) supertype Collection defaults to List
+    t.apply(Collection, list) == list
+  }
+
+  ["Mappy types"] {
+    local map = new Mapping {
+      ["bar"] = "foo"
+      [0] = 42
+    }.toMap()
+    t.apply(Map, map) == map
+    t.apply(Mapping, map) == map.toMapping()
+  }
+
+  ["Values of the correct Class type are returned"] {
+    t.apply(Foo, new Foo { x = 1 }) == new Foo { x = 1 }
+  }
+
+  ["Dynamic to user-defined class"] {
+    t.apply(Foo, dynamic.foo) == new Foo { x = 1 }
+    t.apply(Bar, dynamic) == new Bar { foo = new { x = 1 } }
+  }
+
+  ["Dynamic to concrete typealias"] {
+    t.apply(FooBarMapping, exMapping.toMap().toDynamic()) == exMapping
+    t.apply(BarListing, exListing.toList().toDynamic()) == exListing
+    t.apply(BarList, exListing.toList().toDynamic()) == exListing.toList()
+    t.apply(BarSet, exSet.toDynamic()) == exSet
+  }
+
+  ["Dynamic to union typealias"] {
+    t.apply(BarUnionSetOrList, exSet) == exSet
+    t.apply(BarUnionSetOrList, exListing.toList()) is Collection
+  }
+
+  ["Service.toDynamic() to MyService"] {
+    t.apply(MyService, service.toDynamic()) == service
+  }
+
+  ["Service nested Dynamic to k8s Service"] {
+    local nestedDynamicService = new Dynamic {
+      apiVersion = "v1"
+      kind = "Service"
+      metadata {
+        name = "example-service"
+        namespace = "example-namespace"
+        labels {
+          ["app"] = "example"
+          ["env"] = "prod"
+          ["prtn"] = "p102"
+        }
+      }
+      spec {
+        type = "ClusterIP"
+        ports {
+          new Dynamic {
+            port = 8080
+            targetPort = 8080
+            protocol = "TCP"
+          }
+        }
+        selector {
+          ["app"] = "example"
+          ["env"] = "prod"
+          ["prtn"] = "p102"
+        }
+      }
+    }
+    t.apply(MyService, nestedDynamicService) == service
+  }
+
+  ["Negative cases"] {
+    // Something to think about: `y` is not in Foo; it quietly falls through here.
+    t.apply(Foo, new Dynamic { x = 42 y = 1337 }) == new Foo { x = 42 }
+  }
+
+  ["Type with fields that have dependent constraints"] {
+    local expectedOverconstrained = new OverConstrained {
+      foo = "test"
+      bar = null
+    }
+
+    t.apply(OverConstrained, new Dynamic { foo = "test" }) == expectedOverconstrained
+  }
+
+  ["Class with default attribute gets set correctly"] {
+    local expectedClassWithDefault = new ClassWithDefaultAttribute {
+      who = "you!"
+      where = "here"
+    }
+
+    expectedClassWithDefault.what == "The default"
+
+    local input = new Dynamic {
+      who = "you!"
+      where = "here"
+    }
+
+    t.apply(ClassWithDefaultAttribute, input) == expectedClassWithDefault
+  }
+
+  ["Correctly converts parent properties on a class"] {
+    local expectedResult: SubClass = new {
+      a = "a"
+      b = 2
+      c = 3
+    }
+
+    local value = new {
+      a = "a"
+      b = 2
+      c = 3
+    }
+
+    t.apply(SubClass, value) == expectedResult
+  }
+
+  ["Report missing union type value"] {
+    module.catch(() -> t.apply(enumType, "non")).contains("'non'")
+  }
+  ["Custom handler allows converting custom types"] {
+    local expectedResult: Storage = new {
+      size = 1024.b
+    }
+    local value = new {
+      size = 1024
+    }
+    // instantiate module as we need to amend it
+    new t {
+      classHandlers {
+        [DataSize] = (_, value) -> (value as Int).toDataSize("b")
+      }
+    }.apply(Storage, value) == expectedResult
+  }
+}

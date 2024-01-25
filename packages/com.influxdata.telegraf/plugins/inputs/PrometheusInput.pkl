@@ -1,0 +1,110 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The [prometheus input plugin](https://github.com/influxdata/telegraf/blob/release-1.17/plugins/inputs/prometheus/README.md)
+/// gathers metrics from HTTP servers exposing metrics in Prometheus format.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.PrometheusInput
+
+extends "Input.pkl"
+
+/// An array of urls to scrape metrics from.
+urls: Listing<String>
+
+/// Tag name for the scrapped url.
+///
+/// Optional, default is "url".
+url_tag: String?
+
+/// Metric version controls the mapping from Prometheus metrics into Telegraf metrics.
+///
+/// When using the prometheus_client output,
+/// use the same value in both plugins to ensure metrics are round-tripped without modification.
+///
+/// Examples:
+/// ```
+/// metric_version = 1 // deprecated in 1.13
+/// metric_version = 2 // recommended version
+/// ```
+metric_version: Int(isBetween(1, 2))?
+
+/// An array of Kubernetes services to scrape metrics from.
+kubernetes_services: Listing<String>?
+
+/// Kubernetes config file to create client from.
+kube_config: String?
+
+/// Scrape Kubernetes pods for the following prometheus annotations:
+///
+/// - prometheus.io/scrape: Enable scraping for this pod.
+/// - prometheus.io/scheme: If the metrics endpoint is secured
+///   then you will need to set this to `https` and most likely set the tls config.
+/// - prometheus.io/path: If the metrics path is not /metrics, define it with this annotation.
+/// - prometheus.io/port: If port is not 9102 use this annotation.
+monitor_kubernetes_pods: Boolean?
+
+/// Get the list of pods to scrape given the following scope.
+///
+///  Possible values:
+/// - `cluster`: the kubernetes watch api (default, no need to specify)
+/// - `node`: the local cadvisor api; for scalability. Note that the config [node_ip] or the
+///   environment variable `NODE_IP` must be set to the host IP.
+pod_scrape_scope: ("cluster"|"node")?
+
+/// Only for node scrape scope: node IP of the node that telegraf is running on.
+///
+/// Either this config or the environment variable `NODE_IP` must be set.
+node_ip: String(pod_scrape_scope == "node")?
+
+/// Restricts Kubernetes monitoring to a single namespace
+///
+/// Example: `monitor_kubernetes_pods_namespace = "default"`
+monitor_kubernetes_pods_namespace: String?
+
+/// Label selector to target pods which have the label.
+///
+/// Field selector to target pods, e.g., to scrape pods on a specific node:
+/// `kubernetes_field_selector = "env=dev,app=nginx"`
+kubernetes_field_selector: String?
+
+/// Use bearer token for authorization ([bearer_token] takes priority).
+///
+/// Path to the bearer token file.
+bearer_token: String?
+
+/// Use bearer token for authorization ([bearer_token] takes priority).
+bearer_token_string: String?
+
+/// HTTP Basic Authentication username and password ([bearer_token] and
+/// [bearer_token_string] take priority).
+username: String?
+password: String?
+
+/// Specify timeout duration for slower prometheus clients.
+///
+/// Default: `3.s`
+response_timeout: Duration?
+
+/// Optional TLS CA.
+tls_ca: String?
+
+/// Optional TLS certificate.
+tls_cert: String?
+
+/// Optional TLS private key.
+tls_key: String?
+
+/// Use TLS but skip chain & host verification.
+insecure_skip_verify: Boolean?

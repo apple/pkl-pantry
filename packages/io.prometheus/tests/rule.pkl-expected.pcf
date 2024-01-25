@@ -1,0 +1,25 @@
+examples {
+  ["basic rule"] {
+    """
+    groups:
+    - name: alerting_rules
+      interval: 5m
+      rules:
+      - alert: HighRequestLatency
+        expr: job:request_latency_seconds:mean5m{job="myjob"} > 0.5
+        for: 10m
+        labels:
+          prod: true
+          priority: 1
+          severity: page
+        annotations:
+          summary: High request latency
+    - name: recording_rules
+      interval: 10h
+      rules:
+      - record: job:http_inprogress_requests:sum
+        expr: sum by (job) (http_inprogress_requests)
+    
+    """
+  }
+}

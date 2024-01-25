@@ -1,0 +1,29 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// A reference to other components in the specification, internally and externally.
+///
+/// The Reference Object is defined by [JSON Reference](https://datatracker.ietf.org/doc/html/draft-pbryan-zyp-json-ref-03)
+/// and follows the same structure, behavior and rules.
+///
+/// For this specification, reference resolution is accomplished as defined by the JSON Reference specification
+/// and not by the JSON Schema specification.
+///
+/// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#reference-object
+@ModuleInfo { minPklVersion = "0.25.0" }
+module org.openapis.v3.Reference
+
+/// The reference URI
+`$ref`: Uri

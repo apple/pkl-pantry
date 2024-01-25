@@ -1,0 +1,91 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The tail plugin "tails" a logfile and parses each log message.
+///
+/// By default, the tail plugin acts like the following unix tail command:
+///
+/// ```
+/// tail -F --lines=0 myfile.log
+/// ```
+///
+/// - `-F` means that it will follow the _name_ of the given file, so
+/// that it will be compatible with log-rotated files, and that it will retry on
+/// inaccessible files.
+/// - `--lines=0` means that it will start at the end of the file (unless
+/// the `from_beginning` option is set).
+///
+/// see http://man7.org/linux/man-pages/man1/tail.1.html for more details.
+///
+/// The plugin expects messages in one of the
+/// [Telegraf Input Data Formats](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md).
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.plugins.inputs.TailInput
+
+extends "Input.pkl"
+
+import "../parsers/InputDataFormat.pkl"
+
+/// File names or a pattern to tail.
+///
+/// These accept standard unix glob matching rules, but with the addition of `**` as a "super asterisk":
+///
+/// - `"/var/log/**.log"`: recursively find all .log files in /var/log
+/// - `"/var/log/*/*.log"`: find all .log files with a parent dir in /var/log
+/// - `"/var/log/apache.log"`: just tail the apache log file
+///
+/// See https://github.com/gobwas/glob for more examples.
+files: Listing<String>
+
+/// Read file from beginning.
+///
+/// Default: `false`
+from_beginning: Boolean?
+
+/// Whether file is a named pipe.
+///
+/// Default: `false`
+pipe: Boolean?
+
+/// Method used to watch for file updates.
+///
+/// Default: `"inotify"`
+watch_method: (*"inotify"|"poll")?
+
+/// Maximum lines of the file to process that have not yet be written by the output.
+///
+/// For best throughput set based on the number of metrics on each line
+/// and the size of the output's metric_batch_size.
+max_undelivered_lines: Int(isPositive)?
+
+/// Character encoding to use when interpreting the file contents.
+///
+/// Invalid characters are replaced using the unicode replacement character.
+/// When set to the empty string the data is not decoded to text.
+///
+/// Examples:
+/// ```
+/// character_encoding = "utf-8"
+/// character_encoding = "utf-16le"
+/// character_encoding = "utf-16be"
+/// character_encoding = ""
+/// ```
+character_encoding: String?
+
+/// Data format to consume.
+///
+/// Each data format has its own unique set of configuration options, read more about them here:
+/// https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
+data_format: InputDataFormat?

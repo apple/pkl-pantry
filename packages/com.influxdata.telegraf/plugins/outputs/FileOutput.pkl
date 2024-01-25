@@ -1,0 +1,55 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// This plugin writes telegraf metrics to files.
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.plugins.outputs.FileOutput
+
+extends "Output.pkl"
+
+import ".../serializers/OutputDataFormat.pkl"
+
+files: Listing<String>?
+
+/// Use batch serialization format instead of line based delimiting.
+///
+/// The batch format allows for the production of non line based output formats
+/// and may more efficiently encode and write metrics.
+///
+/// Defaults to false.
+use_batch_format: Boolean?
+
+/// The file will be rotated after the time interval specified.
+///
+/// When set to 0 no time based rotation is performed.
+///
+/// Defaults to no rotation
+rotation_interval: Duration?
+
+/// The logfile will be rotated when it becomes larger than the specified size.
+///
+/// When set to 0, no size based rotation is performed.
+rotation_max_size: DataSize?
+
+/// Maximum number of rotated archives to keep, any older logs are deleted.
+///
+/// If set to -1, no archives are removed.
+rotation_max_archives: Int?
+
+/// The [data format](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_OUTPUT.md)
+/// to output.
+///
+/// Each data format has its own unique set of configuration options.
+data_format: OutputDataFormat

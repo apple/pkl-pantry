@@ -1,0 +1,125 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Node representing a Pkl module.
+@Unlisted
+module pkl.experimental.syntax.ModuleNode
+
+extends "ClassOrModuleNode.pkl"
+
+import "AnnotationNode.pkl"
+import "DocCommentNode.pkl"
+import "Node.pkl"
+import "ClassNode.pkl"
+import "QualifiedIdentifierNode.pkl"
+import "TypeAliasNode.pkl"
+
+/// The top-level section of a module
+///
+/// E.g. `module com.package.MyModule`
+declaration: ModuleDeclarationNode?
+
+/// The list of imports for a module.
+imports: Listing<ImportNode>?
+
+/// The classes as defined in the module.
+classes: Listing<ClassNode>?
+
+/// The typealiases as defined in the module.
+typealiases: Listing<TypeAliasNode>?
+
+class ModuleDeclarationNode extends Node {
+  /// Content for the first line of the module following "#!"
+  /// Enables modules to be evaluated as executable scripts
+  ///
+  /// Example: "/usr/bin/env pkl eval"
+  shebang: String?
+
+  /// Annotations for the module itself, for instance, `@ModuleInfo`
+  annotations: Listing<AnnotationNode>?
+
+  docComment: DocCommentNode?
+
+  moduleHeader: ModuleHeaderNode?
+
+  function render(currentIndent: String) =
+    List(
+      shebang.ifNonNull((it) -> "#!\(it)"),
+      docComment?.render(currentIndent),
+      annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
+      moduleHeader?.render(currentIndent)
+    ).filterNonNull().join("\n")
+}
+
+local const renderer = new PcfRenderer {}
+
+class ModuleHeaderNode extends Node {
+  modifiers: Listing<"abstract"|"open">(isDistinct, name != null)?
+
+  name: QualifiedIdentifierNode?
+
+  moduleExtendsOrAmendsClause: ModuleExtendsOrAmendsClauseNode?
+
+  function render(header) =
+    let (moduleHeader = new Listing {
+      when (modifiers != null) {
+        modifiers.join(" ") + " "
+      }
+      when (name != null) {
+        "module " + name.render(header)
+      }
+    }.join(""))
+      List(
+        if (moduleHeader.isEmpty) null else moduleHeader,
+        moduleExtendsOrAmendsClause?.render()
+      ).filterNonNull().join("\n\n")
+}
+
+class ModuleExtendsOrAmendsClauseNode extends Node {
+  type: "extends"|"amends" = Undefined()
+  extendedModule: String
+  function render() =
+    """
+    \(type) \(renderer.renderValue(extendedModule))
+    """
+}
+
+class ImportNode extends Node {
+  value: String
+  alias: String?
+  keyword: "import"|"import*" = "import"
+  function render() = new Listing {
+    keyword
+    " "
+    renderer.renderValue(value)
+    when (alias != null) {
+      " as "
+      alias
+    }
+  }.join("")
+}
+
+function renderImports() =
+  (imports?.toList() ?? List()).map((it) -> it.render()).join("\n")
+
+function render(currentIndent: String) = List(
+  declaration?.render(currentIndent),
+  renderImports(),
+  super.render(currentIndent),
+  classes?.toList()?.map((c) -> c.render(currentIndent))?.join("\n\n"),
+  typealiases?.toList()?.map((t) -> t.render(currentIndent))?.join("\n\n")
+)
+  .filter((line) -> line != null && !line.isEmpty)
+  .join("\n\n") + "\n"

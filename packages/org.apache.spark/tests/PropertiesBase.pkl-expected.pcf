@@ -1,0 +1,13 @@
+examples {
+  ["rendering properties"] {
+    """
+    spark.core.numbers = 5
+    spark.driver.something = some driver setting
+    spark.executor.something = some executor setting
+    spark.shards.1.setting.this-node.memory = 5g
+    spark.kubernetes.some.type.of.memory = 10Gi
+    spark.some.type.of.duration = 5min
+    
+    """
+  }
+}

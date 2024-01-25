@@ -1,0 +1,61 @@
+examples {
+  ["binary operators - basic"] {
+    "\"foo\" + \"bar\""
+  }
+  ["binary operators - precedence: no parentheses when child precedence is higher"] {
+    "5 * 5 + 5 * 5"
+  }
+  ["binary operators - precedence: parenthese added when child precedence is lower"] {
+    "(5 + 5) * (5 + 5)"
+  }
+  ["unary operators"] {
+    "!false"
+  }
+  ["unary operators - parenthesizes binary expressions"] {
+    "-(5 + 10)"
+  }
+  ["member access - single identifier"] {
+    "foo"
+  }
+  ["member access - method call"] {
+    "foo(bar, biz)"
+  }
+  ["if/else"] {
+    """
+    if (foo == "foo")
+      "foo"
+    else
+      "bar"
+    """
+    """
+    if (foo == "foo")
+        "foo"
+      else
+        "bar"
+    """
+  }
+  ["super access"] {
+    "super.someProperty"
+    "super.someProperty(true)"
+  }
+  ["super subscript"] {
+    "super[\"test\"]"
+  }
+  ["subscript"] {
+    "test[\"key\"]"
+    """
+    (if (test)
+      testTrue
+    else
+      testFalse)["test" + "Key"]
+    """
+  }
+  ["read"] {
+    "read(\"env:HOME\")"
+    "read*(\"env:HOME\")"
+    "read?(\"env:HOME\")"
+  }
+  ["trace"] {
+    "trace(test)"
+  }
+}

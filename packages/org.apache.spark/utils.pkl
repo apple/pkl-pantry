@@ -1,0 +1,104 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.apache.spark.utils
+
+/// Match indexed positions in a property.
+///
+/// For example matches `.[0-9]` or `.[Foo]` or `.{Foo}`
+// language=regexp
+indexRegex: Regex = Regex(#"""
+  (?x)          # turn on extended mode
+  \.            # '.' literal
+  (?:
+  \{            # '{' literal
+  ([^}]+)       # capture: any character except for '}'
+  }             # followed by '}'
+  |             # OR
+  \[            # '[' literal
+  ([^]]+)       # capture: any character except for ']'
+  ]             # folowed by ']'
+  )
+  """#)
+
+// https://spark.apache.org/docs/latest/configuration.html#spark-properties
+function convertDuration(dur: Duration): String =
+  if (dur.unit == "ns" || dur.unit == "us") convertDuration(dur.toUnit("ms"))
+  else "\(dur.value)\(dur.unit)"
+
+function convertValue(propName: String, propValue: Any): Any =
+  if (propValue is Duration)
+    convertDuration(propValue)
+  else if (propValue is DataSize)
+    if (propName.contains(".kubernetes."))
+      // taken from io.k8s.K8sObject
+      let (unit = propValue.unit)
+        let (k8sUnit =
+          if (unit.length == 3) unit[0].toUpperCase() + unit[1]
+          else if (unit.length == 2) unit[0].toUpperCase()
+          else ""
+        )
+          "\(propValue.value)\(k8sUnit)"
+    else
+      // https://spark.apache.org/docs/latest/configuration.html#spark-properties
+      let (bin = propValue.toBinaryUnit()) "\(bin.value)\(bin.unit.take(1))"
+  else propValue
+
+/// Converts a property to its expanded set of properties.
+function convertProperty(propName: String, propValue: Any): Map =
+  if (propValue is Mapping)
+    convertIndexedProperty(propName, propValue)
+  else
+    Map(propName, convertValue(propName, propValue))
+
+/// Flatten a deeply nested Mapping into a Map where the keys becomes a list
+///
+/// For example:
+///
+///     new Mapping { ["foo"] = new Mapping { ["bar"] = 100 } }
+///
+/// Becomes:
+///
+///     Map(List(".foo", ".bar"), 100)
+///
+function flattenMapKeys(value: Mapping<String, unknown>, path: List<String>): Map<List<String>, unknown> =
+  value
+    .toMap()
+    .flatMap((key, _value) ->
+      if (_value is Mapping) flattenMapKeys(_value, path.add("." + key))
+      else Map(path.add("." + key), _value)
+    )
+
+/// Performs substituting of indexed positions with the corresponding Mapping keys.
+///
+/// Given prop `foo.bar.[baz].biz.[buz]` and value `new { [1] { [11] = "one" }; [2] { [22] = "two" } }`,
+/// produces:
+///
+///     Map(
+///       "foo.bar.1.biz.11", "one",
+///       "foo.bar.2.biz.22", "two"
+///     )
+function convertIndexedProperty(propName: String, propValue: Mapping): Map =
+  let (propNameParts = propName.split(indexRegex))
+  let (flattenedMap = flattenMapKeys(propValue, List()))
+    flattenedMap.map((key, value) ->
+      let (convertedProperty = propNameParts
+          .zip(key)
+          .flatMap((pair) -> List(pair.first, pair.second))
+          .join("")
+        + if (propNameParts.length > key.length) propNameParts.last else ""
+      )
+        Pair(convertedProperty, convertValue(convertedProperty, value))
+    )

@@ -1,0 +1,37 @@
+examples {
+  ["full declaration"] {
+    """
+    #!/usr/bin/env pkl eval
+    /// This is a module doc comment!
+    @test { annotation = true }
+    open module pkl.experimental.syntax.tests.ModuleNode
+    
+    amends "pkl:test"
+    
+    """
+  }
+  ["short methods are rendered inline"] {
+    """
+    /// Adds five to its argument.
+    const local function addFive(input: Int) = input + 5
+    
+    """
+  }
+  ["methods with long values are rendered indented"] {
+    """
+    /// Adds five to its argument.
+    const local function myReallyLongMethodForAddingFiveToAnInteger(inputIntegerValue: Int) =
+      inputIntegerValue + 5
+    
+    """
+  }
+  ["methods with long values but short first lines are rendered inline"] {
+    """
+    /// Adds five to its argument and returns a dynamic object containing the result.
+    const local function myLongMethodForReturningADynamicObject(inputIntegerValue: Int) = new Dynamic {
+      value = inputIntegerValue + 5
+    }
+    
+    """
+  }
+}

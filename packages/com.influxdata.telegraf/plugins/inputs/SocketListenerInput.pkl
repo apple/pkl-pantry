@@ -1,0 +1,111 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The Socket Listener is a service input plugin that listens for messages
+/// from streaming (tcp, unix) or datagram (udp, unixgram) protocols.
+///
+/// The plugin expects messages in the
+/// [Telegraf Input Data Formats](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md).
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.plugins.inputs.SocketListenerInput
+
+extends "Input.pkl"
+
+import "../parsers/InputDataFormat.pkl"
+
+/// URL to listen on.
+///
+/// Examples:
+/// ```
+/// service_address = "tcp://:8094"
+/// service_address = "tcp://127.0.0.1:http"
+/// service_address = "tcp4://:8094"
+/// service_address = "tcp6://:8094"
+/// service_address = "tcp6://[2001:db8::1]:8094"
+/// service_address = "udp://:8094"
+/// service_address = "udp4://:8094"
+/// service_address = "udp6://:8094"
+/// service_address = "unix:///tmp/telegraf.sock"
+/// service_address = "unixgram:///tmp/telegraf.sock"
+/// ```
+service_address: Uri
+
+/// Change the file mode bits on unix sockets.
+///
+/// These permissions may not be respected by some platforms.
+/// To safely restrict write permissions, it is best to place the socket
+/// into a directory that has previously been created with the desired permissions.
+///
+/// Example:
+/// ```
+/// socket_mode = "777"
+/// ```
+socket_mode: String?
+
+/// Maximum number of concurrent connections.
+///
+/// Only applies to stream sockets (e.g. TCP).
+/// 0 (default) is unlimited.
+///
+/// Default: `1024`
+max_connections: UInt16?
+
+/// Read timeout.
+/// Only applies to stream sockets (e.g. TCP).
+/// 0 (default) is unlimited.
+///
+/// Default: `30.s`
+read_timeout: Duration?
+
+/// Optional TLS configuration.
+///
+/// Only applies to stream sockets (e.g. TCP).
+tls_cert: String?
+tls_key: String?
+
+/// Enables client authentication if set.
+///
+/// Example:
+/// ```
+/// tls_allowed_cacerts { "/etc/telegraf/clientca.pem" }
+/// ```
+tls_allowed_cacerts: Listing<String>?
+
+/// Maximum socket buffer size (in bytes when no unit specified).
+///
+/// For stream sockets, once the buffer fills up, the sender will start backing up.
+/// For datagram sockets, once the buffer fills up, metrics will start dropping.
+///
+/// Default: OS default
+read_buffer_size: DataSize?
+
+/// Period between keep alive probes.
+///
+/// Only applies to TCP sockets.
+/// 0 disables keep alive probes.
+///
+/// Default: OS configuration
+keep_alive_period: Duration?
+
+/// Data format to consume.
+///
+/// Each data format has its own unique set of configuration options, read more about them here:
+/// <https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md>
+data_format: InputDataFormat?
+
+/// Content encoding for message payloads.
+///
+/// Can be set to "gzip" to or "identity" to apply no encoding.
+content_encoding: ("gzip"|"identity")?

@@ -1,0 +1,41 @@
+examples {
+  ["for generator"] {
+    """
+    {
+      for (person in people) {
+        person.name
+      }
+    }
+    """
+    """
+    {
+      for (person: Person in people) {
+        person.name
+      }
+    }
+    """
+    """
+    {
+      for (personIndex, person in people) {
+        person.name
+      }
+    }
+    """
+    """
+    {
+      for (personIndex: Int, person: Person in people) {
+        person.name
+      }
+    }
+    """
+  }
+  ["when generator"] {
+    """
+    {
+      when (test) {
+        conditionalProperty = true
+      }
+    }
+    """
+  }
+}

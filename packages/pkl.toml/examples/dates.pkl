@@ -1,0 +1,39 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.toml.examples.dates
+
+import "../toml.pkl"
+
+// Offset Date-Time
+odt1 = new toml.DateTime { value = "1979-05-27T07:32:00Z" }
+odt2 = new toml.DateTime { value = "1979-05-27T00:32:00-07:00" }
+odt3 = new toml.DateTime { value = "1979-05-27T00:32:00.999999-07:00" }
+odt4 = new toml.DateTime { value = "1979-05-27 07:32:00Z" }
+
+// Local Date-Time
+ldt1 = new toml.DateTime { value = "1979-05-27T07:32:00" }
+ldt2 = new toml.DateTime { value = "1979-05-27T00:32:00.999999" }
+
+// Local Date
+ld1 = new toml.Date { value = "1979-05-27" }
+
+// Local Time
+lt1 = new toml.Time { value = "07:32:00" }
+lt2 = new toml.Time { value = "00:32:00.999999" }
+
+output {
+  renderer = new toml.Renderer {}
+}

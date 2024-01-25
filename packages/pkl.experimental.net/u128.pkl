@@ -1,0 +1,150 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Who was it that said we'd never need more than 64 bits??
+/// Some tasks work best with unsigned 128-bit integers, eg. working with IPv6 addresses.
+/// This module implements a [UInt128] type composed out of 4 [UInt]s that can handle limited bit-wise and arithmetic operations.
+/// NB: this task is a better fit for [UInt32], but it cannot be used here as we rely on shifting bits off the significant end and Pcl's implementation doesn't permit this
+module pkl.experimental.net.u128
+
+import "pkl:math"
+
+/// A [UInt128] with value 0.
+const zero: UInt128 = UInt128(0, 0, 0, 0)
+/// A [UInt128] with value 1.
+const one: UInt128 = UInt128(0, 0, 0, 1)
+/// The maximum [UInt128] value.
+const maxUInt128: UInt128 = UInt128(math.maxUInt32, math.maxUInt32, math.maxUInt32, math.maxUInt32)
+
+/// Creates a [UInt128] with components [UInt32]s [high], [midHigh], [midLow], and [low]
+const function UInt128(high: UInt32, midHigh: UInt32, midLow: UInt32, low: UInt32): UInt128 = new {
+  words = List(low, midLow, midHigh, high)
+}
+
+/// An unsigned 128-bit integer.
+class UInt128 {
+  hidden words: List<UInt>(length == 4)
+  hidden hihi: UInt = words[3]
+  hidden hilo: UInt = words[2]
+  hidden lohi: UInt = words[1]
+  hidden lolo: UInt = words[0]
+
+  local self = this
+
+  function toString(): String = new Listing<String> {
+    hihi.toRadixString(16).padStart(8, "0")
+    hilo.toRadixString(16).padStart(8, "0")
+    lohi.toRadixString(16).padStart(8, "0")
+    lolo.toRadixString(16).padStart(8, "0")
+  }.join("")
+
+  /// Bitwise AND of this integer and [n].
+  function and(other: UInt128): UInt128 = UInt128(
+    self.hihi.and(other.hihi),
+    self.hilo.and(other.hilo),
+    self.lohi.and(other.lohi),
+    self.lolo.and(other.lolo)
+  )
+
+  /// Bitwise OR of this integer and [n].
+  function or(other: UInt128): UInt128 = UInt128(
+    self.hihi.or(other.hihi),
+    self.hilo.or(other.hilo),
+    self.lohi.or(other.lohi),
+    self.lolo.or(other.lolo)
+  )
+
+  /// Returns true if this integer is less than or equal to [other].
+  function le(other: UInt128): Boolean = self.words == other.words || self.lt(other)
+
+  /// Returns true if this integer is strictly less than [other].
+  function lt(other: UInt128): Boolean =
+    self.hihi < other.hihi || self.hihi == other.hihi && (
+        self.hilo < other.hilo || self.hilo == other.hilo && (
+            self.lohi < other.lohi || self.lohi == other.lohi && (
+                self.lolo < other.lolo
+                )))
+
+  /// Shifts this integer left by [n] bits.
+  function shl(n: UInt): UInt128 =
+    if (n == 0) self
+    else if (n > 32) self.shl(32).shl(n - 32) // just recurse, 5head!
+    // not only is this n == 32 case more efficient, but it protects us from the fact that Pcl has no UInt64 type
+    // we would be in for a bad time if we shifted a [math.maxUInt32] left 32 bits into the sign bit of [Int]
+    else if (n == 32) UInt128(self.hilo, self.lohi, self.lolo, 0)
+    else UInt128(
+        self.hihi.shl(n).and(math.maxUInt32).or(self.hilo.ushr(32 - n)),
+        self.hilo.shl(n).and(math.maxUInt32).or(self.lohi.ushr(32 - n)),
+        self.lohi.shl(n).and(math.maxUInt32).or(self.lolo.ushr(32 - n)),
+        self.lolo.shl(n).and(math.maxUInt32)
+      )
+
+  /// Return the sum of this integer and [other].
+  function add(other: UInt128): UInt128 = new {
+    local complement = math.maxUInt32 - other.lolo
+    local loloOverflows = self.lolo > complement
+    local lolo =
+      if (loloOverflows) self.lolo - math.maxUInt32 + other.lolo - 1
+      else self.lolo + other.lolo
+
+    local lohiComplement = math.maxUInt32 - other.lohi
+    local lohiCarry = if (loloOverflows) 1 else 0
+    local lohiOverflows = (self.lohi + lohiCarry) > lohiComplement
+    local lohi =
+      if (lohiOverflows) self.lohi - math.maxUInt32 + other.lohi - 1 + lohiCarry
+      else self.lohi + other.lohi + lohiCarry
+
+    local hiloComplement = math.maxUInt32 - other.hilo
+    local hiloCarry = if (lohiOverflows) 1 else 0
+    local hiloOverflows = (self.hilo + hiloCarry) > hiloComplement
+    local hilo =
+      if (hiloOverflows) self.hilo - math.maxUInt32 + other.hilo - 1 + hiloCarry
+      else self.hilo + other.hilo + hiloCarry
+
+    local hihiCarry = if (hiloOverflows) 1 else 0
+    local hihi = (self.hihi + other.hihi + hihiCarry).and(math.maxUInt32)
+    words = List(lolo, lohi, hilo, hihi)
+  }
+
+  /// Generate a sequence of [UInt128] between this integer and [other], inclusive.
+  /// Behaves like [pcl.base.IntSeq].
+  function seq(other: UInt128): Listing<UInt128> =
+    if (self.hihi == other.hihi)
+      if (self.hilo == other.hilo)
+        if (self.lohi == other.lohi) new {
+          for (ll in IntSeq(self.lolo, other.lolo)) { UInt128(self.hihi, self.hilo, self.lohi, ll) }
+        }
+        else new {
+          ...UInt128(self.hihi, self.hilo, self.lohi, self.lolo).seq(UInt128(self.hihi, self.hilo, self.lohi, math.maxUInt32))
+          for (lh in IntSeq(self.lohi, other.lohi)) {
+            ...UInt128(self.hihi, self.hilo, lh, 0).seq(UInt128(self.hihi, self.hilo, lh, math.maxUInt32))
+          }
+          ...UInt128(other.hihi, other.hilo, other.lohi, 0).seq(UInt128(other.hihi, other.hilo, other.lohi, other.lolo))
+        }
+      else new {
+        ...UInt128(self.hihi, self.hilo, self.lohi, self.lolo).seq(UInt128(self.hihi, self.hilo, math.maxUInt32, math.maxUInt32))
+        for (hl in IntSeq(self.hilo, other.hilo)) {
+          ...UInt128(self.hihi, hl, 0, 0).seq(UInt128(self.hihi, hl, math.maxUInt32, math.maxUInt32))
+        }
+        ...UInt128(other.hihi, other.hilo, 0, 0).seq(UInt128(other.hihi, other.hilo, other.lohi, other.lolo))
+      }
+    else new {
+      ...UInt128(self.hihi, self.hilo, self.lohi, self.lolo).seq(UInt128(self.hihi, math.maxUInt32, math.maxUInt32, math.maxUInt32))
+      for (hh in IntSeq(self.hilo, other.hilo)) {
+        ...UInt128(hh, 0, 0, 0).seq(UInt128(hh, math.maxUInt32, math.maxUInt32, math.maxUInt32))
+      }
+      ...UInt128(other.hihi, 0, 0, 0).seq(UInt128(other.hihi, other.hilo, other.lohi, other.lolo))
+    }
+}

@@ -1,0 +1,299 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Enables the generation of a [Schema] from a Pkl module, class, or typealias.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module org.openapis.v3.SchemaGenerator
+
+import "pkl:reflect"
+import "pkl:math"
+import "Schema.pkl"
+
+/// Given either a module, class, or typealias, generates the equivalent OpenAPI v3.0 [Schema].
+///
+/// Example:
+/// ```
+/// import "package://artifacts.apple.com/pkl/pkl/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
+///
+/// class Person {
+///   /// The person's legal name.
+///   name: String?
+/// }
+///
+/// personSchema = SchemaGenerator.generate(Person)
+/// ```
+///
+/// `personSchema` generates a schema that looks like so:
+///
+/// ```json
+/// {
+///   "type": "object",
+///   "title": "Person",
+///   "properties": {
+///     "name": {
+///       "type": "string",
+///       "description": "The person's legal name.",
+///       "nullable": true
+///     }
+///   },
+///   "additionalProperties": false,
+///   "required": []
+/// }
+/// ```
+///
+/// Known limitations:
+///   * This generator cannot generate schemas that contain recursive descriptors,
+///     because a single [Schema] lacks the ability to reuse definitions.
+///   * [Type Constraints](https://pages.github.pie.apple.com/pkl/main/current/language-reference/index.html#type-constraints)
+///     do not get encoded into the [Schema]. The only exceptions are well-known type constraints for
+///     numbers (for example, [Int8] and [UInt8]).
+function generate(value: Module|Class|TypeAlias): Schema =
+  let (ref = if (value is Module)
+    reflect.Module(value)
+  else if (value is TypeAlias)
+    reflect.TypeAlias(value)
+  else
+    reflect.Class(value)
+  )
+    convertDeclaration(ref, Set())
+
+/// Customize how the generator produces JSON Schema. This is useful if a Pkl type is expected
+/// to map to a (non-standard) JSON Schema type.
+///
+/// To use converters, a new instance of [SchemaGenerator] must be initialized.
+///
+/// Example:
+/// ```
+/// import "package://artifacts.apple.com/pkl/pkl/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
+///
+/// k8sGenerator = new SchemaGenerator {
+///   converters {
+///     [DataSize] {
+///       type = "string"
+///       description = "A Kubernetes data size representation. For instance, 5Mi"
+///       pattern = "^\d+(?:[EPTGMK]i?)?$"
+///     }
+///   }
+/// }
+/// ```
+hidden converters: Mapping<Class, Schema>
+
+/// Converts a [reflect.Declaration] into the equivalent [Schema].
+local function convertDeclaration(declaration: reflect.Declaration, seenClasses: Set<Class>): Schema =
+  if (declaration is reflect.Class)
+    convertType(reflect.DeclaredType(declaration), seenClasses)
+  else if (declaration is reflect.Module)
+    (convertDeclaration(declaration.moduleClass, seenClasses)) {
+      // We need to amend title because it would otherwise be `"ModuleClass"`.
+      title = declaration.name
+    }
+  else if (declaration is reflect.Property)
+    convertType(declaration.type, seenClasses) |> addBaseSchema(declaration)
+  else
+    convertType((declaration as reflect.TypeAlias).referent, seenClasses) |> addBaseSchema(declaration)
+
+/// Adds common base values to a [Schema].
+local function addBaseSchema(declaration: reflect.Declaration): Mixin<Schema> = new {
+  description = declaration.docComment
+  // If this is a `Property`, the name is the name of the property, which is not a good
+  // indication of the underlying type. Therefore, we only apply the title when the
+  // declaration is not a property.
+  when (!(declaration is reflect.Property)) {
+    title = declaration.name
+  }
+  when (!declaration.annotations.filter((a) -> a is Deprecated).isEmpty) {
+    deprecated = true
+  }
+}
+
+local function convertDeclaredType(typ: reflect.DeclaredType, seenClasses: Set<Class>): Schema =
+  let (reflectee = typ.referent.reflectee)
+    if (reflectee == Any || typ == reflect.unknownType)
+      new {}
+    else if (reflectee == Int)
+      new {
+        type = "integer"
+      }
+    else if (reflectee == Int8)
+      new {
+        type = "integer"
+        minimum = math.minInt8
+        maximum = math.maxInt8
+      }
+    else if (reflectee == Int16)
+      new {
+        type = "integer"
+        minimum = math.minInt16
+        maximum = math.maxInt16
+      }
+    else if (reflectee == Int32)
+      new {
+        type = "integer"
+        format = "int32"
+      }
+    else if (reflectee == UInt8)
+      new {
+        type = "integer"
+        minimum = 0
+        maximum = math.maxUInt8
+      }
+    else if (reflectee == UInt16)
+      new {
+        type = "integer"
+        minimum = 0
+        maximum = math.maxUInt16
+      }
+    else if (reflectee == UInt32)
+      new {
+        type = "integer"
+        minimum = 0
+        maximum = math.maxUInt32
+      }
+    else if (reflectee == Float)
+      new {
+        type = "number"
+        format = "float"
+      }
+    else if (reflectee == Dynamic)
+      new {
+        oneOf {
+          new {
+            type = "array"
+          }
+          new {
+            type = "object"
+          }
+        }
+      }
+    else if (reflectee == Boolean)
+      new {
+        type = "boolean"
+      }
+    else if (reflectee == Null)
+      new {
+        enum {
+          null
+        }
+      }
+    else if (reflectee == Number)
+      new {
+        type = "number"
+      }
+    else if (reflectee == String)
+      new {
+        type = "string"
+      }
+    else if (typ == reflect.nothingType)
+      // This type is `NOT ANY`, ergo, nothing.
+      new {
+        not {}
+      }
+    else if (reflectee == Listing || reflectee == List)
+      let (elementType = typ.typeArguments[0])
+        new {
+          type = "array"
+          items = convertType(elementType, seenClasses)
+        }
+    else if (reflectee == Mapping || reflectee == Map)
+      let (keyType = typ.typeArguments[0])
+        let (valueType = typ.typeArguments[1])
+          if (keyType != reflect.stringType)
+            throw("Invalid schema: Mappings can only be a string type when converting to JSON schema. Received: \(keyType)")
+          else
+            new {
+              type = "object"
+              additionalProperties = convertTypeForProperty(valueType, seenClasses)
+            }
+    else if (reflectee is Class)
+      if (seenClasses.findOrNull((c) -> c == typ.referent.reflectee) != null)
+        throw("Invalid Schema: Unable to convert a schema that refers to itself. This is because OpenAPI v3.0 does not have a way to provide definitions. Recurring class: \(typ.referent.reflectee)")
+      else
+        converters.getOrNull(typ.referent.reflectee) ??
+          let (reflectedClass = reflect.Class(reflectee))
+            let (_properties = getProperties(reflectedClass))
+              new Schema {
+                type = "object"
+                properties {
+                  for (_, property in _properties) {
+                    [property.name] =
+                      convertDeclarationForProperty(property, seenClasses.add(reflectee))
+                  }
+                }
+                additionalProperties = false
+                required {
+                  for (_, property in _properties) {
+                    when (property.type.nullable != property.type) {
+                      property.name
+                    }
+                  }
+                }
+              } |> addBaseSchema(reflectedClass)
+    else
+      convertDeclaration(reflect.TypeAlias(reflectee), seenClasses)
+
+/// Given a `reflect.Type`, produce a matching [Schema].
+local function convertType(typ: reflect.Type, seenClasses: Set<Class>): Schema =
+  if (typ is reflect.NullableType)
+    (convertType(typ.member, seenClasses)) {
+      nullable = true
+    }
+  else if (typ is reflect.UnionType)
+    new {
+      oneOf {
+        for (member in typ.members) {
+          convertType(member, seenClasses)
+        }
+      }
+    }
+  else if (typ is reflect.StringLiteralType)
+    new {
+      enum {
+        typ.value
+      }
+    }
+  else if (typ is reflect.DeclaredType)
+    convertDeclaredType(typ, seenClasses)
+  else throw("Unsure how to cast this type: \(typ)")
+
+/// Same as [convertType], except casts results to [Schema.PropertySchema]
+local function convertTypeForProperty(typ: reflect.Type, seenClasses: Set<Class>): Schema.PropertySchema =
+  convertType(typ, seenClasses).toDynamic().toTyped(Schema.PropertySchema)
+
+/// Same as [convertDeclaration], except casts results to [Schema.PropertySchema].
+local function convertDeclarationForProperty(declaration: reflect.Declaration, seenClasses: Set<Class>): Schema.PropertySchema =
+  convertDeclaration(declaration, seenClasses).toDynamic().toTyped(Schema.PropertySchema)
+
+/// Given a class, return all of its properties, including properties of all inherited classes.
+///
+/// Excludes properties that are functions, and any hidden properties. Also, excludes properties on [Module].
+///
+/// **NOTE**: JSON Schema has a way to combine schemas together using `allOf`. At first glance, this might
+/// seem like a good way to model inheritance; the schema is all of the child properties and the parent
+/// properties. However, this mechanism breaks if a child class overrides the property of a parent class.
+/// If an overridden property is mutually exclusive with the parent property, `allOf` would produce an
+/// invalid JSON schema because it is impossible for any object to match all of the specified constraints.
+local function getProperties(clazz: reflect.Class): Map<String, reflect.Property> =
+  // Edge case: Modules implicitly inherit the `Module` class. We do not want to capture this as part of the
+  // schema.
+  if (clazz.reflectee == Module)
+    Map()
+  else
+    let (properties = clazz.properties
+      .filter((_, prop) -> !(prop.type is reflect.FunctionType))
+      .filter((_, prop) -> !prop.modifiers.contains("hidden")))
+      if (clazz.superclass == clazz || clazz.superclass == null)
+        properties
+      else
+        getProperties(clazz.superclass!!) + properties

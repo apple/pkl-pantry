@@ -1,0 +1,51 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// [Exec Input Plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/exec/README.md)
+///
+/// The exec plugin executes all the commands in parallel on every interval and parses metrics from their output in any one of the accepted Input Data Formats.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.ExecInput
+
+extends "Input.pkl"
+
+import ".../parsers/InputDataFormat.pkl"
+
+/// Commands array.
+commands: Listing<String>
+
+/// Environment variables.
+hidden env: Mapping<String, String>
+
+/// The environment variables as exposed to the exec input plugin.
+///
+/// This is an internal property that is derived from [env].
+fixed environment: Listing<String> = env
+  .toMap()
+  .entries
+  .map((entry) -> "\(entry.key)=\(entry.value)")
+  .toListing()
+
+/// Timeout for each command to complete.
+timeout: Duration?
+
+/// Measurement name suffix (for separating different commands).
+name_suffix: String?
+
+/// The [input data format](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md)
+/// to consume.
+///
+/// Each data format has its own unique set of configuration options.
+data_format: InputDataFormat?

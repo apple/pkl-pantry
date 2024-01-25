@@ -1,0 +1,84 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+abstract module pkl.experimental.syntax.TypeNode
+
+extends "Node.pkl"
+
+import "QualifiedIdentifierNode.pkl"
+import "ExpressionNode.pkl"
+import "TypeNode.pkl"
+
+class NullableTypeNode extends TypeNode {
+  typeNode: TypeNode
+  function render(currentIndent: String) =
+    let (underlyingRendered = if (typeNode is UnionTypeNode) parenthesize(typeNode.render(currentIndent)) else typeNode.render(currentIndent))
+      underlyingRendered + "?"
+}
+
+class BuiltInTypeNode extends TypeNode {
+  type: "unknown"|"nothing"|"module" = Undefined()
+  function render(_) = type
+}
+
+class StringLiteralTypeNode extends TypeNode {
+  value: String
+
+  function render(_) = pcfRenderer.renderValue(value)
+}
+
+class DeclaredTypeNode extends TypeNode {
+  name: QualifiedIdentifierNode
+
+  typeArguments: Listing<TypeNode>
+
+  local function renderTypeArguments(currentIndent: String) =
+    if (typeArguments.isEmpty) ""
+    else "<" + typeArguments.toList().map((t) -> t.render(currentIndent)).join(", ") + ">"
+
+  function render(currentIndent: String) = name.render(currentIndent) + renderTypeArguments(currentIndent)
+}
+
+class ConstrainedTypeNode extends TypeNode {
+  /// The underlying type
+  typeNode: TypeNode
+
+  constraints: Listing<ExpressionNode>
+
+  local function renderConstraints(currentIndent: String) =
+    "(" + constraints.toList().map((c) -> c.render(currentIndent)).join(", ") + ")"
+
+  function render(currentIndent: String) =
+    let (renderedUnderlyingType = if (typeNode is UnionTypeNode) parenthesize(typeNode.render(currentIndent)) else typeNode.render(currentIndent))
+      renderedUnderlyingType + renderConstraints(currentIndent)
+}
+
+class UnionTypeNode extends TypeNode {
+  members: Listing<TypeNode>
+
+  function render(currentIndent: String) =
+    let (childrenRendered = members.toList().map((t) -> t.render(currentIndent)))
+      // Multiline if length exceeds `maxColumnWidth` chars.
+      // If multiline, indent one level deeper.
+      if (childrenRendered.fold(0, (acc, elem) -> acc + elem.length) > maxColumnWidth)
+        "\n\(currentIndent + indent)" + childrenRendered.join("\n\(currentIndent + indent)|")
+      else
+        childrenRendered.join("|")
+}
+
+// TODO fill me in
+class FunctionTypeNode extends TypeNode {
+
+}

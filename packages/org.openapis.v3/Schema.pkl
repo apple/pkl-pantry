@@ -1,0 +1,383 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The Schema object as defined by the OpenAPI v3.0 Specification.
+///
+/// The [Schema] object allows the definition of input and output data types.
+/// These types can be objects, but also primitives and arrays.
+/// This object is an extended subset of
+/// [JSON Schema Specification Wright Draft 00](http://json-schema.org/specification-links.html#draft-5)
+/// (a.k.a. JSON Schema Draft 5).
+///
+/// For more information about the properties, see
+/// [JSON Schema Core](https://tools.ietf.org/html/draft-wright-json-schema-00) and
+/// [JSON Schema Validation](https://tools.ietf.org/html/draft-wright-json-schema-validation-00).
+///
+/// **NOTE**: OpenAPI v3.0's schema object is incompatible with OpenAPI v3.1's schema object.
+/// For example, [nullable] is valid on v3.0, but is invalid in v3.1.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#schema-object>
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module org.openapis.v3.Schema
+
+import "Schema.pkl"
+import "Reference.pkl"
+
+/// The basic type of the value represented by this schema.
+///
+/// If this property is not defined, the value may be of any type.
+type: ("string"|"number"|"integer"|"boolean"|"object"|"array")?
+
+/// An additional descriptor for the value represented by this schema.
+///
+/// OAS uses several known formats to define in fine detail the data type being used.
+///
+/// However, to support documentation needs, the [format] property is an open `string`-valued property, and can have any value.
+/// Formats such as `"email"`, `"uuid"`, and so on, *may* be used even though undefined by this specification.
+/// Types that are not accompanied by a `format` property follow the type definition in the JSON Schema. Tools that do
+/// not recognize a specific [format] *may* default to the [type] alone, as if the [format] is not specified.
+///
+/// The formats defined by the OAS are:
+///
+/// Common Name | [type] | [format] | Comments
+/// ----------- | ------ | -------- | --------
+/// integer | `integer` | `int32` | signed 32 bits
+/// long | `integer` | `int64` | signed 64 bits
+/// float | `number` | `float` | |
+/// double | `number` | `double` | |
+/// string | `string` | | |
+/// byte | `string` | `byte` | base64 encoded characters
+/// binary | `string` | `binary` | any sequence of octets
+/// boolean | `boolean` | | |
+/// date | `string` | `date` | As defined by `full-date` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+/// dateTime | `string` | `date-time` | As defined by `date-time` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+/// password | `string` | `password` | A hint to UIs to obscure input.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#dataTypeFormat>
+format: ("int32"|"int64"|"float"|"double"|"byte"|"binary"|"date"|"date-time"|"password"|String)?
+
+/// A short descriptor of this schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+title: String?
+
+/// A long descriptor of this schema. Maybe written in Markdown.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+description: String?
+
+/// Specifies a default value.
+///
+/// This value is not used to fill in missing values during the validation process.
+/// Non-validation tools such as documentation generators or form
+/// generators may use this value to give hints to users about how to use
+/// a value. However, [default] is typically used to express that if a
+/// value is missing, then the value is semantically the same as if the
+/// value was present with the default value. The value of [default]
+/// should validate against the schema in which it resides, but that isn't
+/// required.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+default: Any?
+
+/// Restricts the value specified by this schema to a fixed set of values.
+///
+/// It must be an array with at least one element, where each element is unique.
+///
+/// You can use enum even without a type, to accept values of different types.
+///
+/// Elements in the array might be of any type, including [null].
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values>
+enum: Listing<Any>(!isEmpty && isDistinct)?
+
+// === Numeric type validators ===
+
+/// Restricts to a number that is a multiple of this value.
+///
+/// It may be set to any positive number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples>
+multipleOf: Number(type is ("number"|"integer") && isPositive)?
+
+/// Represent a number that is greater or equal to this value.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+minimum: Number(type is ("number"|"integer"))?
+
+/// Represent a number that is greater than this value.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+exclusiveMinimum: Number(type is ("number"|"integer"))?
+
+/// Represent a number that is less than or equal to this value.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+maximum: Number(type is ("number"|"integer"))?
+
+/// Represent a number that is less than this value.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+exclusiveMaximum: Number(type is ("number"|"integer"))?
+
+// === String validators ===
+
+/// Represent a string that adheres to a regex pattern.
+///
+/// The regular expression must conform to [ECMA 262](https://262.ecma-international.org/5.1/#sec-7.8.5).
+///
+/// <https://json-schema.org/understanding-json-schema/reference/string.html#regular-expressions>
+pattern: String(isRegex && type == "string")?
+
+/// Represent a string that has a minimum length.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+minLength: UInt(type == "string")?
+
+/// Represent a string that has a maximum length.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+maxLength: UInt(type == "string")?
+
+// == Array validators ==
+
+/// Represent that each item in an array must conform to the specified schema.
+///
+/// If the type is array, [items] must be specified.
+items: (Schema|Reference)(type == "array")?
+
+/// Represent an array that has a minumum length.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+minItems: UInt(type == "array")?
+
+/// Represent an array that has a maximum length.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+maxItems: UInt(type == "array")?
+
+/// Represent an array where each item is unique.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#uniqueness>
+uniqueItems: Boolean?
+
+// == Objects ==
+
+/// Represent an object that must have at minimum a certain number of properties.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#size>
+minProperties: UInt(type == "object")?
+
+/// Represent an object that must have at maximum a certain number of properties.
+maxProperties: UInt(type == "object")?
+
+/// Represent an object that have properties that conform to a
+/// certain schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#properties>
+properties: Mapping<String, PropertySchema|Reference>(type == "object")?
+
+/// Represent an object that has additional properties.
+///
+/// The value of [additionalProperties] is a schema that
+/// will be used to validate any properties in the instance that are not
+/// matched by [properties]. Setting the
+/// [additionalProperties] schema to [false] means no additional
+/// properties will be allowed.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#additional-properties>
+additionalProperties: (Boolean|PropertySchema|Reference)(type == "object")?
+
+/// Represent an object that has certain properties defined on it.
+///
+/// By default, no properties are required.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#required-properties>
+required: Listing<String>(type == "object", isDistinct)?
+
+// == Composition ==
+
+/// Represent a value that must match against **exactly** one of the subschemas.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#oneof>
+oneOf: Listing<Schema|Reference>(length > 0)?
+
+/// Represent a value that must match ay least one of the subschemas.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#anyof>
+anyOf: Listing<Schema|Reference>(length > 0)?
+
+/// Represent a value that must match **all** of the subschemas.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#allof>
+allOf: Listing<Schema|Reference>(length > 0)?
+
+/// Represent a value that must not match the given schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#not>
+not: (Schema|Reference)?
+
+// == OpenAPI v3.0 specific fields ==
+
+/// Represent that the value may optionally be [null].
+///
+/// Default value is [false].
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+nullable: Boolean?
+
+/// Helps inform of alternative schemas.
+///
+/// When request bodies or response payloads may be one of a number of different
+/// schemas, a discriminator object can be used to aid in serialization,
+/// deserialization, and validation. The discriminator is a specific object in
+/// a schema which is used to inform the consumer of the specification of an
+/// alternative schema based on the value associated with it.
+///
+/// When using the discriminator, inline schemas will not be considered.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#discriminator-object>
+discriminator: Discriminator?
+
+/// Declares the property as "read only".
+///
+/// Relevant only for Schema [properties] definitions. This means that
+/// it *may* be sent as part of a response but *should not* be sent as part
+/// of the request. If the property is marked as [readOnly] and is in the
+/// [required] list, [required] only effects the response. A property
+/// *may not* be marked as both [readOnly] and [writeOnly].
+///
+/// Default value is [false].
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+readOnly: Boolean?
+
+/// Declares the property as "write only".
+///
+/// This is relevant only for Schema [properties] definitions. Therefore, it
+/// it *may* be sent as part of a response but *should not* be sent as part
+/// If the property is marked as [writeOnly] being [true] and is in the [required] list,
+/// the [required] will take effect on the request only. A property *may not* be marked
+/// as both [readOnly] and [writeOnly] being [true].
+///
+/// Default value is [false].
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+writeOnly: Boolean(implies(readOnly != true))?
+
+/// Additional external documentation for this schema.
+externalDocs: ExternalDocumentation?
+
+/// Indicates that this property is deprecated.
+///
+/// Default value is [false].
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+deprecated: Boolean?
+
+/// A free-form property to include an example of an instance for this schema.
+///
+/// To represent examples that cannot be naturally represented in JSON or YAML, a string
+/// value can be used to contain the example with escaping where necessary.
+example: Any?
+
+/// Helps inform of alternative schemas.
+///
+/// When request bodies or response payloads may be one of a number of different
+/// schemas, a discriminator object can be used to aid in serialization,
+/// deserialization, and validation. The discriminator is a specific object in
+/// a schema which is used to inform the consumer of the specification of an
+/// alternative schema based on the value associated with it.
+///
+/// When using the discriminator, inline schemas will not be considered.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#discriminator-object>
+class Discriminator {
+  /// The name of the property in the payload that holds the discriminator value.
+  propertyName: String
+
+  /// A mapping from payload values to schema names or references.
+  mapping: Mapping<String, String>?
+}
+
+/// Reference to an external resource for extended documentation.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject>
+class ExternalDocumentation {
+  /// A short description of the target documentation.
+  ///
+  /// [CommonMark syntax](https://spec.commonmark.org) *may* be used for rich text representation.
+  description: String?
+
+  /// The URL for the target documentation.
+  ///
+  /// Value *must* be in the format of a URL.
+  uri: Uri
+}
+
+/// A metadata object that allows for more fine-tuned XML model definitions.
+///
+/// When using arrays, XML element names are not inferred (for singular/plural
+/// forms) and the [name] property **should** be used to add that information.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#xmlObject>
+class Xml {
+  /// Replaces the name of the element/attribute used for the described schema property.
+  ///
+  /// When defined within [items], it affects the name of the individual XML elements within the list.
+  /// When defined alongside [type] being `array` (outside the [items]), it affects the wrapping element
+  /// and only if [wrapped] is [true]. If [wrapped] is [false], it is ignored.
+  name: String?
+
+  /// The URI of the namespace definition. Value MUST be in the form of an absolute URI.
+  namespace: Uri?
+
+  /// The prefix used for the [name].
+  prefix: String?
+
+  /// Declares whether the property definition translates to an attribute instead of an element.
+  ///
+  /// Default value is [false].
+  attribute: Boolean?
+
+  /// Signifies whether the array is wrapped (for example, `<books><book/><book/></books>`)
+  /// or unwrapped (`<book/><book/>`).
+  ///
+  /// *May* be used only for an array definition. Default value is [false].
+  ///
+  /// The definition takes effect only when defined alongside [type] being `array` (outside the items).
+  wrapped: Boolean?
+}
+
+/// Property schemas are [Schema]s that optionally include XML metadata.
+class PropertySchema extends Schema {
+  /// Adds additional metadata to describe the XML representation of this property.
+  ///
+  /// This *may* be used only on properties schemas. It has no effect on root schemas.
+  xml: Xml?
+}
+
+hidden renderers: Mapping<String, ValueRenderer> = new {
+  ["json"] = new JsonRenderer {}
+  ["yaml"] = new YamlRenderer {}
+  ["pcf"] = new PcfRenderer {}
+}
+
+output {
+  // It's pretty common to have OpenAPI written in YAML. Therefore, we support the YAML format too.
+  renderer = let (format = read?("prop:pkl.outputFormat") ?? "json")
+      if (renderers.containsKey(format))
+        renderers[format]
+      else throw("Unsupported output format: `\(format)`. Supported formats are `json`, `yaml` and `pcf`.")
+}
