@@ -25,7 +25,7 @@ import "Schema.pkl"
 ///
 /// Example:
 /// ```
-/// import "package://artifacts.apple.com/pkl/pkl/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
+/// import "package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
 ///
 /// class Person {
 ///   /// The person's legal name.
@@ -56,7 +56,7 @@ import "Schema.pkl"
 /// Known limitations:
 ///   * This generator cannot generate schemas that contain recursive descriptors,
 ///     because a single [Schema] lacks the ability to reuse definitions.
-///   * [Type Constraints](https://pages.github.pie.apple.com/pkl/main/current/language-reference/index.html#type-constraints)
+///   * [Type Constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints)
 ///     do not get encoded into the [Schema]. The only exceptions are well-known type constraints for
 ///     numbers (for example, [Int8] and [UInt8]).
 function generate(value: Module|Class|TypeAlias): Schema =
@@ -76,7 +76,7 @@ function generate(value: Module|Class|TypeAlias): Schema =
 ///
 /// Example:
 /// ```
-/// import "package://artifacts.apple.com/pkl/pkl/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
+/// import "package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
 ///
 /// k8sGenerator = new SchemaGenerator {
 ///   converters {

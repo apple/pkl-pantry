@@ -34,14 +34,18 @@ jobs:
               if [[ -d "$dir" ]]
               then
                 pkg=$(basename "$dir")
-                echo -n "> Releasing $pkg at SHA1 ${CIRCLE_SHA1}..."
-                gh release create "$pkg" \
-                  --title "$pkg" \
-                  --target "${CIRCLE_SHA1}" \
-                  --repo "$REPO" \
-                  --notes "Release of $pkg" \
-                  "$dir"/*
-                echo "DONE"
+                if gh release view "$pkg" ; then
+                  echo "Package $pkg already published"
+                else
+                  echo -n "> Releasing $pkg at SHA1 ${CIRCLE_SHA1}..."
+                  gh release create "$pkg" \
+                    --title "$pkg" \
+                    --target "${CIRCLE_SHA1}" \
+                    --repo "$REPO" \
+                    --notes "Release of $pkg" \
+                    "$dir"/*
+                  echo "DONE"
+                fi
               else
                 echo "> SKIPPING $dir; not a directory"
               fi

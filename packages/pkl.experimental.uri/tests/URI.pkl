@@ -25,7 +25,7 @@ local nums = "0123456789"
 
 facts {
   ["encode"] {
-    URI.encode("https://pcl.apple.com/some path") == "https://pcl.apple.com/some%20path"
+    URI.encode("https://example.com/some path") == "https://example.com/some%20path"
     URI.encode(alphaLower) == alphaLower
     URI.encode(alphaUpper) == alphaUpper
     URI.encode(nums) == nums
@@ -36,7 +36,7 @@ facts {
     URI.encode("🏀") == "%F0%9F%8F%80"
   }
   ["encodeComponent"] {
-    URI.encodeComponent("https://pcl.apple.com/some path") == "https%3A%2F%2Fpcl.apple.com%2Fsome%20path"
+    URI.encodeComponent("https://example.com/some path") == "https%3A%2F%2Fexample.com%2Fsome%20path"
     URI.encode(alphaLower) == alphaLower
     URI.encode(alphaUpper) == alphaUpper
     URI.encode(nums) == nums
@@ -53,19 +53,19 @@ facts {
     URI.percentDecode("%2Fbar%2Fbaz") == "/bar/baz"
   }
   ["parse"] {
-    local uri1 = URI.parse("https://www.apple.com")
+    local uri1 = URI.parse("https://www.example.com")
     uri1 == new URI {
       scheme = "https"
-      host = "www.apple.com"
+      host = "www.example.com"
       path = ""
     }
     uri1.pathSegments == List("")
 
-    local uri2 = URI.parse("https://bilbo@www.apple.com:1234/my/path?search=mysearch#fragment-value")
+    local uri2 = URI.parse("https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value")
     uri2 == new URI {
       scheme = "https"
       userInfo = "bilbo"
-      host = "www.apple.com"
+      host = "www.example.com"
       port = 1234
       path = "/my/path"
       query = "search=mysearch"
@@ -73,35 +73,35 @@ facts {
     }
     uri2.pathSegments == List("my", "path")
 
-    local uri3 = URI.parse("pcl:base?mybase")
+    local uri3 = URI.parse("pkl:base?mybase")
     uri3 == new URI {
-      scheme = "pcl"
+      scheme = "pkl"
       path = "base"
       query = "mybase"
     }
     uri3.pathSegments == List("base")
 
-    local uri4 = URI.parse("pcl:base?mybase#fragment")
+    local uri4 = URI.parse("pkl:base?mybase#fragment")
     uri4 == new URI {
-      scheme = "pcl"
+      scheme = "pkl"
       path = "base"
       query = "mybase"
       fragment = "fragment"
     }
     uri4.pathSegments == List("base")
 
-    local uri5 = URI.parse("https://www.apple.com/my%20path")
+    local uri5 = URI.parse("https://www.example.com/my%20path")
     uri5 == new URI {
       scheme = "https"
-      host = "www.apple.com"
+      host = "www.example.com"
       path = "/my%20path"
     }
     uri5.pathSegments == List("my path")
 
-    local uri6 = URI.parse("https://www.apple.com/search?q=%F0%9F%8F%80")
+    local uri6 = URI.parse("https://www.example.com/search?q=%F0%9F%8F%80")
     uri6 == new URI {
       scheme = "https"
-      host = "www.apple.com"
+      host = "www.example.com"
       path = "/search"
       query = "q=%F0%9F%8F%80"
     }
@@ -144,9 +144,9 @@ facts {
     }
     uri11.pathSegments == List("..", "bar", "baz")
 
-    local uri12 = URI.parse("//www.apple.com/foo")
+    local uri12 = URI.parse("//www.example.com/foo")
     uri12 == new URI {
-      host = "www.apple.com"
+      host = "www.example.com"
       path = "/foo"
     }
     uri12.pathSegments == List("foo")
@@ -159,13 +159,13 @@ facts {
     uri13.pathSegments == List("")
   }
   ["toString()"] {
-    URI.parse("https://www.apple.com").toString() == "https://www.apple.com"
-    URI.parse("https://bilbo@www.apple.com:1234/my/path?search=mysearch#fragment-value").toString() == "https://bilbo@www.apple.com:1234/my/path?search=mysearch#fragment-value"
-    URI.parse("pcl:base?mybase").toString() == "pcl:base?mybase"
-    URI.parse("pcl:base?mybase#fragment").toString() == "pcl:base?mybase#fragment"
-    URI.parse("https://www.apple.com/my%20path").toString() == "https://www.apple.com/my%20path"
-    URI.parse("https://www.apple.com/search?q=%F0%9F%8F%80").toString() == "https://www.apple.com/search?q=%F0%9F%8F%80"
-    URI.parse("pcl:%F0%9F%8F%80#myfragment").toString() == "pcl:%F0%9F%8F%80#myfragment"
+    URI.parse("https://www.example.com").toString() == "https://www.example.com"
+    URI.parse("https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value").toString() == "https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value"
+    URI.parse("pkl:base?mybase").toString() == "pkl:base?mybase"
+    URI.parse("pkl:base?mybase#fragment").toString() == "pkl:base?mybase#fragment"
+    URI.parse("https://www.example.com/my%20path").toString() == "https://www.example.com/my%20path"
+    URI.parse("https://www.example.com/search?q=%F0%9F%8F%80").toString() == "https://www.example.com/search?q=%F0%9F%8F%80"
+    URI.parse("pkl:%F0%9F%8F%80#myfragment").toString() == "pkl:%F0%9F%8F%80#myfragment"
     URI.parse("file:/my%20file.txt").toString() == "file:/my%20file.txt"
     URI.parse("file:///my%20file.txt").toString() == "file:///my%20file.txt"
   }
@@ -186,11 +186,11 @@ facts {
       == "schemey:/first/"
     URI.parse("schemey:/first/leaf").resolve("./second").toString()
       == "schemey:/first/second"
-    URI.parse("https://www.apple.com").resolve("some/relative/path").toString()
-      == "https://www.apple.com/some/relative/path"
-    URI.parse("https://www.apple.com").resolve("some/relative/path").toString()
-      == "https://www.apple.com/some/relative/path"
-    URI.parse("https://www.apple.com").resolve("//www.icloud.com/some/relative/path").toString()
-      == "https://www.icloud.com/some/relative/path"
+    URI.parse("https://www.example.com").resolve("some/relative/path").toString()
+      == "https://www.example.com/some/relative/path"
+    URI.parse("https://www.example.com").resolve("some/relative/path").toString()
+      == "https://www.example.com/some/relative/path"
+    URI.parse("https://www.example.com").resolve("//foo.com/some/relative/path").toString()
+      == "https://foo.com/some/relative/path"
   }
 }

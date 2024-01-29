@@ -17,7 +17,7 @@ import "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0#/toml.pkl"
 
 === In a project
 
-If using a link:https://pkl.apple.com/main/current/language-reference/index.html#projects[project], add a package as a dependency:
+If using a link:https://pkl-lang.org/main/current/language-reference/index.html#projects[project], add a package as a dependency:
 
 [source,pkl]
 ----
@@ -28,7 +28,7 @@ dependencies {
 }
 ----
 
-=== Documentation
+== Documentation
 
 The documentation for all packages published here can be found in our
 link:https://pkl-lang.org/package-docs[Package Docs] website.

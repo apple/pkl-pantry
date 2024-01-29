@@ -10,10 +10,10 @@ examples {
       relabel_configs:
       - regex: .*?
     remote_write:
-    - url: https://fake-endpoint.apple.com/remote_write
+    - url: https://example.com/remote_write
       sigv4:
         region: us-west-2
-    
+
     """
   }
 }

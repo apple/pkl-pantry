@@ -119,7 +119,7 @@ class UInt128 {
   }
 
   /// Generate a sequence of [UInt128] between this integer and [other], inclusive.
-  /// Behaves like [pcl.base.IntSeq].
+  /// Behaves like [IntSeq].
   function seq(other: UInt128): Listing<UInt128> =
     if (self.hihi == other.hihi)
       if (self.hilo == other.hilo)

@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 /// We sell IP addresses and IP address accessories
 /// This module contains types and functions for handling network (IP and MAC) addresses
-@ModuleInfo { minPklVersion = "0.24.1" }
+@ModuleInfo { minPklVersion = "0.25.0" }
 module pkl.experimental.net.net
 
 import "pkl:math"

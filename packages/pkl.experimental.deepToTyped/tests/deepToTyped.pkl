@@ -143,7 +143,6 @@ local class Storage {
   size: DataSize
 }
 
-// TODO (Pkl migrator): Unsafe property reference: https://pcl.apple.com/main/current/release-notes/0.24.html#class-and-annotation-scoping-changes
 facts {
   ["Basic types"] {
     t.apply(Int, 1) == 1
