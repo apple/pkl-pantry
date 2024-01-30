@@ -49,7 +49,6 @@ jobs {
         command = #"""
           if [[ -d build/releases && -n "$(ls -A build/releases)" ]]
           then
-            export GH_DEBUG=1
             REPO="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
             for dir in build/releases/*
             do
@@ -59,6 +58,7 @@ jobs {
                 if gh release view "$pkg" ; then
                   echo "Package $pkg already published"
                 else
+                  # TODO we can be kinder to GitHub by querying once for all releases.
                   echo -n "> Releasing $pkg at SHA1 ${CIRCLE_SHA1}..."
                   gh release create "$pkg" \
                     --title "$pkg" \

@@ -48,8 +48,8 @@ package {
   }
   description = myModule.docComment
   issueTracker = "https://github.com/apple/pkl-pantry/issues"
-  sourceCode = "https://github.com/apple/pkl-pantry/tree/main/packages/\(name)"
-  sourceCodeUrlScheme = "https://github.com/apple/pkl-pantry/blob/main/packages/\(name)%{path}#L%{line}-%{endLine}"
+  sourceCode = "https://github.com/apple/pkl-pantry/tree/\(name)@\(version)/packages/\(name)"
+  sourceCodeUrlScheme = "https://github.com/apple/pkl-pantry/blob/\(name)@\(version)/packages/\(name)%{path}#L%{line}-%{endLine}"
 }
 
 tests {
