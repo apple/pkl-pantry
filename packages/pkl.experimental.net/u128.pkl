@@ -16,7 +16,7 @@
 /// Who was it that said we'd never need more than 64 bits??
 /// Some tasks work best with unsigned 128-bit integers, eg. working with IPv6 addresses.
 /// This module implements a [UInt128] type composed out of 4 [UInt]s that can handle limited bit-wise and arithmetic operations.
-/// NB: this task is a better fit for [UInt32], but it cannot be used here as we rely on shifting bits off the significant end and Pcl's implementation doesn't permit this
+/// NB: this task is a better fit for [UInt32], but it cannot be used here as we rely on shifting bits off the significant end and Pkl's implementation doesn't permit this
 module pkl.experimental.net.u128
 
 import "pkl:math"
@@ -81,7 +81,7 @@ class UInt128 {
   function shl(n: UInt): UInt128 =
     if (n == 0) self
     else if (n > 32) self.shl(32).shl(n - 32) // just recurse, 5head!
-    // not only is this n == 32 case more efficient, but it protects us from the fact that Pcl has no UInt64 type
+    // not only is this n == 32 case more efficient, but it protects us from the fact that Pkl has no UInt64 type
     // we would be in for a bad time if we shifted a [math.maxUInt32] left 32 bits into the sign bit of [Int]
     else if (n == 32) UInt128(self.hilo, self.lohi, self.lolo, 0)
     else UInt128(
