@@ -1,0 +1,14 @@
+amends "../basePklProject.pkl"
+
+dependencies {
+  ["k8s"] {
+    uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.0"
+  }
+}
+
+package {
+  version = "1.0.0"
+  description = """
+    Extensions of the `io.k8s` standard Kubernetes templates.
+    """
+}

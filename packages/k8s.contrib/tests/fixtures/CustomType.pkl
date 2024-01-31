@@ -1,0 +1,15 @@
+module CustomType
+
+extends "@k8s/K8sResource.pkl"
+
+fixed apiVersion = "v1"
+
+fixed kind = "Custom"
+
+spec: CustomSpec?
+
+class CustomSpec {
+  field1: String?
+
+  field2: String?
+}

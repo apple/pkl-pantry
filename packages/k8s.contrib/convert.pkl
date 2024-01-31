@@ -1,0 +1,294 @@
+/// Converts a Kubernetes YAML manifest file to Pkl.
+///
+/// Evaluating the generated Pkl file will output (an equivalent of) the original YAML.
+/// Evaluating multiple generated Pkl files at once will output a single YAML stream.
+///
+/// For a way to manage Kubernetes manifests across applications, environments, and clusters,
+/// see [AppEnvCluster.pkl](https://pkl-lang.org/package-docs/k8s.contrib/k8s.contrib.AppEnvCluster/index.html).
+///
+/// ## Prerequisites
+///
+/// * The `pkl` command is [installed](https://pkl-lang.org/main/current/pkl-cli/index.html#installation).
+///
+/// ## Usage
+///
+/// To convert _deployment.yml_ to _deployment.pkl_, run:
+/// ```
+/// pkl eval -p input=deployment.yml \
+///     -o deployment.pkl \
+///     package://pkl.pkl-lang.org/pkl-pantry/k8s.contrib@<version>#/convert.pkl
+/// ```
+///
+/// To validate the generated Pkl file, run `pkl deployment.pkl`.
+///
+/// ## Known limitations
+///
+/// * YAML comments are not preserved.
+/// * YAML aliases are inlined.
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module k8s.contrib.convert
+
+import "pkl:reflect"
+import "pkl:yaml"
+import "@k8s/K8sObject.pkl"
+import "@k8s/K8sResource.pkl"
+import "@k8s/api/core/v1/ResourceRequirements.pkl"
+import "@k8s/k8sSchema.pkl"
+
+/// The Kubernetes resources to convert.
+///
+/// Each resource is an object of type [Mapping] as produced by [yaml.Parser].
+///
+/// Defaults to the resources contained in the YAML file passed with `-p input=path/to/file.yml`.
+resourcesToConvert: List<Mapping> =
+  new yaml.Parser { useMapping = true }
+    .parseAll(read(inputUri))
+    .filterNonNull() as List<Mapping>
+
+/// Converters to be sequentially applied to [resourcesToConvert].
+///
+/// The default [resourceConverters] suffice to convert standard Kubernetes resources.
+resourceConverters: Mapping<String, (Mapping) -> Any> = new {
+  ["convert resource to conform to Pkl template"] = (resource) ->
+      let (template = getResourceTemplate(resource))
+        let (templateType = reflect.DeclaredType(reflect.Module(template).moduleClass))
+          convert(resource, templateType)
+  ["remove kind and apiVersion properties (set by Pkl template)"] = (resource) ->
+    resource.toMap().remove("apiVersion").remove("kind") |> toDynamic
+}
+
+/// Resource templates to be used for converting custom resources.
+///
+/// The first [String] key is the resource's `kind`, the second its `apiVersion`.
+///
+/// Example:
+/// ```
+/// customResourceTemplates {
+///   ["Custom"] {
+///      ["v1"] = import("Custom.pkl")
+///   }
+/// }
+/// ```
+customResourceTemplates: Mapping<String, Mapping<String, K8sResource>>
+
+function getResourceTemplate(resource: Mapping): K8sResource =
+  let (kind = resource["kind"])
+    let (apiVersion = resource["apiVersion"])
+      doGetResourceTemplate(kind, apiVersion, k8sSchema.resourceTemplates) ??
+        doGetResourceTemplate(kind, apiVersion, customResourceTemplates) ??
+          throw("Cannot find a template for resource of kind `\(kind)`.")
+
+function getResourceTemplateUri(resource: Mapping): String =
+  reflect.Module(getResourceTemplate(resource)).uri
+
+// below here is implementation
+
+input = read("prop:input")
+
+local inputUri =
+  if (input.startsWith(Regex(#"\w+:"#))) input      // absolute URI
+  else if (input.startsWith("/")) "file://\(input)" // absolute file path
+  else "file://\(read("env:PWD"))/\(input)"         // relative file path
+
+function resourceConverterFn(resource) =
+  resourceConverters.fold(resource, (acc, _, f) -> f.apply(acc))
+
+local typedClass = reflect.Class(Typed)
+
+/// Preserve entry key `"default"` as property `_____default_____`, because `default` conflicts with
+/// built-in [Dynamic.default].
+///
+/// We'll turn this back when rendering (see [renderConvertedValue]).
+local toDynamic: (Mapping|Map) -> Dynamic = (input) ->
+  if (input is Mapping) toDynamic.apply(input.toMap())
+  else
+    (input.toDynamic()) {
+      when (input.containsKey("default")) {
+        _____default_____ = input["default"]
+      }
+    }
+
+/// Best effort conversion for union types.
+///
+/// - If type is not a [Mapping] or [Listing], render as-is.
+/// - If type includes [Listing] and object is [Listing], render as a [Listing].
+/// - If type includes a [Mapping], render as a [Mapping].
+/// - Otherwise, use the first remaining alternative.
+local function convertUnion(value: Any, type: reflect.UnionType): Any =
+  if (!(value is Mapping|Listing))
+    value
+  else
+    let (listingType = type.members.findOrNull((elem) -> elem is reflect.DeclaredType && elem.referent.reflectee == Listing))
+      let (mappingType = type.members.findOrNull((elem) -> elem is reflect.DeclaredType && elem.referent.reflectee == Mapping))
+        if (value is Listing && listingType != null)
+          convert(value, listingType)
+        else if (mappingType != null)
+          convert(value, mappingType)
+        else
+          let (otherType = type.members.find((elem) -> elem != listingType && elem != mappingType))
+            convert(value, otherType)
+
+local function convert(value: Any, type: reflect.Type?): Any =
+  if (type is reflect.NullableType)
+    convert(value, type.member)
+  else if (type is reflect.DeclaredType)
+    let (referent = type.referent)
+      if (value is Listing && referent.reflectee == Listing)
+        new Listing {
+          for (e in value) {
+            convert(e, type.typeArguments[0])
+          }
+        }
+      else if (value is Mapping && referent.reflectee == Mapping)
+        new Mapping {
+          for (k, v in value) {
+            [k] = convert(v, type.typeArguments[1])
+          }
+        }
+      else if (value is Mapping && referent.reflectee == ResourceRequirements.getClass())
+        new Dynamic {
+          when (value.containsKey("requests")) {
+            requests {
+              for (k, v in value["requests"]) {
+                [k] = convertDataSize(v) ?? v
+              }
+            }
+          }
+          when (value.containsKey("limits")) {
+            limits {
+              for (k, v in value["limits"]) {
+                [k] = convertDataSize(v) ?? v
+              }
+            }
+          }
+        }
+      else if (value is Mapping && referent is reflect.Class && referent.isSubclassOf(typedClass))
+        value
+          .toMap()
+          .map((k, v) -> Pair(k, convert(v, referent.properties.getOrNull(k)?.type))) |> toDynamic
+      else value
+  else if (type is reflect.UnionType)
+    convertUnion(value, type)
+  else if (value is Mapping) value |> toDynamic
+  else value
+
+local function doGetResourceTemplate(kind: String, apiVersion: String, templatesByKindAndVersion: Mapping): K8sResource? =
+  let (templatesByVersion: Mapping? = templatesByKindAndVersion.getOrNull(kind))
+    if (templatesByVersion == null)
+      null
+    else
+      let (template = templatesByVersion.getOrNull(apiVersion))
+        if (template != null)
+          template as K8sResource
+        else
+          // TODO: toMap() unnecessarily downloads templates
+          throw("""
+            Cannot find a pantry template for version `\(apiVersion)` of resource `\(kind)`.
+            Available versions:
+            \(templatesByVersion.keys.join("\n"))
+            """)
+
+// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory
+local function convertDataSize(input: K8sObject.Quantity): RenderDirective? =
+  let (inputString: String = if (input is Int|Float|DataSize) input.toString() else input as String)
+    let (matches = Regex(#"^(\d+(?:\.\d+)?)(k|Ki|Mi?|Gi?|Ti?|Pi?|Ei?)$"#).findMatchesIn(inputString))
+      if (matches.isEmpty)
+        null
+      else
+        let (groups = matches[0].groups)
+          let (value = groups[1].value)
+            let (unit = groups[2].value)
+              // We don't have exabytes/exbibytes in Pkl, so convert down to peta/pebi
+              let (pklValue = if (unit.startsWith("E")) value.toInt() * 1000 else value)
+                let (pklUnit = if (unit.startsWith("E")) unit.replaceFirst("E", "P") else unit)
+                  new RenderDirective {
+                    text = "= \(pklValue).\(pklUnit.toLowerCase())b"
+                  }
+
+// Collects all imports,
+// assigning unique import aliases if multiple versions of the same kind are used.
+local importsByKindAndVersion: Map<String, Map<String, ImportInfo>> =
+  resourcesToConvert.fold(Map(), (imports, res) ->
+    let (importsByVersion = imports.getOrNull(res["kind"]))
+      if (importsByVersion == null)
+        imports.put(
+          res["kind"],
+          Map(
+            res["apiVersion"],
+            new ImportInfo {
+              resource = res
+              name = res["kind"]
+              uri = getResourceTemplateUri(res)
+              isAliased = false
+            }))
+      else if (importsByVersion.containsKey(res["apiVersion"]))
+        imports
+      else if (importsByVersion.length == 1)
+        let (first = importsByVersion.values.single.resource)
+          imports.put(
+            res["kind"],
+            Map(
+              // for consistency, also used aliased name for first import of this kind
+              first["apiVersion"], createAliasedInfo(first),
+              res["apiVersion"], createAliasedInfo(res)))
+      else
+        imports.put(
+          res["kind"],
+          importsByVersion
+            .put(res["apiVersion"], createAliasedInfo(res))))
+
+local function createAliasedInfo(res: Mapping): ImportInfo = new {
+  resource = res
+  name = "\(res["kind"])\(res["apiVersion"].split("/").last.capitalize())"
+  uri = getResourceTemplateUri(res)
+  isAliased = true
+}
+
+local class ImportInfo {
+  resource: Mapping
+  name: String
+  uri: String
+  isAliased: Boolean
+}
+
+local function renderConvertedValue(value: Any) =
+  new PcfRenderer {}.renderValue(value).replaceAll("_____default_____", "default")
+
+output {
+  local importInfos = importsByKindAndVersion.values
+    .flatMap((it) -> it.values)
+    .sortWith((info1, info2) -> info1.uri < info2.uri)
+  local textBuffer: Listing<String> = new {
+    "import \"\(reflect.Module(K8sResource).uri)\"\n"
+    for (importInfo in importInfos) {
+      if (importInfo.isAliased)
+        "import \"\(importInfo.uri)\" as \(importInfo.name)\n"
+      else
+        "import \"\(importInfo.uri)\"\n"
+    }
+    "\n"
+    "resources: Listing<K8sResource> = new {"
+    for (resource in resourcesToConvert) {
+      "\n"
+      "  new \(importsByKindAndVersion[resource["kind"]][resource["apiVersion"]].name) "
+      // would be good to be able to set base indent
+      for (lineIdx, line in renderConvertedValue(resourceConverterFn(resource)).split("\n")) {
+        when (lineIdx != 0) {
+          "  "
+        }
+        line
+        "\n"
+      }
+    }
+    "}\n\n"
+      """
+      output {
+        value = resources
+        renderer = (K8sResource.output.renderer as YamlRenderer) {
+          isStream = true
+        }
+      }
+      """
+  }
+  text = textBuffer.toList().join("")
+}

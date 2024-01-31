@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Custom
+metadata:
+  name: my-custom-type
+spec:
+  field1: foo
+  field2: bar
