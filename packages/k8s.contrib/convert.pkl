@@ -1,3 +1,4 @@
+// TODO(oss): confirm link in line 8
 /// Converts a Kubernetes YAML manifest file to Pkl.
 ///
 /// Evaluating the generated Pkl file will output (an equivalent of) the original YAML.
@@ -181,7 +182,6 @@ local function doGetResourceTemplate(kind: String, apiVersion: String, templates
         if (template != null)
           template as K8sResource
         else
-          // TODO: toMap() unnecessarily downloads templates
           throw("""
             Cannot find a pantry template for version `\(apiVersion)` of resource `\(kind)`.
             Available versions:

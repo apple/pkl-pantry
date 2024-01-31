@@ -29,29 +29,10 @@ local function doConvert(uri: String) =
   })
     converter.output.text.replaceAll(absolutePathToPklPantry, "$pklPantryBaseDir/")
 
-examples {
-  ["cassandra.yml"] {
-    doConvert("fixtures/cassandra.yml")
-  }
-  ["glusterfs.yml"] {
-    doConvert("fixtures/glusterfs.yml")
-  }
-  ["guestbook.yml"] {
-    doConvert("fixtures/guestbook.yml")
-  }
-  ["multipleVersions.yml"] {
-    doConvert("fixtures/multipleVersions.yml")
-  }
-  ["wordpress.yml"] {
-    doConvert("fixtures/wordpress.yml")
-  }
-  ["crds"] {
-    doConvert("fixtures/crds.yml")
-  }
-  ["custom"] {
-    doConvert("fixtures/custom.yml")
-  }
-  ["datasizes"] {
-    doConvert("fixtures/datasizes.yml")
+examples = new {
+  for (file, _ in read*("fixtures/*.yml")) {
+    [file.replaceAll(Regex(".*fixtures/"), "")] {
+      doConvert(file)
+    }
   }
 }
