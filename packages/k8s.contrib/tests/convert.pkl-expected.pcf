@@ -1,0 +1,1171 @@
+examples {
+  ["cassandra.yml"] {
+    """
+    import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+    import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/apps/v1/StatefulSet.pkl"
+    import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Service.pkl"
+    import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/storage/v1/StorageClass.pkl"
+
+    resources: Listing<K8sResource> = new {
+      new Service {
+        metadata {
+          labels {
+            ["app"] = "cassandra"
+          }
+          name = "cassandra"
+        }
+        spec {
+          clusterIP = "None"
+          ports {
+            new {
+              port = 9042
+            }
+          }
+          selector {
+            ["app"] = "cassandra"
+          }
+        }
+      }
+
+      new StatefulSet {
+        metadata {
+          name = "cassandra"
+          labels {
+            ["app"] = "cassandra"
+          }
+        }
+        spec {
+          serviceName = "cassandra"
+          replicas = 3
+          selector {
+            matchLabels {
+              ["app"] = "cassandra"
+            }
+          }
+          template {
+            metadata {
+              labels {
+                ["app"] = "cassandra"
+              }
+            }
+            spec {
+              terminationGracePeriodSeconds = 1800
+              containers {
+                new {
+                  name = "cassandra"
+                  image = "gcr.io/google-samples/cassandra:v14"
+                  imagePullPolicy = "Always"
+                  ports {
+                    new {
+                      containerPort = 7000
+                      name = "intra-node"
+                    }
+                    new {
+                      containerPort = 7001
+                      name = "tls-intra-node"
+                    }
+                    new {
+                      containerPort = 7199
+                      name = "jmx"
+                    }
+                    new {
+                      containerPort = 9042
+                      name = "cql"
+                    }
+                  }
+                  resources {
+                    requests {
+                      ["cpu"] = "500m"
+                      ["memory"] = 1.gib
+                    }
+                    limits {
+                      ["cpu"] = "500m"
+                      ["memory"] = 1.gib
+                    }
+                  }
+                  securityContext {
+                    capabilities {
+                      add {
+                        "IPC_LOCK"
+                      }
+                    }
+                  }
+                  lifecycle {
+                    preStop {
+                      exec {
+                        command {
+                          "/bin/sh"
+                          "-c"
+                          "nodetool drain"
+                        }
+                      }
+                    }
+                  }
+                  env {
+                    new {
+                      name = "MAX_HEAP_SIZE"
+                      value = "512M"
+                    }
+                    new {
+                      name = "HEAP_NEWSIZE"
+                      value = "100M"
+                    }
+                    new {
+                      name = "CASSANDRA_SEEDS"
+                      value = "cassandra-0.cassandra.default.svc.cluster.local"
+                    }
+                    new {
+                      name = "CASSANDRA_CLUSTER_NAME"
+                      value = "K8Demo"
+                    }
+                    new {
+                      name = "CASSANDRA_DC"
+                      value = "DC1-K8Demo"
+                    }
+                    new {
+                      name = "CASSANDRA_RACK"
+                      value = "Rack1-K8Demo"
+                    }
+                    new {
+                      name = "CASSANDRA_SEED_PROVIDER"
+                      value = "io.k8s.cassandra.KubernetesSeedProvider"
+                    }
+                    new {
+                      name = "POD_IP"
+                      valueFrom {
+                        fieldRef {
+                          fieldPath = "status.podIP"
+                        }
+                      }
+                    }
+                  }
+                  readinessProbe {
+                    exec {
+                      command {
+                        "/bin/bash"
+                        "-c"
+                        "/ready-probe.sh"
+                      }
+                    }
+                    initialDelaySeconds = 15
+                    timeoutSeconds = 5
+                  }
+                  volumeMounts {
+                    new {
+                      name = "cassandra-data"
+                      mountPath = "/var/lib/cassandra"
+                    }
+                  }
+                }
+              }
+            }
+          }
+          volumeClaimTemplates {
+            new {
+              metadata {
+                name = "cassandra-data"
+                annotations {
+                  ["volume.beta.kubernetes.io/storage-class"] = "fast"
+                }
+              }
+              spec {
+                accessModes {
+                  "ReadWriteOnce"
+                }
+                resources {
+                  requests {
+                    ["storage"] = "1Gi"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      new StorageClass {
+        metadata {
+          name = "fast"
+        }
+        provisioner = "k8s.io/minikube-hostpath"
+        parameters {
+          ["type"] = "pd-ssd"
+        }
+      }
+    }
+
+    output {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+    """
+  }
+  ["crds.yml"] {
+    """
+    import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+    import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl"
+
+    resources: Listing<K8sResource> = new {
+      new CustomResourceDefinition {
+        metadata {
+          annotations {
+            ["controller-gen.kubebuilder.io/version"] = "v0.5.0"
+          }
+          creationTimestamp = null
+          labels {
+            ["gatekeeper.sh/system"] = "yes"
+          }
+          name = "configs.config.gatekeeper.sh"
+        }
+        spec {
+          group = "config.gatekeeper.sh"
+          names {
+            kind = "Config"
+            listKind = "ConfigList"
+            plural = "configs"
+            singular = "config"
+          }
+          scope = "Namespaced"
+          versions {
+            new {
+              name = "v1alpha1"
+              schema {
+                openAPIV3Schema {
+                  description = "Config is the Schema for the configs API"
+                  properties {
+                    ["apiVersion"] {
+                      description = "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+                      type = "string"
+                    }
+                    ["kind"] {
+                      description = "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+                      type = "string"
+                    }
+                    ["metadata"] {
+                      type = "object"
+                    }
+                    ["spec"] {
+                      description = "ConfigSpec defines the desired state of Config"
+                      properties {
+                        ["match"] {
+                          description = "Configuration for namespace exclusion"
+                          items {
+                            properties {
+                              ["excludedNamespaces"] {
+                                items {
+                                  type = "string"
+                                }
+                                type = "array"
+                              }
+                              ["processes"] {
+                                items {
+                                  type = "string"
+                                }
+                                type = "array"
+                              }
+                            }
+                            type = "object"
+                          }
+                          type = "array"
+                        }
+                        ["readiness"] {
+                          description = "Configuration for readiness tracker"
+                          properties {
+                            ["statsEnabled"] {
+                              type = "boolean"
+                            }
+                          }
+                          type = "object"
+                        }
+                        ["sync"] {
+                          description = "Configuration for syncing k8s objects"
+                          properties {
+                            ["syncOnly"] {
+                              description = "If non-empty, only entries on this list will be replicated into OPA"
+                              items {
+                                properties {
+                                  ["group"] {
+                                    type = "string"
+                                  }
+                                  ["kind"] {
+                                    type = "string"
+                                  }
+                                  ["version"] {
+                                    type = "string"
+                                  }
+                                }
+                                type = "object"
+                              }
+                              type = "array"
+                            }
+                          }
+                          type = "object"
+                        }
+                        ["validation"] {
+                          description = "Configuration for validation"
+                          properties {
+                            ["traces"] {
+                              description = "List of requests to trace. Both \\"user\\" and \\"kinds\\" must be specified"
+                              items {
+                                properties {
+                                  ["dump"] {
+                                    description = "Also dump the state of OPA with the trace. Set to `All` to dump everything."
+                                    type = "string"
+                                  }
+                                  ["kind"] {
+                                    description = "Only trace requests of the following GroupVersionKind"
+                                    properties {
+                                      ["group"] {
+                                        type = "string"
+                                      }
+                                      ["kind"] {
+                                        type = "string"
+                                      }
+                                      ["version"] {
+                                        type = "string"
+                                      }
+                                    }
+                                    type = "object"
+                                  }
+                                  ["user"] {
+                                    description = "Only trace requests from the specified user"
+                                    type = "string"
+                                  }
+                                }
+                                type = "object"
+                              }
+                              type = "array"
+                            }
+                          }
+                          type = "object"
+                        }
+                        ["foo"] {
+                          type = "array"
+                          items {
+                            new {
+                              type = "string"
+                              properties {
+                                ["bar"] {
+                                  type = "string"
+                                  default = "bar"
+                                }
+                                ["baz"] {
+                                  type = "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                      type = "object"
+                    }
+                    ["status"] {
+                      description = "ConfigStatus defines the observed state of Config"
+                      type = "object"
+                    }
+                  }
+                  type = "object"
+                }
+              }
+              served = true
+              storage = true
+            }
+          }
+        }
+        status {
+          acceptedNames {
+            kind = ""
+            plural = ""
+          }
+          conditions {}
+          storedVersions {}
+        }
+      }
+    }
+
+    output {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+    """
+  }
+  ["custom.yml"] {
+      """
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+      import "$pklPantryBaseDir/packages/k8s.contrib/tests/fixtures/CustomType.pkl"
+
+      resources: Listing<K8sResource> = new {
+        new Custom {
+          metadata {
+            name = "my-custom-type"
+          }
+          spec {
+            field1 = "foo"
+            field2 = "bar"
+          }
+        }
+      }
+
+      output {
+        value = resources
+        renderer = (K8sResource.output.renderer as YamlRenderer) {
+          isStream = true
+        }
+      }
+      """
+  }
+  ["datasizes.yml"] {
+      """
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Pod.pkl"
+
+      resources: Listing<K8sResource> = new {
+        new Pod {
+          metadata {
+            name = "various-datasizes"
+          }
+          spec {
+            containers {
+              new {
+                name = "kilobytes"
+                resources {
+                  requests {
+                    ["memory"] = 1.kb
+                  }
+                }
+              }
+              new {
+                name = "kebibytes"
+                resources {
+                  requests {
+                    ["memory"] = 1.kib
+                  }
+                }
+              }
+              new {
+                name = "mebibytes"
+                resources {
+                  requests {
+                    ["memory"] = 1.mib
+                  }
+                }
+              }
+              new {
+                name = "exbibytes"
+                resources {
+                  requests {
+                    ["memory"] = 1000.pib
+                  }
+                }
+              }
+              new {
+                name = "exabytes"
+                resources {
+                  requests {
+                    ["memory"] = 1000.pb
+                  }
+                }
+              }
+              new {
+                name = "fractional-gigabytes"
+                resources {
+                  requests {
+                    ["memory"] = 0.5.gib
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      output {
+        value = resources
+        renderer = (K8sResource.output.renderer as YamlRenderer) {
+          isStream = true
+        }
+      }
+      """
+  }
+  ["glusterfs.yml"] {
+      """
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Endpoints.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Pod.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Service.pkl"
+
+      resources: Listing<K8sResource> = new {
+        new Endpoints {
+          metadata {
+            name = "glusterfs-cluster"
+          }
+          subsets {
+            new {
+              addresses {
+                new {
+                  ip = "10.240.106.152"
+                }
+              }
+              ports {
+                new {
+                  port = 1
+                }
+              }
+            }
+            new {
+              addresses {
+                new {
+                  ip = "10.240.79.157"
+                }
+              }
+              ports {
+                new {
+                  port = 1
+                }
+              }
+            }
+          }
+        }
+
+        new Pod {
+          metadata {
+            name = "glusterfs"
+          }
+          spec {
+            containers {
+              new {
+                name = "glusterfs"
+                image = "nginx"
+                volumeMounts {
+                  new {
+                    mountPath = "/mnt/glusterfs"
+                    name = "glusterfsvol"
+                  }
+                }
+              }
+            }
+            volumes {
+              new {
+                name = "glusterfsvol"
+                glusterfs {
+                  endpoints = "glusterfs-cluster"
+                  path = "kube_vol"
+                  readOnly = true
+                }
+              }
+            }
+          }
+        }
+
+        new Service {
+          metadata {
+            name = "glusterfs-cluster"
+          }
+          spec {
+            ports {
+              new {
+                port = 1
+              }
+            }
+          }
+        }
+      }
+
+      output {
+        value = resources
+        renderer = (K8sResource.output.renderer as YamlRenderer) {
+          isStream = true
+        }
+      }
+      """
+  }
+  ["guestbook.yml"] {
+      """
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/apps/v1/Deployment.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Service.pkl"
+
+      resources: Listing<K8sResource> = new {
+        new Deployment {
+          metadata {
+            name = "frontend"
+          }
+          spec {
+            selector {
+              matchLabels {
+                ["app"] = "guestbook"
+                ["tier"] = "frontend"
+              }
+            }
+            replicas = 3
+            template {
+              metadata {
+                labels {
+                  ["app"] = "guestbook"
+                  ["tier"] = "frontend"
+                }
+              }
+              spec {
+                containers {
+                  new {
+                    name = "php-redis"
+                    image = "gcr.io/google-samples/gb-frontend:v4"
+                    resources {
+                      requests {
+                        ["cpu"] = "100m"
+                        ["memory"] = 100.mib
+                      }
+                    }
+                    env {
+                      new {
+                        name = "GET_HOSTS_FROM"
+                        value = "dns"
+                      }
+                    }
+                    ports {
+                      new {
+                        containerPort = 80
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        new Service {
+          metadata {
+            name = "frontend"
+            labels {
+              ["app"] = "guestbook"
+              ["tier"] = "frontend"
+            }
+          }
+          spec {
+            type = "NodePort"
+            ports {
+              new {
+                port = 80
+              }
+            }
+            selector {
+              ["app"] = "guestbook"
+              ["tier"] = "frontend"
+            }
+          }
+        }
+
+        new Deployment {
+          metadata {
+            name = "redis-master"
+          }
+          spec {
+            selector {
+              matchLabels {
+                ["app"] = "redis"
+                ["role"] = "master"
+                ["tier"] = "backend"
+              }
+            }
+            replicas = 1
+            template {
+              metadata {
+                labels {
+                  ["app"] = "redis"
+                  ["role"] = "master"
+                  ["tier"] = "backend"
+                }
+              }
+              spec {
+                containers {
+                  new {
+                    name = "master"
+                    image = "k8s.gcr.io/redis:e2e"
+                    resources {
+                      requests {
+                        ["cpu"] = "100m"
+                        ["memory"] = 100.mib
+                      }
+                    }
+                    ports {
+                      new {
+                        containerPort = 6379
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        new Service {
+          metadata {
+            name = "redis-master"
+            labels {
+              ["app"] = "redis"
+              ["role"] = "master"
+              ["tier"] = "backend"
+            }
+          }
+          spec {
+            ports {
+              new {
+                port = 6379
+                targetPort = 6379
+              }
+            }
+            selector {
+              ["app"] = "redis"
+              ["role"] = "master"
+              ["tier"] = "backend"
+            }
+          }
+        }
+
+        new Deployment {
+          metadata {
+            name = "redis-slave"
+          }
+          spec {
+            selector {
+              matchLabels {
+                ["app"] = "redis"
+                ["role"] = "slave"
+                ["tier"] = "backend"
+              }
+            }
+            replicas = 2
+            template {
+              metadata {
+                labels {
+                  ["app"] = "redis"
+                  ["role"] = "slave"
+                  ["tier"] = "backend"
+                }
+              }
+              spec {
+                containers {
+                  new {
+                    name = "slave"
+                    image = "gcr.io/google_samples/gb-redisslave:v1"
+                    resources {
+                      requests {
+                        ["cpu"] = "100m"
+                        ["memory"] = 100.mib
+                      }
+                    }
+                    env {
+                      new {
+                        name = "GET_HOSTS_FROM"
+                        value = "dns"
+                      }
+                    }
+                    ports {
+                      new {
+                        containerPort = 6379
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        new Service {
+          metadata {
+            name = "redis-slave"
+            labels {
+              ["app"] = "redis"
+              ["role"] = "slave"
+              ["tier"] = "backend"
+            }
+          }
+          spec {
+            ports {
+              new {
+                port = 6379
+              }
+            }
+            selector {
+              ["app"] = "redis"
+              ["role"] = "slave"
+              ["tier"] = "backend"
+            }
+          }
+        }
+      }
+
+      output {
+        value = resources
+        renderer = (K8sResource.output.renderer as YamlRenderer) {
+          isStream = true
+        }
+      }
+      """
+  }
+  ["multipleVersions.yml"] {
+      """
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Service.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl" as CustomResourceDefinitionV1
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl" as CustomResourceDefinitionV1beta1
+
+      resources: Listing<K8sResource> = new {
+        new Service {
+          metadata {
+            name = "foo.bar.baz"
+          }
+        }
+
+        new CustomResourceDefinitionV1 {
+          metadata {
+            name = "foo.bar.baz"
+          }
+        }
+
+        new CustomResourceDefinitionV1beta1 {
+          metadata {
+            name = "foo.bar.biz"
+          }
+        }
+
+        new CustomResourceDefinitionV1 {
+          metadata {
+            name = "foo.bar.qux"
+          }
+        }
+      }
+
+      output {
+        value = resources
+        renderer = (K8sResource.output.renderer as YamlRenderer) {
+          isStream = true
+        }
+      }
+      """
+  }
+  ["wordpress.yml"] {
+      """
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/apps/v1/Deployment.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/PersistentVolume.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/PersistentVolumeClaim.pkl"
+      import "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/Service.pkl"
+
+      resources: Listing<K8sResource> = new {
+        new PersistentVolume {
+          metadata {
+            name = "wordpress-pv-1"
+          }
+          spec {
+            capacity {
+              ["storage"] = "20Gi"
+            }
+            accessModes {
+              "ReadWriteOnce"
+            }
+            gcePersistentDisk {
+              pdName = "wordpress-1"
+              fsType = "ext4"
+            }
+          }
+        }
+
+        new PersistentVolume {
+          metadata {
+            name = "wordpress-pv-2"
+          }
+          spec {
+            capacity {
+              ["storage"] = "20Gi"
+            }
+            accessModes {
+              "ReadWriteOnce"
+            }
+            gcePersistentDisk {
+              pdName = "wordpress-2"
+              fsType = "ext4"
+            }
+          }
+        }
+
+        new PersistentVolume {
+          metadata {
+            name = "local-pv-1"
+            labels {
+              ["type"] = "local"
+            }
+          }
+          spec {
+            capacity {
+              ["storage"] = "20Gi"
+            }
+            accessModes {
+              "ReadWriteOnce"
+            }
+            hostPath {
+              path = "/tmp/data/pv-1"
+            }
+          }
+        }
+
+        new PersistentVolume {
+          metadata {
+            name = "local-pv-2"
+            labels {
+              ["type"] = "local"
+            }
+          }
+          spec {
+            capacity {
+              ["storage"] = "20Gi"
+            }
+            accessModes {
+              "ReadWriteOnce"
+            }
+            hostPath {
+              path = "/tmp/data/pv-2"
+            }
+          }
+        }
+
+        new Service {
+          metadata {
+            name = "wordpress-mysql"
+            labels {
+              ["app"] = "wordpress"
+            }
+          }
+          spec {
+            ports {
+              new {
+                port = 3306
+              }
+            }
+            selector {
+              ["app"] = "wordpress"
+              ["tier"] = "mysql"
+            }
+            clusterIP = "None"
+          }
+        }
+
+        new PersistentVolumeClaim {
+          metadata {
+            name = "mysql-pv-claim"
+            labels {
+              ["app"] = "wordpress"
+            }
+          }
+          spec {
+            accessModes {
+              "ReadWriteOnce"
+            }
+            resources {
+              requests {
+                ["storage"] = "20Gi"
+              }
+            }
+          }
+        }
+
+        new Deployment {
+          metadata {
+            name = "wordpress-mysql"
+            labels {
+              ["app"] = "wordpress"
+            }
+          }
+          spec {
+            selector {
+              matchLabels {
+                ["app"] = "wordpress"
+                ["tier"] = "mysql"
+              }
+            }
+            strategy {
+              type = "Recreate"
+            }
+            template {
+              metadata {
+                labels {
+                  ["app"] = "wordpress"
+                  ["tier"] = "mysql"
+                }
+              }
+              spec {
+                containers {
+                  new {
+                    image = "mysql:5.6"
+                    name = "mysql"
+                    env {
+                      new {
+                        name = "MYSQL_ROOT_PASSWORD"
+                        valueFrom {
+                          secretKeyRef {
+                            name = "mysql-pass"
+                            key = "password"
+                          }
+                        }
+                      }
+                    }
+                    livenessProbe {
+                      tcpSocket {
+                        port = 3306
+                      }
+                    }
+                    ports {
+                      new {
+                        containerPort = 3306
+                        name = "mysql"
+                      }
+                    }
+                    volumeMounts {
+                      new {
+                        name = "mysql-persistent-storage"
+                        mountPath = "/var/lib/mysql"
+                      }
+                    }
+                  }
+                }
+                volumes {
+                  new {
+                    name = "mysql-persistent-storage"
+                    persistentVolumeClaim {
+                      claimName = "mysql-pv-claim"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        new Service {
+          metadata {
+            name = "wordpress"
+            labels {
+              ["app"] = "wordpress"
+            }
+          }
+          spec {
+            ports {
+              new {
+                port = 80
+              }
+            }
+            selector {
+              ["app"] = "wordpress"
+              ["tier"] = "frontend"
+            }
+            type = "LoadBalancer"
+          }
+        }
+
+        new PersistentVolumeClaim {
+          metadata {
+            name = "wp-pv-claim"
+            labels {
+              ["app"] = "wordpress"
+            }
+          }
+          spec {
+            accessModes {
+              "ReadWriteOnce"
+            }
+            resources {
+              requests {
+                ["storage"] = "20Gi"
+              }
+            }
+          }
+        }
+
+        new Deployment {
+          metadata {
+            name = "wordpress"
+            labels {
+              ["app"] = "wordpress"
+            }
+          }
+          spec {
+            selector {
+              matchLabels {
+                ["app"] = "wordpress"
+                ["tier"] = "frontend"
+              }
+            }
+            strategy {
+              type = "Recreate"
+            }
+            template {
+              metadata {
+                labels {
+                  ["app"] = "wordpress"
+                  ["tier"] = "frontend"
+                }
+              }
+              spec {
+                containers {
+                  new {
+                    image = "wordpress:4.8-apache"
+                    name = "wordpress"
+                    env {
+                      new {
+                        name = "WORDPRESS_DB_HOST"
+                        value = "wordpress-mysql"
+                      }
+                      new {
+                        name = "WORDPRESS_DB_PASSWORD"
+                        valueFrom {
+                          secretKeyRef {
+                            name = "mysql-pass"
+                            key = "password"
+                          }
+                        }
+                      }
+                    }
+                    ports {
+                      new {
+                        containerPort = 80
+                        name = "wordpress"
+                      }
+                    }
+                    volumeMounts {
+                      new {
+                        name = "wordpress-persistent-storage"
+                        mountPath = "/var/www/html"
+                      }
+                    }
+                  }
+                }
+                volumes {
+                  new {
+                    name = "wordpress-persistent-storage"
+                    persistentVolumeClaim {
+                      claimName = "wp-pv-claim"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      output {
+        value = resources
+        renderer = (K8sResource.output.renderer as YamlRenderer) {
+          isStream = true
+        }
+      }
+      """
+  }
+}
