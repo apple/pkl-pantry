@@ -68,13 +68,13 @@ typealias IPv4CIDRString = String(matches(Regex(#"\#(net.ipv4String)/\d{1,2}"#))
 typealias IPv6CIDRString = String(matches(Regex(#"\#(net.ipv6String)/\d{1,3}"#)))
 
 /// Creates an [IPAddress] from an [IPAddressString].
-const function IP(ip: IPAddressString): IPAddress =
+function IP(ip: IPAddressString): IPAddress =
   if (ip is IPv6AddressString) IPv6Address(ip)
   else if (ip is IPv4AddressString) IPv4Address(ip)
   else throw("Invalid IP: \(ip)")
 
 /// Creates an [IPv4Address] from an [IPv4AddressString].
-const function IPv4Address(ip: IPv4AddressString): IPv4Address = new {
+function IPv4Address(ip: IPv4AddressString): IPv4Address = new {
   local parts = ip.split(".")
   repr = parts[0].toInt().shl(24)
     .or(parts[1].toInt().shl(16))
@@ -98,7 +98,10 @@ class IPv4Address {
   function reverse(): String = new IPv4Network { base = self; prefix = self.bitWidth }.reverse()
 
   /// return the ip address immediately after this one
-  function next(): IPv4Address = new { repr = self.repr + 1 }
+  function next(): IPv4Address = add(1)
+
+  /// return the ip address [n] after this one
+  function add(n: UInt32): IPv4Address = new { repr = self.repr + n }
 
   function toString(): IPv4AddressString = new Listing<String> {
     repr.ushr(24).and(math.maxUInt8).toString()
@@ -109,7 +112,7 @@ class IPv4Address {
 }
 
 /// Creates an [IPv6Address] from an [IPv6AddressString].
-const function IPv6Address(ip: IPv6AddressString): IPv6Address =
+function IPv6Address(ip: IPv6AddressString): IPv6Address =
   let (_ip = expandIPv6AddressString(ip).toLowerCase().split(":"))
     new {
       repr = u128.UInt128(
@@ -144,7 +147,10 @@ class IPv6Address {
   function reverse(): String = new IPv6Network { base = self; prefix = self.bitWidth }.reverse()
 
   /// return the ip address immediately after this one
-  function next(): IPv6Address = new { repr = self.repr.add(u128.one) }
+  function next(): IPv6Address = add(1)
+
+  /// return the ip address [n] after this one
+  function add(n: UInt32): IPv6Address = new { repr = self.repr.add(u128.UInt128(0, 0, 0, n)) }
 
   function toString(): IPv6AddressString = expandIPv6AddressString(new Listing {
     repr.hihi.ushr(16).toRadixString(16)
@@ -159,13 +165,13 @@ class IPv6Address {
 }
 
 /// Creates an [IPNetwork] from an IPv4 or IPv6 CIDR block string
-const function IPNetwork(cidr: String): IPNetwork =
+function IPNetwork(cidr: String): IPNetwork =
   if (cidr.split("/").first is IPv4AddressString) IPv4Network(cidr)
   else if (cidr.split("/").first is IPv6AddressString) IPv6Network(cidr)
   else throw("Invalid network CIDR: \(cidr)")
 
 /// Creates an [IPv4Network] from an IPv4 CIDR block string
-const function IPv4Network(cidr: String): IPv4Network = new {
+function IPv4Network(cidr: String): IPv4Network = new {
   base = IPv4Address(cidr.split("/").first)
   prefix = cidr.split("/").last.toInt()
 }
@@ -209,14 +215,14 @@ class IPv4Network {
 }
 
 /// Produces a listing of IPv4 addresses between [start] and [end], inclusive.
-const function IPv4Range(start: IPv4Address, end: IPv4Address): Listing<IPv4Address> = new {
+function IPv4Range(start: IPv4Address, end: IPv4Address): Listing<IPv4Address> = new {
   for (ipu in IntSeq(start.repr, end.repr)) {
     new { repr = ipu }
   }
 }
 
 /// Creates an [IPv6Network] from an IPv6 CIDR block string
-const function IPv6Network(cidr: String): IPv6Network = new {
+function IPv6Network(cidr: String): IPv6Network = new {
   base = IPv6Address(cidr.split("/").first)
   prefix = cidr.split("/").last.toInt()
 }
@@ -257,7 +263,7 @@ class IPv6Network {
 }
 
 /// Produces a listing of IPv6 addresses between [start] and [end], inclusive.
-const function IPv6Range(start: IPv6Address, end: IPv6Address): Listing<IPv6Address> = new {
+function IPv6Range(start: IPv6Address, end: IPv6Address): Listing<IPv6Address> = new {
   for (ipu in start.repr.seq(end.repr)) {
     new { repr = ipu }
   }
@@ -284,22 +290,51 @@ const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressStri
   ).join(":"))
     trimmed.replaceFirst(Regex("(:|^)(0:)+0(:|$)"), "::")
 
+function MACAddress(mac: MACAddressString): MACAddress = new {
+  repr = mac.split(Regex("[.:-]")).map((octet) -> parseHexOctet(octet))
+}
+
+class MACAddress {
+  hidden repr: List<UInt8>(length == 6)
+
+  local self = this
+
+  function toString(): MACAddressString = repr.map((octet) -> octet.toRadixString(16).padStart(2, "0")).join(":")
+
+  function eui64(addr: IPv6Address): IPv6Address = new {
+    repr = u128.UInt128(
+      addr.repr.hihi,
+      addr.repr.hilo,
+      uint32FromBytes(self.repr[0].xor(0x02), self.repr[1], self.repr[2], 0xff),
+      uint32FromBytes(0xfe, self.repr[3], self.repr[4], self.repr[5])
+    )
+  }
+}
+
 /// parseHex tranforms a single hexadecimal character into its unsigned integer representation.
-const function parseHex(digit: Char): UInt8 =
+function parseHex(digit: Char): UInt8 =
   let (d = digit.toLowerCase())
     "0123456789abcdef".chars.findIndexOrNull((it) -> it == d) ??
       throw("Unrecognized hex digit: \(d)")
 
+/// parseHexOctet tranforms a two hexadecimal characters into its unsigned integer representation.
+function parseHexOctet(octet: String(length == 2)): UInt8 = byteLut[octet.toLowerCase()]
+
 /// parseHex32 transforms an 8 character hexidecimal string into its UInt32 representation.
-const function parseHex32(s: String(this.length == 8)): UInt32 =
+function parseHex32(s: String(length == 8)): UInt32 =
   IntSeq(0, 7)
     .step(2)
     .map((it) -> s.substring(it, it + 2))
-    .fold(0, (acc, it) -> acc.shl(8) + byteLut[it.toLowerCase()])
+    .fold(0, (acc, it) -> acc.shl(8) + parseHexOctet(it))
 
+/// byteLut is a lookup table mapping a string of two lowercase hex digits (zero-padded) to the UInt8 value.
 const local byteLut = IntSeq(0, 255).map((it) -> it).toMap((it) -> it.toRadixString(16).padStart(2, "0"), (it) -> it)
 
 /// mask32Hi generates a mask of 1s in the top [prefix] bits of a [UInt32].
-const function mask32Hi(prefix: UInt(this.isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-prefix).shl(32-prefix)
+const function mask32Hi(prefix: UInt(isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-prefix).shl(32-prefix)
 /// mask32Lo generates a mask of 1s in the bottom [suffix] bits of a [UInt32].
-const function mask32Lo(suffix: UInt(this.isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-suffix)
+const function mask32Lo(suffix: UInt(isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-suffix)
+
+/// uint32FromBytes constructs a [UInt32] from four [UInt8] values.
+const function uint32FromBytes(hihi: UInt8, hilo: UInt8, lohi: UInt8, lolo: UInt8): UInt32 =
+  hihi.shl(24).or(hilo.shl(16)).or(lohi.shl(8)).or(lolo)
