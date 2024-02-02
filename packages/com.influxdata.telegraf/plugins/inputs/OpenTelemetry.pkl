@@ -47,7 +47,3 @@ tls_cert: String?
 /// Add service key
 tls_key: String?
 
-/// Maximum allowed body size of gRPC _receive_ request.
-///
-/// This is only available in `mosaic-agent`. Default if unset is `4.mb`.
-max_recv_msg_size: DataSize?
