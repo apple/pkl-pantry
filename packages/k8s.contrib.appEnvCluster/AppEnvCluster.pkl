@@ -1,0 +1,231 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Template for generating Kubernetes manifests for apps.
+///
+/// This template assumes a three-level configuration hierarchy: application, environment, and cluster.
+/// Modules at the root of the configuration hierarchy directly amend this module
+/// (`amends "package://pkl.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@<version>#/AppEnvCluster.pkl"`).
+/// All other modules amend their parent (`amends "..."`).
+///
+/// Leaf modules dictate which Kubernetes resources are generated.
+/// To generate all resources, evaluate all modules (non-leaf modules are automatically ignored):
+///
+/// ```bash
+/// $ pkl eval **/*.pkl
+/// ```
+///
+/// By default, all resources are written to standard output as a YAML stream, where each resource
+/// is separated using `---`.
+/// This YAML stream may also be written to a file using the
+/// [`-o`](https://pkl-lang.org/main/current/pkl-cli/index.html#output-path) flag.
+///
+/// Each resource can also be written to its own file using the
+/// [`-m`](https://pkl-lang.org/main/current/pkl-cli/index.html#multiple-file-output-path) flag.
+/// When writing individual files, the file paths follow the same three-level hierarchy of
+/// application, environment and cluster.
+///
+/// ```bash
+/// # Write all resources as a YAML stream into `output.yaml`
+/// $ pkl eval -o output.yaml **/*.pkl
+///
+/// # Write each resource to its own file to the `.out/` directory
+/// $ pkl eval -m .out/ **/*.pkl
+/// ```
+///
+/// Modules higher up in the config hierarchy contain configuration common to their descendants.
+///
+/// Kubernetes resources are grouped by kind and keyed by name:
+///
+/// ```pkl
+/// ingresses {
+///   ["cluster-service.example.com"] { ... }
+/// }
+/// services {
+///   ["cluster-service"] { ... }
+/// }
+/// ```
+///
+/// Resource names are used as default values for the resources' `metadata.name` properties.
+///
+/// Kubernetes configuration often contains lists of key-value pairs.
+/// To override a particular value, match its key with a _predicate_:
+///
+/// ```pkl
+/// env { // list of environment variable names and values
+///   [[name == "IMAGE_REPOSITORY"]] { // override value(s) matching this predicate
+///     value = "docker.com"
+///   }
+/// }
+/// ```
+///
+/// Note the use of double brackets (`[[...]]`), which distinguishes a predicate from an ordinary key (`[...]`).
+///
+/// == Extending This Template
+///
+/// This template only covers the most common kinds of resources: [configMaps], [deployments], [ingresses], etc.
+/// To describe other kinds of resources, _extend_ this template and add additional top-level properties.
+/// For example, to describe _HorizontalPodAutoscaler_ resources,
+/// create a new file named `MyTemplate.pkl` with the following content:
+///
+/// ```pkl
+/// module MyTemplate
+///
+/// extends "package://pkl.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@<version>#/AppEnvCluster.pkl"
+///
+/// import "package://pkg.pkl-lang.org/pkl-k8s/k8s@<version>#/api/autoscaling/v1/HorizontalPodAutoscaler.pkl"
+///
+/// horizontalPodAutoscalers: Mapping<String, HorizontalPodAutoscaler> = module.resourceMapping(HorizontalPodAutoscaler)
+/// ```
+///
+/// To browse Pkl Kubernetes templates and determine their import URIs (such as `package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.0#/api/core/v1/Pod.pkl`),
+/// go to [the package repo](https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-k8s/k8s/current/).
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module k8s.contrib.appEnvCluster.AppEnvCluster
+
+import "pkl:reflect"
+import "@k8s/K8sObject.pkl"
+import "@k8s/K8sResource.pkl"
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/apps/v1/StatefulSet.pkl"
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
+import "@k8s/api/core/v1/Pod.pkl"
+import "@k8s/api/core/v1/Secret.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/api/networking/v1/Ingress.pkl"
+import "@k8s/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+/// Kubernetes resources of type [ConfigMap], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+configMaps: Mapping<String, ConfigMap> = resourceMapping(ConfigMap)
+
+/// Kubernetes resources of type [Deployment], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+deployments: Mapping<String, Deployment> = resourceMapping(Deployment)
+
+/// Kubernetes resources of type [Ingress], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+ingresses: Mapping<String, Ingress> = resourceMapping(Ingress)
+
+/// Kubernetes resources of type [PersistentVolumeClaim], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+persistentVolumeClaims: Mapping<String, PersistentVolumeClaim> = resourceMapping(PersistentVolumeClaim)
+
+/// Kubernetes resources of type [Pod], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+pods: Mapping<String, Pod> = resourceMapping(Pod)
+
+/// Kubernetes resources of type [Secret], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+secrets: Mapping<String, Secret> = resourceMapping(Secret)
+
+/// Kubernetes resources of type [Service], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+services: Mapping<String, Service> = resourceMapping(Service)
+
+/// Kubernetes resources of type [StatefulSet], keyed by name.
+///
+/// The resources' `metadata.name` property is automatically set to their key.
+statefulSets: Mapping<String, StatefulSet> = resourceMapping(StatefulSet)
+
+/// The application that [resources] belong to.
+///
+/// This is the first level of the application/environment/cluster directory structure.
+/// To access this property from a module that amends this template, use `module.app`.
+hidden app: String = path[0]
+
+/// The environment that [resources] belong to.
+///
+/// This is the second level of the application/environment/cluster directory structure.
+/// To access this property from a module that amends this template, use `module.env`.
+hidden env: String = path[1]
+
+/// The cluster that [resources] belong to.
+///
+/// This is the third level of the application/environment/cluster directory structure.
+/// To access this property from a module that amends this template, use `module.cluster`.
+hidden cluster: String = path[2]
+
+/// File path between the current module ([this]) and its template, relative to the template.
+///
+/// Does not include the current module's file name.
+hidden path: List<String> = findRootModule(reflect.Module(module)).relativePathTo(module)
+
+/// Renders a Pkl object as YAML string.
+///
+/// With this method, YAML files in [ConfigMap]s can be specified as Pkl objects rather than strings.
+function toYamlString(obj: Object): String = output.renderer.renderValue(obj)
+
+/// Creates an empty mapping from resource name to resource [type] that defaults `metadata.name` to the resource name.
+function resourceMapping(type): Mapping<String, unknown> =
+  new Mapping { default = (key) -> (type) { metadata { name = key } } }
+
+/// Tells if the current module ([this]) is a leaf module. Only leaf modules generate output.
+///
+/// Override this method to extend the application/environment/cluster directory structure beyond three levels.
+function isLeafModule(): Boolean = path.length == 3
+
+output {
+  renderer = new YamlRenderer {
+    isStream = true
+    converters = (K8sObject.output.renderer as YamlRenderer).converters
+  }
+  value = if (isLeafModule()) module.toMap().values.flatMap((it) -> it.toMap().values) else List()
+  files {
+    for (file: K8sResource in value as List) {
+      [determineFileName(file)] = file.output
+    }
+  }
+}
+
+local function findRootModule(mod: reflect.Module): Module =
+  let (supermodule = mod.supermodule)
+    if (supermodule == null || !supermodule.isAmend) mod.reflectee
+    else findRootModule(supermodule)
+
+local class GroupVersion {
+  group: String?
+  version: String
+}
+
+local function parseGroupVersion(apiVersionString: String): GroupVersion =
+  let (idx = apiVersionString.indexOfOrNull("/"))
+    if (idx == null)
+      new { version = apiVersionString }
+    else
+      new { group = apiVersionString.take(idx); version = apiVersionString.drop(idx + 1) }
+
+local function determineFileName(resource: K8sResource) =
+  let (metadata = resource.getPropertyOrNull("metadata") as ObjectMeta?)
+    let (groupVersion = parseGroupVersion(resource.apiVersion))
+      let (dir = path.join("/"))
+        let (baseName =
+          List(
+            metadata?.namespace,
+            metadata?.name,
+            groupVersion.group,
+            resource.kind
+          ).filterNonNull().join("-")
+        )
+          let (filePath = "\(dir)/\(baseName)")
+            resource.output.renderer.extension.ifNonNull((it) -> "\(filePath).\(it)") ?? filePath

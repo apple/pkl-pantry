@@ -1,0 +1,53 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module k8s.contrib.tests.convert
+amends "pkl:test"
+
+import "pkl:yaml"
+import "pkl:reflect"
+
+import "../convert.pkl"
+
+local absolutePathToPklPantry = reflect.Module(module).uri.replaceFirst("packages/k8s.contrib/tests/convert.pkl", "")
+
+/// Run conversion, replacing full file import paths with paths stemming from "$pklPantryBaseDir".
+///
+/// Before:
+///
+/// `import "file:///User/me/work/pkl-pantry/packages/k8s/K8sObject.pkl"`
+///
+/// After:
+///
+/// `import "$pklPantryBaseDir/packages/k8s/K8sObject.pkl"`
+local function doConvert(uri: String) =
+  let (converter = (convert) {
+    resourcesToConvert = new yaml.Parser { useMapping = true }.parseAll(read(uri)).filterNonNull() as List<Mapping>
+
+    customResourceTemplates {
+      ["Custom"] {
+        ["v1"] = import("./fixtures/CustomType.pkl")
+      }
+    }
+  })
+    converter.output.text.replaceAll(absolutePathToPklPantry, "$pklPantryBaseDir/")
+
+examples = new {
+  for (file, _ in read*("fixtures/*.yml")) {
+    [file.replaceAll(Regex(".*fixtures/"), "")] {
+      doConvert(file)
+    }
+  }
+}
