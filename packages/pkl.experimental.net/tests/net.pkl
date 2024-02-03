@@ -13,9 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Experimental library for handling network (IP and MAC) addresses.
-amends "../basePklProject.pkl"
+module pkl.experimental.net.tests.net
 
-package {
-  version = "1.1.0"
+amends "pkl:test"
+
+import "../net.pkl"
+
+local baseIP = net.IPv6Address("::")
+
+facts {
+  ["MACAddress"] {
+    net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toString() == "0000:0000:0000:0000:3673:5aff:fefa:af22"
+  }
 }
