@@ -17,7 +17,7 @@
 ///
 /// This template assumes a three-level configuration hierarchy: application, environment, and cluster.
 /// Modules at the root of the configuration hierarchy directly amend this module
-/// (`amends "package://pkl.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@<version>#/AppEnvCluster.pkl"`).
+/// (`amends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@<version>#/AppEnvCluster.pkl"`).
 /// All other modules amend their parent (`amends "..."`).
 ///
 /// Leaf modules dictate which Kubernetes resources are generated.
@@ -83,7 +83,7 @@
 /// ```pkl
 /// module MyTemplate
 ///
-/// extends "package://pkl.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@<version>#/AppEnvCluster.pkl"
+/// extends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@<version>#/AppEnvCluster.pkl"
 ///
 /// import "package://pkg.pkl-lang.org/pkl-k8s/k8s@<version>#/api/autoscaling/v1/HorizontalPodAutoscaler.pkl"
 ///
