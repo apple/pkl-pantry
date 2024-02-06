@@ -1,0 +1,13 @@
+amends "pkl:test"
+
+examples {
+  ["k8s deployment images"] {
+    import("../examples/k8s_deployment_images.pkl").output.text
+  }
+  ["k8s name and kind list"] {
+    import("../examples/k8s_name_and_kind.pkl").output.text
+  }
+  ["github repos and stars"] {
+    import("../examples/github_repos_stars.pkl").output.text
+  }
+}

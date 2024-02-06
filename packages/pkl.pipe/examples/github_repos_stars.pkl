@@ -1,0 +1,17 @@
+/// This example shows how to map a Github API response for repos in an org
+/// into a list of "reponame: stars". It is the equivalent of the CLI invocation:
+///
+/// ```
+/// curl https://api.github.com/orgs/apple/repos | pkl eval json.pkl -x 'pipe.toList().map((r) -> "\(r.name): \(r.stargazers_count)").join("\n")'
+/// ```
+module pkl.pipe.examples.github_repos_stars
+amends "../json.pkl"
+
+// This does the equivalent of stdin redirection, eg:
+// pkl eval json.pkl -x '...' < ./github.json
+input = read("./github.json")
+
+output {
+  // This is equivalent to `pkl eval -x`
+  text = module.pipe.toList().map((r) -> "\(r.name): \(r.stargazers_count)").join("\n")
+}

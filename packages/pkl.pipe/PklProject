@@ -1,0 +1,14 @@
+/// Tools for constructing pipelines and one-liners in Pkl, by processing text, JSON, or YAML.
+///
+/// Use Pkl's `--expression` (or `-x`) argument to provide a Pkl expression that will be evaluated
+/// in the context of the content passed to `stdin`.
+/// The Pkl property `pipe` (also aliased as `stdin`) represents the content that was passed to `stdin`.
+amends "../basePklProject.pkl"
+
+package {
+  version = "1.0.0"
+}
+
+dependencies {
+  ["k8s.contrib"] = import("../k8s.contrib/PklProject")
+}
