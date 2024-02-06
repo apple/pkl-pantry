@@ -1,0 +1,33 @@
+/// CLI tool for working with YAML in Pkl, kind of like [yq](https://github.com/mikefarah/yq) or
+/// [yq](https://github.com/kislyuk/yq).
+///
+/// Example usage:
+///
+///     # Get the number of replicas in a Kubernetes deployment YAML file
+///     pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/yaml.pkl -x 'pipe.spec.replicas' < deployment.yaml
+///
+@ModuleInfo { minPklVersion = "0.24.0" }
+module pkl.pipe.yaml
+extends "./text.pkl"
+
+import "pkl:yaml"
+
+hidden parser: yaml.Parser = new {
+  useMapping = read?("prop:useMapping")?.toBoolean() ?? false
+}
+
+local yamlDocs: List<yaml.Value> = parser.parseAll(input)
+
+pipe: (List<yaml.Value>|yaml.Value)? =
+  if (yamlDocs.isEmpty) null
+  // If there is a single document, set pipe to the value of the single doc,
+  // rather than force the user to always use `pipe[0]`
+  else yamlDocs.singleOrNull ?? yamlDocs
+stdin: (List<yaml.Value>|yaml.Value)? = pipe
+
+output {
+  value = pipe
+  when (read?("prop:pkl.outputFormat") == null) {
+    renderer = module.yamlRenderer
+  }
+}

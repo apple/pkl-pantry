@@ -1,0 +1,14 @@
+/// This example shows how to parse a Kubernetes deployment object to get a list of all container images.
+/// It is the equivalent of the CLI invocation:
+///
+/// ```
+/// pkl eval yaml.pkl -x 'pipe.map((r) -> "\(r.apiVersion).\(r.kind): \(r.metadata.name)").join("\n")' < examples/service_and_pod.yaml
+/// ```
+module pkl.pipe.examples.k8s_name_and_kind
+amends "../yaml.pkl"
+
+input = read("./k8s_service_and_pod.yaml")
+
+output {
+  text = module.pipe.map((r) -> "\(r.apiVersion).\(r.kind): \(r.metadata.name)").join("\n")
+}

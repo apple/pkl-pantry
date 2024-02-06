@@ -1,0 +1,55 @@
+/// Tools for constructing pipelines and one-liners in Pkl.
+///
+/// Example usage:
+///
+/// ```
+/// # Count characters, like `wc`
+/// echo 'fourteen chars' | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.length'
+///
+/// # Get Pkl filenames as a JSON array (multiple options for JSON-encoding)
+/// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.split("\n").filter((n) -> n.endsWith("pkl")) |> asJSON'
+/// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'asJson(pipe.split("\n").filter((n) -> n.endsWith("pkl")))'
+/// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.split("\n").filter((n) -> n.endsWith("pkl")) |> formatted' -f json
+///
+/// # Get all filenames grouped by extension
+/// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'asYaml(pipe.split("\n").groupBy((element) -> element.split(".").last))'
+///
+/// # Years since the Unix epoch
+/// date +"%s" | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.trimEnd().toInt().toDuration("s").toUnit("d") / 365'
+/// ```
+@ModuleInfo { minPklVersion = "0.24.0" }
+open module pkl.pipe.text
+
+hidden input: Resource(!this.text.trimEnd().isEmpty) = read("file:/dev/stdin")
+
+hidden pipe: String = input.text.trimEnd()
+hidden stdin: String = pipe
+
+typealias RenderFunc = (Any) -> (String)
+
+hidden yamlRenderer: YamlRenderer = new { isStream = true }
+function asYaml(value): String = yamlRenderer.renderValue(value)
+hidden asYaml: RenderFunc = (value) -> asYaml(value)
+hidden toYaml: RenderFunc = asYaml
+hidden asYAML: RenderFunc = asYaml
+hidden toYAML: RenderFunc = asYaml
+
+hidden jsonRenderer: JsonRenderer = new {}
+function asJson(value): String = jsonRenderer.renderValue(value)
+hidden asJson: RenderFunc = (value) -> asJson(value)
+hidden toJson: RenderFunc = asJson
+hidden asJSON: RenderFunc = asJson
+hidden toJSON: RenderFunc = asJson
+
+hidden formatted = (value) -> output.renderer.renderValue(value)
+
+output {
+  value = throw("""
+    Error: no expression passed to pkl.pipe.text. Use `--expression` or `-x` to pass a Pkl expression.
+
+    Usage: pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x <pkl expression>
+
+    Example:
+    echo 'fourteen chars' | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.length'
+  """)
+}

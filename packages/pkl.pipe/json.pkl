@@ -1,0 +1,28 @@
+/// CLI tool for working with JSON in Pkl, kind of like [jq](https://stedolan.github.io/jq/).
+///
+/// Example usage:
+///
+///     # Get my IP address
+///     curl https://ifconfig.co/json | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/json.pk -x 'pipe.ip'
+///
+///     # Get repos and stars for Github org
+///     curl https://api.github.com/orgs/apple/repos | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/json.pkl -x 'pipe.toList().map((r) -> "\(r.name): \(r.stargazers_count)").join("\n")'
+@ModuleInfo { minPklVersion = "0.24.0" }
+module pkl.pipe.json
+extends "./text.pkl"
+
+import "pkl:json"
+
+local parsed = new json.Parser {
+  useMapping = read?("prop:useMapping")?.toBoolean() ?? false
+}.parse(input)
+
+pipe: (List<json.Value>|json.Value)? = if (parsed is Listing) parsed.toList() else parsed
+stdin: (List<json.Value>|json.Value)? = pipe
+
+output {
+  value = pipe
+  when (read?("prop:pkl.outputFormat") == null) {
+    renderer = module.jsonRenderer
+  }
+}

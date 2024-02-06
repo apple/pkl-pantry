@@ -1,0 +1,48 @@
+examples {
+  ["k8s deployment images"] {
+    """
+    nginx:1.14.2
+    splunkforwarder:1234
+    """
+  }
+  ["k8s name and kind list"] {
+    """
+    v1.Pod: nginx
+    v1.Service: nginx-service
+    """
+  }
+  ["github repos and stars"] {
+    """
+    cups: 1584
+    swift-lldb: 666
+    swift: 60875
+    swift-llbuild: 977
+    swift-package-manager: 8960
+    swift-llvm: 814
+    swift-clang: 672
+    swift-evolution: 13735
+    swift-corelibs-foundation: 4700
+    swift-corelibs-libdispatch: 2249
+    swift-corelibs-xctest: 1003
+    example-package-playingcard: 267
+    example-package-fisheryates: 174
+    example-package-deckofplayingcards: 163
+    example-package-dealer: 276
+    swift-3-api-guidelines-review: 452
+    swift-docker: 1242
+    swift-integration-tests: 95
+    swift-cmark: 222
+    swift-internals: 184
+    fstools: 40
+    swift-compiler-rt: 95
+    swift-xcode-playground-support: 248
+    ccs-caldavclientlibrary: 38
+    ccs-caldavtester: 47
+    ccs-calendarserver: 448
+    ccs-pyosxframeworks: 25
+    ccs-pycalendar: 67
+    ccs-pykerberos: 107
+    ccs-pyopendirectory: 22
+    """
+  }
+}

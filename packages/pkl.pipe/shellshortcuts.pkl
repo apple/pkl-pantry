@@ -1,0 +1,59 @@
+/// Shell aliases for using Pkl pipe tools.
+///
+/// To make using the Pkl pipe tools even easier, this module produces a shell aliases file
+/// that is compatible with both bash and zsh.
+///
+/// Usage:
+///
+/// ```
+/// # First, generate the aliases file
+/// pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<version>#/shellshortcuts.pkl > ~/.pklpipe
+///
+/// # Then add it to your profile or rc file.
+///
+/// # For zsh, use:
+/// echo 'source ~/.pklpipe' >> ~/.zshrc
+///
+/// # For bash with a login shell, use:
+/// echo 'source ~/.pklpipe' >> ~/.bash_profile
+///
+/// # Then use the shortcuts in commands like:
+/// curl https://ifconfig.co/json | pjq 'pipe.ip'
+/// ```
+@ModuleInfo { minPklVersion = "0.24.0" }
+module pkl.pipe.shellshortcuts
+
+import "pkl:reflect"
+
+local modules: Mapping<String, Module> = new {
+  ["ptq"] = import("./text.pkl")
+  ["pjq"] = import("./json.pkl")
+  ["pyq"] = import("./yaml.pkl")
+  ["pkubeval"] = import("./kubeval.pkl")
+}
+
+output {
+  text = modules
+    .toMap()
+    .entries
+    .map((el) ->
+      shellFuncForPath(
+        el.first,
+        reflect.Module(el.second).uri
+      )
+    ).join("\n") + "\n"
+}
+
+/// [shellFuncForPath] renders a function definition which is compatible with
+/// both bash and zsh. If a single argument is passed to the function, it will
+/// be passed to a Pkl invocation with `--expression`; if no arguments are passed,
+/// the Pkl module will be invoked without any arguments.
+local function shellFuncForPath(functionName: String, modulePath: String): String = #"""
+  function \#(functionName) {
+      if [[ -n $1 && "$1" != -* ]]; then
+        pkl eval \#(modulePath) --expression "$1" "${@:2}"
+      else
+        pkl eval \#(modulePath) $@
+      fi
+  }
+  """#

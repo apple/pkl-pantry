@@ -1,0 +1,30 @@
+/// A Pkl implementation of a Kubernetes manifest validation tool, inspired by
+/// [kubeval](https://github.com/instrumenta/kubeval)
+///
+/// Example usage:
+///
+/// ```
+/// pkl eval <(pkl eval -m package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/kubeval.pkl> < deployment.yaml)
+/// # or
+/// pkl eval <(pkl eval -p input=deployment.yaml package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/kubeval.pkl)
+/// ```
+@ModuleInfo { minPklVersion = "0.24.0" }
+module pkl.pipe.kubeval
+amends "yaml.pkl"
+
+import "@k8s.contrib/convert.pkl"
+
+parser {
+  useMapping = true
+}
+
+input = (read?("prop:input").ifNonNull((it) -> read(it as String)) as Resource?) ?? super.input
+
+output = (convert) {
+  resourcesToConvert =
+    let (pipe = module.pipe)
+      if (pipe is List)
+        pipe
+      else
+        List(pipe)
+}.output
