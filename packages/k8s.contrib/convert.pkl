@@ -28,7 +28,7 @@
 /// ```
 /// pkl eval -p input=deployment.yml \
 ///     -o deployment.pkl \
-///     package://pkl.pkl-lang.org/pkl-pantry/k8s.contrib@<version>#/convert.pkl
+///     package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@<version>#/convert.pkl
 /// ```
 ///
 /// To validate the generated Pkl file, run `pkl eval deployment.pkl`.
