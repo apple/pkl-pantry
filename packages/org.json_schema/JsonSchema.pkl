@@ -1,0 +1,469 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// A document that describes constraints on JSON values.
+///
+/// Currently only supports JSON Schema 6 or higher.
+/// JSON Schema 4 isn't supported because of breaking changes in how [exclusiveMinimum] and [exclusiveMaximum] work.
+///
+/// JSON Schema documentation can be found at <https://json-schema.org>.
+open module org.json_schema.JsonSchema
+
+import "pkl:reflect"
+import "JsonSchema.pkl"
+import "@uri/URI.pkl"
+
+typealias JsonSchemaTypeName = "string"|"number"|"integer"|"boolean"|"object"|"array"|"null"
+
+typealias JsonSchemaVersion =
+  "http://json-schema.org/draft-06/schema#"
+  |"http://json-schema.org/draft-06/schema"
+  |"http://json-schema.org/draft-07/schema#"
+  |"http://json-schema.org/draft-07/schema"
+  |"https://json-schema.org/draft/2019-09/schema"
+  |"https://json-schema.org/draft/2020-12/schema"
+  |String
+
+typealias JsonSchemaValue = Boolean|Number|Null|String|Dynamic|Typed|Listing
+
+/// A JSON Schema can either be a [JsonSchema] object or a simple boolean.
+///
+/// A boolean schema is shorthand for:
+///  - true: Any value is valid
+///  - false: No value is valid
+typealias Schema = *JsonSchema|Boolean
+
+/// The known versions of JSON Schema.
+///
+/// For example, `http://json-schema.org/draft-06/schema#`.
+hidden versions: List<String> =
+  (reflect.TypeAlias(JsonSchemaVersion).referent as reflect.UnionType).members
+    .filterIsInstance(reflect.StringLiteralType)
+    .map((it) -> it.value)
+
+/// Ensures that this document's [`$schema`] is later than [version].
+local function availableAfter(version: JsonSchemaVersion) =
+  if ($schema == null) // If $schema is unset, skip this check.
+    true
+  else
+    let (currentVersion = versions.indexOfOrNull($schema))
+    let (availableAfterVersion = versions.indexOf(version))
+      if (currentVersion == null)
+        let (_ = trace("WARN: unrecognized $schema: \($schema)")) true
+      else
+        currentVersion >= availableAfterVersion
+
+local parseUri = (it) -> URI.parse(it)
+
+/// The base-level schema.
+///
+/// This is a utility property to help with resolving references.
+hidden $$baseSchema: JsonSchema?
+
+/// The ID as an instance of [URI].
+hidden /** final */ $$idUri: URI? = $id?.ifNonNull(parseUri)
+
+/// The reference as an instance of [URI].
+hidden /** final */ $$refUri: URI? = $ref?.ifNonNull(parseUri)
+
+// region Core
+/// URI-reference for the schema.
+///
+/// The reference serves two purposes:
+///
+///   * It declares a unique identifier for the schema.
+///   * It declares a base URI against which `$ref` URI-references are resolved.
+///
+/// It is best practice that every top-level schema should set `$id` to an
+/// absolute-URI (not a relative reference), with a domain that you control.
+///
+/// <https://json-schema.org/understanding-json-schema/structuring.html#the-id-property>
+$id: String?
+
+/// Reference to a schema.
+///
+/// <https://json-schema.org/understanding-json-schema/structuring.html#using-id-with-ref>
+$ref: String?
+
+/// The presence of this property declares that this object represents a JSON Schema, and also
+/// represents the version that the schema was written against.
+///
+/// It is recommended that all JSON Schemas have a [`$schema`] entry,
+/// which must be at the root.  Therefore most of the time, you'll want
+/// this at the root of your schema:
+///
+///     "$schema": "http://json-schema.org/draft/2019-09/schema#"
+///
+/// <https://json-schema.org/understanding-json-schema/reference/schema.html>
+$schema: JsonSchemaVersion?
+
+/// Implementation comments for a schema.
+///
+/// Its value must always be a string. Unlike the annotations
+/// [title], [description], and [examples], JSON schema
+/// implementations aren't allowed to attach any meaning or behavior to it
+/// whatsoever, and may even strip them at any time. Therefore, they are
+/// useful for leaving notes to future editors of a JSON schema, but
+/// should not be used to communicate to users of the schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#comments>
+$comment: String(availableAfter("http://json-schema.org/draft-07/schema#"))?
+
+/// Defines schemas that maybe re-used within a complex JSON Schema document.
+///
+/// <https://json-schema.org/understanding-json-schema/structuring.html?highlight=definitions#reuse>
+definitions: Mapping<String, Schema>?
+
+/// Defines schemas that maybe re-used within a complex JSON Schema document.
+///
+/// This is the same thing as [definitions], but was renamed in draft 2019.
+///
+/// <https://json-schema.org/understanding-json-schema/structuring.html#defs>
+$defs: Mapping<String, Schema>(availableAfter("https://json-schema.org/draft/2019-09/schema"))?
+
+// endregion
+// region Metadata
+
+/// A short descriptor of this schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+title: String?
+
+/// A long descriptor of this schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+description: String?
+
+/// A default instance value of this schema.
+///
+/// This value is not used to fill in missing values during the validation process.
+/// Non-validation tools such as documentation generators or form
+/// generators may use this value to give hints to users about how to use
+/// a value.
+/// However, [default] is typically used to express that if a value is missing,
+/// then the value is semantically the same as if the value was present with the
+/// default value.
+/// The value of [default] should validate against the schema in which it resides,
+/// but that isn't required.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+default: JsonSchemaValue?
+
+/// A place to provide a set of examples that validate against the schema.
+///
+/// This isn't used for validation, but may help with explaining the effect
+/// and purpose of the schema to a reader.
+/// Each entry should validate against the schema in which it resides, but
+/// that isn't strictly required.
+/// There is no need to duplicate the [default] value in the [examples] array,
+/// since [default] will be treated as another example.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+examples: JsonSchemaValue?
+
+/// Indicates that the instance value should not be used and
+/// may be removed in the future.
+///
+/// Introduced in draft 2019-09.
+deprecated: Boolean(availableAfter("https://json-schema.org/draft/2019-09/schema"))?
+
+/// Metadata indicating that the instance value should not be modified.
+///
+/// It could be used to indicate that a `PUT` request that changes a value would result
+/// in a 400 Bad Request response
+///
+/// Introduced in draft 7.
+readOnly: Boolean(availableAfter("http://json-schema.org/draft-07/schema#"))?
+
+/// Metadata indicating that a value may be set, but will remain hidden.
+///
+/// In could be used to indicate you can set a value with a `PUT` request,
+/// but it would not be included when retrieving that record with a `GET` request
+///
+/// Introduced in draft 7.
+writeOnly: Boolean(availableAfter("http://json-schema.org/draft-07/schema#"))?
+
+// endregion
+// region Core validation
+
+/// The fundamental data type for a schema.
+///
+/// At its core, JSON Schema defines the following basic types:
+///
+///   - `string`
+///   - `number`
+///   - `integer`
+///   - `boolean`
+///   - `array`
+///   - `object`
+///   - `null`
+///
+/// [type] may either be a string or a listing.
+///
+///   - If it's a string, it is the name of one of the basic types above.
+///   - If it is an array, it must be an array of strings, where each string
+///     is the name of one of the basic types, and each element is unique.
+///     In this case, the JSON snippet is valid if it matches *any* of the
+///     given types.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/type.html#type>
+type: (JsonSchemaTypeName|Listing<JsonSchemaTypeName>)?
+
+/// Restricts the instance value to a fixed set of values.
+///
+/// It must be a listing with at least one element, where each element is unique.
+/// You can use [enum] even without a [type], to accept values of different types.
+///
+/// Elements in the array might be of any value, including null.
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values>
+enum: (*JsonSchemaValue|Listing<JsonSchemaValue>)?
+
+/// Restricts the instance value to a single value.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/generic.html#constant-values>
+`const`: JsonSchemaValue?
+
+// endregion
+// region Number validators
+
+/// Restricts the instance value to a multiple of the given number.
+///
+/// It may be set to any positive number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples>
+multipleOf: Number(isPositive)?
+
+/// Restricts the instance value to be at minimum the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+minimum: Number?
+
+/// Restricts the instance value to be larger than the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+exclusiveMinimum: Number?
+
+/// Restricts the instance value to be at maximum the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+maximum: Number?
+
+/// Restricts the instance value to be smaller than the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+exclusiveMaximum: Number?
+
+// endregion
+// region String validators
+
+/// Restricts the instance value to a regex pattern.
+///
+/// The regular expression must conform to [ECMA 262](https://262.ecma-international.org/5.1/#sec-7.8.5).
+///
+/// <https://json-schema.org/understanding-json-schema/reference/string.html#regular-expressions>
+pattern: String(isRegex)?
+
+/// Restricts the instance value's length to be at minimum the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+minLength: UInt?
+
+/// Restricts the instance value's length to be at maximum the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+maxLength: UInt?
+
+/// Allows for basic semantic validation on certain kinds of string values that are
+/// commonly used.
+///
+/// This allows values to be constrained beyond what the other tools in JSON Schema,
+/// including Regular Expressions can do.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/string.html#format>
+format: (
+  "date-time"
+  |"time"
+  |"date"
+  |"email"
+  |"idn-email"
+  |"hostname"
+  |"ipv4"
+  |"ipv6"
+  |"uri"
+  |"uri-reference"
+  |"iri"
+  |"iri-reference"
+  |"uri-template"
+  |"json-pointer"
+  |"relative-json-pointer"
+  |"regex"
+  |String)?
+
+//endregion
+// region Object validators
+
+/// The properties (key-value pairs) on the instance value.
+///
+/// Each key is the name of a property and each value is a schema used to
+/// validate that property.
+/// Any property on the instance value that doesn't match any of the property
+/// names within [properties] is ignored.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#properties>
+properties: Mapping<String, Schema>?
+
+/// Specifies that properties on the instance value that match the specified
+/// regular expression should conform to a certain schema.
+///
+/// Sometimes you want to say that, given a particular kind of property name,
+/// the value should match a particular schema. That’s where
+/// [patternProperties] comes in: it maps regular expressions to schemas.
+/// If a property name matches the given regular expression, the property
+/// value must validate against the corresponding schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#pattern-properties>
+patternProperties: Mapping<String(isRegex), Schema>?
+
+/// Controls the handling of any properties on the instance value that are
+/// not listed within [properties], or match any of the regular expressions in
+/// [patternProperties].
+///
+/// By default, any additional properties are allowed.
+///
+/// Setting the [additionalProperties] to [false] means no additional
+/// properties will be allowed.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#additional-properties>
+additionalProperties: Schema?
+
+/// Properties that are required to exist on the instance value.
+///
+/// By default, no properties are required.
+///
+/// The `required` keyword takes an array of zero or more strings.  Each
+/// of these strings must be unique.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#required-properties>
+required: Listing<String>?
+
+/// Validate that the property names match a schema.
+///
+/// The [type] for the schema is implicitly `"string"`.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#property-names>
+propertyNames: Schema?
+
+/// The minimum amount of properties that the instance value should have.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#size>
+minProperties: UInt?
+
+/// The maximum amount of properties that the instance value should have.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/object.html#size>
+maxProperties: UInt?
+
+// endregion
+// region Array validators
+
+/// Constraints on items within an array.
+///
+/// There are two ways in which arrays are generally used in JSON:
+///
+/// - **List validation:** a sequence of arbitrary length where each
+///     item matches the same schema.
+///
+/// - **Tuple validation:** a sequence of fixed length where each item may
+///   have a different schema.  In this usage, the index (or location) of
+///   each item is meaningful as to how the value is interpreted.  (This
+///   usage is often given a whole separate type in some programming
+///   languages, such as Python's `tuple`).
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#items>
+items: (*Schema|Listing<Schema>)?
+
+/// Controls whether it’s valid to have additional items in a tuple beyond what is
+/// defined in items.
+///
+/// The value of the [additionalItems] is a schema that all additional items must pass
+/// in order for the keyword to validate.
+/// This is ignored if there is not a “tuple validation” items
+/// keyword present in the same schema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#addtional-items>
+additionalItems: Schema?
+
+/// A schema that must match at least one item within the instance array.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#contains>
+contains: Schema?
+
+/// Constrains the instance value's length to be at minimum the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+minItems: UInt?
+
+/// Constrains the instance value's length to be at maximum the given number.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+maxItems: UInt?
+
+/// Specifies that each item in the instance value is unique.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/array.html#uniqueness>
+uniqueItems: Boolean?
+
+// endregion
+// region Composition
+
+/// Specifies that the value must match against **exactly** one of the subschemas.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#oneof>
+oneOf: Listing<Schema>(!isEmpty)?
+
+/// Specifies that the value must match ay least one of the subschemas.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#anyof>
+anyOf: Listing<Schema>(!isEmpty)?
+
+/// Specifies that the value must match **all** of the subschemas.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#allof>
+allOf: Listing<Schema>(!isEmpty)?
+
+/// The `not` keyword declares that an instance validates if it doesn’t validate
+/// against the given subschema.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/combining.html#not>
+not: Schema?
+
+// endregion
+
+/// Any additional properties that are [JsonSchema].
+///
+/// Additional properties do not affect the validation of the instance value, but
+/// may be referred to using [$ref].
+///
+/// This is a child property because Pkl modules cannot express both known names
+/// and arbitrary names.
+_inline_: Mapping<String, Schema>?
+
+output {
+  renderer = new JsonRenderer {
+    converters {
+      [module.getClass()] = (s: JsonSchema) -> s.toMap().remove("_inline_") + s._inline_.toMap()
+    }
+  }
+}
