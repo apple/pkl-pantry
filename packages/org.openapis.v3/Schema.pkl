@@ -213,7 +213,7 @@ required: Listing<String>(type == "object", isDistinct)?
 /// <https://json-schema.org/understanding-json-schema/reference/combining.html#oneof>
 oneOf: Listing<Schema|Reference>(length > 0)?
 
-/// Represent a value that must match ay least one of the subschemas.
+/// Represent a value that must match **at least one** of the subschemas.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/combining.html#anyof>
 anyOf: Listing<Schema|Reference>(length > 0)?
