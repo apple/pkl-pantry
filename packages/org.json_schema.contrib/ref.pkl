@@ -1,0 +1,103 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Tools to resolve JSON Schema references
+@Unlisted
+module org.json_schema.contrib.ref
+
+import "@jsonschema/JsonSchema.pkl"
+import "@jsonschema/Parser.pkl"
+import "internal/utils.pkl"
+import "@uri/URI.pkl"
+
+/// Parse a json pointer into its constitutents.
+local function parseJsonPointer(ref: String): List<String|Int> =
+  ref
+    .split("/")
+    .map((str) -> str
+      .replaceAll("~0", "~")
+      .replaceAll("~1", "/"))
+    .map((it) -> URI.percentDecode(it))
+    .map((str) -> str.toIntOrNull() ?? str)
+
+local function resolveRefImpl(cursor: Any, parts: List<String|Int>, fullRef: URI): JsonSchema.Schema? =
+  if (cursor == null)
+    let (_ = trace("WARN: failed to resolve $ref \(fullRef)"))
+      null
+  else if (parts.isEmpty)
+    let (result = cursor as JsonSchema.Schema)
+      // if the resolved schema is still a reference, resolve it again.
+      if (result is JsonSchema && result.$ref != null)
+        resolveRef(fullRef.basePath, result)
+      else
+        result
+  else
+    let (head = parts.first)
+      if (head is Int)
+        if (cursor is Listing)
+          resolveRefImpl(cursor[head], parts.drop(1), fullRef.basePath)
+        else
+          let (_ = trace("WARN: failed to read path `\(head)` from schema because it is not an array. Full ref: `\(fullRef)`"))
+            null
+      else if (cursor is JsonSchema)
+        if (cursor.hasProperty(head))
+          let (nextCursor = cursor.getPropertyOrNull(head)
+            ?? let (inline = cursor._inline_) if (inline != null) inline[head] else null)
+            resolveRefImpl(nextCursor, parts.drop(1), fullRef)
+        else
+          let (inline = cursor._inline_ ?? new Mapping {})
+            resolveRefImpl(inline.getOrNull(head), parts.drop(1), fullRef)
+      else if (cursor is Typed|Dynamic)
+        resolveRefImpl(cursor.getPropertyOrNull(head), parts.drop(1), fullRef)
+      else if (cursor is Mapping)
+        resolveRefImpl(cursor[head], parts.drop(1), fullRef)
+      else
+        let (_ = trace("WARN: unable to find path \(head) in $ref \(fullRef). Tried to look in \(cursor)"))
+          null
+
+local function isSameDocument(origin: URI, ref: URI) =
+  let (resolvedUri = origin.resolveUri(ref))
+    origin.scheme == resolvedUri.scheme
+    && origin.authority() == resolvedUri.authority()
+    && origin.path == resolvedUri.path
+
+/// Resolve a [schema] which contains a [JsonSchema.`$ref`] against the [rootSchema].
+///
+/// [rootSchema] must be the root schema, and not a subschema.
+/// [schema] must contain a `$ref`.
+/// This is as forgiving as possible; if any of the parts fail, it simply returns null.
+///
+/// The returned schema merges the resolved schema into [schema].
+function resolveRef(baseUri: URI, schema: JsonSchema): JsonSchema.Schema? =
+  let (ref = schema.$$refUri!!)
+  let (parts = parseJsonPointer(ref.fragment ?? ""))
+    if (isSameDocument(baseUri, ref))
+      resolveRefImpl(schema.$$baseSchema, parts.drop(1), ref)
+        .ifNonNull((it) -> utils.mergeSchemas((schema) { $ref = null }, List(it)))
+    // Otherwise, we need to figure out the correct relative path.
+    // This is done by resolving [ref] against the base URI.
+    // If the resolved URI is a different document, it is read and parsed first.
+    else
+      let (resolvedUri = baseUri.resolveUri(ref))
+      let (jsonSchemaBlob = read?(resolvedUri.basePath.toString()))
+        if (jsonSchemaBlob == null)
+          let (_ = trace("WARN: Failed to read external URI \(resolvedUri)"))
+            null
+        else
+          let (parsedJsonSchema = (Parser.parse(jsonSchemaBlob)) {
+            $$baseSchema = this
+          })
+            resolveRefImpl(parsedJsonSchema, parts.drop(1), ref)
+              .ifNonNull((it) -> utils.mergeSchemas((schema) { $ref = null }, List(it)))

@@ -1,0 +1,177 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.json_schema.contrib.internal.utils
+
+import "@syntax/TypeNode.pkl"
+import "@syntax/ExpressionNode.pkl"
+import "@syntax/operators.pkl"
+import "@syntax/AnnotationNode.pkl"
+import "Type.pkl"
+import "@jsonschema/JsonSchema.pkl"
+import "singularize.pkl"
+
+/// Renders the string in pascal case.
+///
+/// Underscores, dashes and dots are all considered word separators.
+///
+/// Facts:
+/// ```
+/// pascalCase("foo-bar") == "FooBar"
+/// pascalCase("foo.bar") == "FooBar"
+/// pascalCase("foo_bar") == "FooBar"
+/// pascalCase("fooBar") == "FooBar"
+/// ```
+function pascalCase(text: String) =
+  let (words = text.split(Regex(#"[_.-]"#)))
+    words.map((w) -> w.capitalize()).join("")
+
+/// Node representing `this`.
+THIS: ExpressionNode.BuiltInKeywordExpressionNode = new { keyword = "this" }
+
+/// Node representing `@Deprecated`
+DEPRECATED: AnnotationNode = new {
+  identifier {
+    parts {
+      new { value = "Deprecated" }
+    }
+  }
+}
+
+/// Creates a node equivalent of a number
+function numberLiteral(num: Number) = new ExpressionNode.LiteralValueExpressionNode { value = num }
+
+/// Creates a declared type
+function declaredType(type: String) = new TypeNode.DeclaredTypeNode {
+  name {
+    parts {
+      new {
+        value = type
+      }
+    }
+  }
+}
+
+function declaredType1(type: Type, isImport: Boolean) = new TypeNode.DeclaredTypeNode {
+  name {
+    parts {
+      when (isImport) {
+        new {
+          value = type.moduleName.split(".").last
+        }
+      }
+      new {
+        value = type.name
+      }
+    }
+  }
+}
+
+/// Helper for creating `ExpressionNode.BinaryOperatorExpressionNode`
+function binaryOperatorNode(
+  _lhs: ExpressionNode,
+  _operator: operators.BinaryOperator,
+  _rhs: ExpressionNode
+): ExpressionNode.BinaryOperatorExpressionNode = new {
+  lhs = _lhs
+  operator = _operator
+  rhs = _rhs
+}
+
+/// Merge multiple schemas into one schema document.
+function mergeSchemas(baseSchema: JsonSchema, rest: List<JsonSchema.Schema>) =
+  rest
+    .fold(baseSchema.toMap(), (aggregate: Map, schema: JsonSchema.Schema) ->
+      if (schema is Boolean)
+        aggregate
+      else
+        aggregate + schema.toMap().filter((_, value) -> value != null)
+    )
+    .toTyped(JsonSchema.getClass())
+
+
+local function findMatchingSchemasInMapping(
+  m: Mapping<String, JsonSchema.Schema>?,
+  path: List<String>,
+  predicate: (JsonSchema) -> Boolean
+): Map<List<String>, JsonSchema> =
+  if (m == null)
+    Map()
+  else
+    m
+      .toMap()
+      .filter((_, value) -> value is JsonSchema)
+      .flatMap((propertyName, schema) -> _findMatchingSubSchemas(schema as JsonSchema, path.add(propertyName), predicate))
+
+local function findMatchingSchemasInListing(
+  l: Listing<JsonSchema.Schema>?,
+  path: List<String>,
+  namePart: String,
+  predicate: (JsonSchema) -> Boolean
+): Map<List<String>, JsonSchema> =
+  if (l == null)
+    Map()
+  else
+    l.toList()
+      .filterIsInstance(JsonSchema.getClass())
+      .mapIndexed((idx, schema) -> Pair(idx, schema))
+      .toMap((p) -> p.first, (p) -> p.second)
+      .flatMap((idx, schema) ->
+      _findMatchingSubSchemas(
+        schema,
+        path.add((path.lastOrNull ?? "") + namePart + idx.toString()),
+        predicate
+      )
+    )
+
+function _findMatchingSubSchemas(
+  schema: JsonSchema,
+  path: List<String>,
+  predicate: (JsonSchema) -> Boolean
+): Map<List<String>, JsonSchema> =
+  (if (predicate.apply(schema))
+    Map(path, schema)
+  else
+    Map())
+  + findMatchingSchemasInMapping(schema.properties, path, predicate)
+  + (
+    let (map = schema.patternProperties?.toMap() ?? Map())
+      if (map.length == 1 && map.values.first is JsonSchema)
+        _findMatchingSubSchemas(map.values.first as JsonSchema, path, predicate)
+      else
+        Map()
+    )
+  + findMatchingSchemasInMapping(schema.definitions, path, predicate)
+  + findMatchingSchemasInMapping(schema.$defs, path, predicate)
+  + (if (schema.additionalProperties is JsonSchema)
+      _findMatchingSubSchemas(schema.additionalProperties as JsonSchema, path, predicate)
+    else
+      Map())
+  + (if (schema.items is JsonSchema)
+      // Singularize the name so that we get type names like `Listing<Rule>` instead of `Listing<Rules>`
+      _findMatchingSubSchemas(schema.items as JsonSchema, if (path.length > 0) path.add(singularize.singularize(path.last)) else path, predicate)
+    else if (schema.items is Listing)
+      findMatchingSchemasInListing(schema.items as Listing, path, "Item", predicate)
+    else Map())
+  + findMatchingSchemasInListing(schema.oneOf, path, "Alternate", predicate)
+  + findMatchingSchemasInListing(schema.anyOf, path, "Alternate", predicate)
+  + findMatchingSchemasInMapping(schema._inline_, path, predicate)
+
+/// Traverse the [schema], returning all schemas that match [predicate].
+///
+/// Returns a map whose key is the path to that schema, and value is the schema itself.
+// TODO: additionalItems, allOf
+function findMatchingSubschemas(schema: JsonSchema, predicate: (JsonSchema) -> Boolean): Map<List<String>, JsonSchema> =
+  _findMatchingSubSchemas(schema, List(), predicate)

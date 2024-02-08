@@ -1,0 +1,673 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Logic for turning JSON Schemas into type nodes.
+///
+/// A type node can be thought of as a type annotation; for example, it is `Int` within `foo: Int`.
+///
+/// Class and typealias definitions are handled by [ClassGenerator] instead of here.
+@Unlisted
+module org.json_schema.contrib.internal.TypesGenerator
+
+import "pkl:math"
+import "@jsonschema/JsonSchema.pkl"
+import "../ref.pkl"
+import "@syntax/TypeNode.pkl"
+import "@syntax/ExpressionNode.pkl"
+import "@syntax/operators.pkl"
+import "@uri/URI.pkl"
+import "utils.pkl"
+import "Type.pkl"
+
+/// The base URI, used to resolve `$ref` values.
+baseUri: URI
+
+enclosingModuleName: String
+
+/// Generate a Pkl type definition from a given schema.
+///
+/// Expects class and typealias names to be known beforehand; [typeNames] is a map of a [JsonSchema] to its
+/// determined declared name.
+function generateTypeNode(
+  schema: JsonSchema.Schema,
+  typeNames: Type.TypeNames
+): TypeNode =
+  if (schema is JsonSchema && schema.$$refUri != null)
+    let (resolved = ref.resolveRef(baseUri, schema))
+      // Couldn't resolve the $ref, so mark this as an unknown type.
+      if (resolved == null)
+        new TypeNode.BuiltInTypeNode { type = "unknown" }
+      else
+        generateTypeNode(resolved, typeNames)
+  else if (schema is JsonSchema && schema == schema.$$baseSchema)
+    new TypeNode.BuiltInTypeNode { type = "module" }
+  // If a boolean, `true` means "anything is valid", `false` means "nothing is valid".
+  else if (schema is Boolean)
+    if (schema)
+      utils.declaredType("Any")
+    else
+      new TypeNode.BuiltInTypeNode { type = "nothing" }
+  // If we have generated a class or typealias definition already, simply use it.
+  else if (typeNames.containsKey(schema))
+    let (type = typeNames[schema as JsonSchema])
+      utils.declaredType1(type, type.moduleName != enclosingModuleName)
+  // Edge case: if `type` includes `"null"`, treat this as a nullable type.
+  else if (schema.type is Listing && schema.type.toList().contains("null"))
+    let (subtype = generateTypeNode((schema) {
+      type = schema.type.toList().filter((t) -> t != "null").toListing()
+    }, typeNames))
+      new TypeNode.NullableTypeNode {
+        typeNode = subtype
+      }
+  else
+    let (pair = generateBaseType(schema as JsonSchema, typeNames))
+      pair.second |> addConstraints(pair.first)
+
+/// Node equivalent of `isBetween`.
+///
+/// Returns null if either of minimum or maximum are missing.
+local function constraintIsBetween(minimum: Number?, maximum: Number?): ExpressionNode.MemberAccessExpressionNode? =
+  if (minimum != null && maximum != null)
+    new {
+      identifier {
+        value = "isBetween"
+      }
+      arguments {
+        utils.numberLiteral(minimum)
+        utils.numberLiteral(maximum)
+      }
+    }
+  else null
+
+/// Node equivalent of `length.isBetween(...)`, given the minimum and maximum values.
+local function constraintLengthIsBetween(minimum: Number?, maximum: Number?): ExpressionNode? =
+  let (isBetween = constraintIsBetween(minimum, maximum))
+    if (isBetween != null)
+      new ExpressionNode.QualifiedMemberAccessExpressionNode {
+        lhs = new ExpressionNode.MemberAccessExpressionNode {
+          identifier {
+            value = "length"
+          }
+        }
+        rhs = isBetween
+      }
+    else null
+
+/// Node equivalent of `isEmpty` or `!isEmpty`.
+local function constraintIsEmpty(minimum: Number?, maximum: Number?): ExpressionNode? =
+  let (IS_EMPTY = new ExpressionNode.MemberAccessExpressionNode {
+    identifier {
+      value = "isEmpty"
+    }
+  })
+    if (minimum == null && maximum == 0)
+      IS_EMPTY
+    else if (minimum == 1 && maximum == null)
+      new ExpressionNode.PrefixOperatorExpressionNode {
+        operator = operators.NOT
+        expression = IS_EMPTY
+      }
+    else null
+
+/// Node equivalent of `isPositive` or `!isPositive`.
+local function numberConstraintsIsPositive(minimum: Number?, maximum: Number?): ExpressionNode? =
+  if (minimum == 0 && maximum == null)
+    new ExpressionNode.MemberAccessExpressionNode {
+      identifier {
+        value = "isPositive"
+      }
+    }
+  else if (minimum == null && maximum == -1)
+    new ExpressionNode.PrefixOperatorExpressionNode {
+      operator = operators.NOT
+      expression = new ExpressionNode.MemberAccessExpressionNode {
+        identifier {
+          value = "isPositive"
+        }
+      }
+    }
+  else null
+
+/// Constraints on numbers.
+local function numberConstraints(schema: JsonSchema): List<ExpressionNode> =
+  if (!isNumberSchema(schema))
+    List()
+  else
+    let (minimum = if (schema.exclusiveMinimum != null) schema.exclusiveMinimum!! + 1 else schema.minimum)
+    let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
+    let (isBetween = constraintIsBetween(minimum, maximum))
+    let (isPositive = numberConstraintsIsPositive(minimum, maximum))
+      new Listing {
+        when (isBetween != null) {
+          isBetween
+        }
+        when (isPositive != null) {
+          isPositive
+        }
+        when (isPositive == null && isBetween == null) {
+          when (schema.minimum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minimum!!))
+          }
+
+          when (schema.exclusiveMinimum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.GREATER_THAN, utils.numberLiteral(schema.exclusiveMinimum!!))
+          }
+
+          when (schema.maximum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maximum!!))
+          }
+
+          when (schema.exclusiveMaximum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.LESS_THAN, utils.numberLiteral(schema.exclusiveMaximum!!))
+          }
+        }
+        when (schema.multipleOf != null) {
+          if (schema.multipleOf == 2)
+            new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "isEven"
+              }
+            }
+          else
+            utils.binaryOperatorNode(
+              utils.binaryOperatorNode(utils.THIS, operators.MODULO, utils.numberLiteral(schema.multipleOf!!)),
+              operators.EQUALS,
+              utils.numberLiteral(0)
+            )
+        }
+      }.toList()
+
+local function arrayConstraints(schema: JsonSchema): List<ExpressionNode> =
+  if (!isListingSchema(schema))
+    List()
+  else
+    let (isBetween = constraintLengthIsBetween(schema.minItems, schema.maxItems))
+    let (isEmpty = constraintIsEmpty(schema.minItems, schema.maxItems))
+      new Listing {
+        when (isBetween != null) {
+          isBetween
+        }
+        when (isEmpty != null) {
+          isEmpty
+        }
+        when (isBetween == null && isEmpty == null) {
+          when (schema.minItems != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minItems!!))
+          }
+
+          when (schema.maxItems != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maxItems!!))
+          }
+        }
+        when (schema.uniqueItems == true) {
+          new ExpressionNode.MemberAccessExpressionNode {
+            identifier {
+              value = "isDistinct"
+            }
+          }
+        }
+      }.toList()
+
+local function stringConstraints(schema: JsonSchema): List<ExpressionNode> =
+  if (!isStringSchema(schema))
+    List()
+  else
+    let (isBetween = constraintLengthIsBetween(schema.minLength, schema.maxLength))
+    let (isEmpty = constraintIsEmpty(schema.minLength, schema.maxLength))
+      new Listing {
+        when (isBetween != null) {
+          isBetween
+        }
+        when (isEmpty != null) {
+          isEmpty
+        }
+        when (isBetween == null && isEmpty == null) {
+          when (schema.minLength != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minLength!!))
+          }
+
+          when (schema.maxLength != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maxLength!!))
+          }
+        }
+
+        when (schema.pattern != null) {
+          new ExpressionNode.MemberAccessExpressionNode {
+            identifier {
+              value = "matches"
+            }
+            arguments {
+              new ExpressionNode.MemberAccessExpressionNode {
+                identifier {
+                  value = "Regex"
+                }
+                arguments {
+                  new ExpressionNode.LiteralValueExpressionNode {
+                    value = schema.pattern
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // For formats, regex is easy, but not really clear how to describe anything else.
+        when (schema.format == "regex") {
+          new ExpressionNode.MemberAccessExpressionNode {
+            identifier {
+              value = "isRegex"
+            }
+          }
+        }
+      }.toList()
+
+/// Constraints for [Mapping] types.
+///
+/// Note: [JsonSchema.patternProperties] is handled in the base type rather than as a constraint.
+local function mappingConstraints(schema: JsonSchema): List<ExpressionNode> =
+  if (!isMappingSchema(schema))
+    List()
+  else
+    let (isBetween = constraintLengthIsBetween(schema.minProperties, schema.maxProperties))
+      new Listing {
+        when (isBetween != null) {
+          isBetween
+        }
+        when (isBetween == null) {
+          when (schema.minProperties != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minProperties!!))
+          }
+
+          when (schema.maxProperties != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maxProperties!!))
+          }
+        }
+      }.toList()
+
+/// Internal implementation of [literalValueConstraints]
+///
+/// [enums] must be a non-empty array.
+local function literalValueConstraintsImpl(enums: List<String|Boolean|Number|Null>): ExpressionNode =
+  if (enums.length == 1)
+    new ExpressionNode.BinaryOperatorExpressionNode {
+      lhs = utils.THIS
+      operator = operators.EQUALS
+      rhs = new ExpressionNode.LiteralValueExpressionNode {
+        value = enums[0]
+      }
+    }
+  else
+    new ExpressionNode.BinaryOperatorExpressionNode {
+      lhs = new ExpressionNode.BinaryOperatorExpressionNode {
+        lhs = utils.THIS
+        operator = operators.EQUALS
+        rhs = new ExpressionNode.LiteralValueExpressionNode {
+          value = enums[0]
+        }
+      }
+      operator = operators.OR
+      rhs = literalValueConstraintsImpl(enums.drop(1))
+    }
+
+/// Node equivalent of literal value restrictions.
+///
+/// Given `"enum": [1, 2, 3, 4]`, generates `this == 1 || this == 2 || this == 3 || this == 4`
+/// Note: enums of strings is not handled by this; it is generated as a union type of string literals instead by [generateBaseType].
+local function literalValueConstraints(schema: JsonSchema): List<ExpressionNode> =
+  if (schema.enum == null && schema.`const` == null)
+    List()
+  else
+    let (enums =
+      if (schema.enum is Listing) schema.enum.toList()
+      else if (schema.`const` != null) List(schema.`const`)
+      else List(schema.enum))
+      let (filteredEnums = enums.filter((enum) -> enum is String|Boolean|Number|Null) as List<String|Boolean|Number|Null>)
+        if (filteredEnums.isEmpty)
+          List()
+        // "enum": [true, false] is exactly the same meaning as Boolean, so skip generating literal value constraints.
+        else if (filteredEnums.toSet() == Set(true, false))
+          List()
+        else
+          List(literalValueConstraintsImpl(filteredEnums))
+
+/// Table of binary operators to its exact opposite.
+///
+/// This is used to render a nicer constraint and avoid using `!`.
+/// For example, we want `this > 5` instead of `!(this <= 4)`
+local antonyms: Mapping<operators.BinaryOperator, operators.BinaryOperator> = new {
+  [operators.GREATER_THAN] = operators.LESS_THAN_OR_EQUALS
+  [operators.GREATER_THAN_OR_EQUALS] = operators.LESS_THAN
+  [operators.LESS_THAN] = operators.GREATER_THAN_OR_EQUALS
+  [operators.LESS_THAN_OR_EQUALS] = operators.GREATER_THAN
+  [operators.EQUALS] = operators.NOT_EQUALS
+  [operators.NOT_EQUALS] = operators.EQUALS
+}
+
+local memberAccessAntonyms: Mapping<String, String> = new {
+  ["isOdd"] = "isEven"
+  ["isEven"] = "isOdd"
+  ["isFinite"] = "isInfinite"
+  ["isInfinite"] = "isFinite"
+}
+
+local function constraintExpressions(schema: JsonSchema.Schema): List<ExpressionNode> =
+  if (schema is Boolean) List()
+  else
+    numberConstraints(schema as JsonSchema)
+      + arrayConstraints(schema as JsonSchema)
+      + stringConstraints(schema as JsonSchema)
+      + mappingConstraints(schema as JsonSchema)
+      + literalValueConstraints(schema as JsonSchema)
+
+/// Constraints to be added to a base type.
+///
+/// This will use "nicer" constraints if available.
+/// For exmaple, `isBetween`, `isPositive`, `isEven`, etc.
+///
+/// **NOTE**: If `schema.type` is a [Listing], the schema might contain constraints that are only relevant to one of the subtypes.
+/// For example, a schema might have `"type": ["string", "array"]` and have `uniqueItems` set.
+/// In this situation, `uniqueItems` should apply to only the "array" subtype.
+/// We accomplish this by only applying constraints when the type is detected to be exactly the desired subtype.
+/// When generating base types, we split the types into a union type, and synthesize a subschema of that type.
+local function addConstraints(schema: JsonSchema): Mixin<TypeNode> = (_typeNode) ->
+  let (baseConstraints = constraintExpressions(schema))
+  let (notConstraints =
+    if (schema.not == null) List()
+    else
+      let (_not = (schema.not!!) { type = schema.type })
+        constraintExpressions(_not).map((_expression) ->
+          // `isOdd` instead of `!isEven` etc
+          if (_expression is ExpressionNode.MemberAccessExpressionNode && memberAccessAntonyms.containsKey(_expression.identifier.value))
+            (_expression) {
+              identifier {
+                value = memberAccessAntonyms[_expression.identifier.value]
+              }
+            }
+          // Use antonyms if available. For example, we can use the expression `this > 5` instead of `!(this <= 4)`
+          else if (_expression is ExpressionNode.BinaryOperatorExpressionNode && antonyms.containsKey(_expression.operator))
+            (_expression) {
+              operator = antonyms[_expression.operator]
+            }
+          else
+            new ExpressionNode.PrefixOperatorExpressionNode {
+              operator = operators.NOT
+              expression = _expression
+            })
+        )
+  let (allOfConstraints =
+    if (schema.allOf == null) List()
+    else
+      let (merged = utils.mergeSchemas(schema, schema.allOf!!.toList()))
+        constraintExpressions(merged)
+  )
+  let (allConstraints = baseConstraints + notConstraints + allOfConstraints)
+    if (allConstraints.isEmpty)
+      _typeNode
+    else
+      new TypeNode.ConstrainedTypeNode { typeNode = _typeNode; constraints = allConstraints.toListing() }
+
+/// Generates the declared type of a schema, without constraints.
+///
+/// The base type might already represent some of the JSON Schema's constraints. For instance,
+/// `UInt32` already signifies a minimum and a maximum.
+///
+/// If the base type represents this information, it is removed from the returned [JsonSchema] so
+/// we do not end up with redundant constraints like `UInt32(isBetween(0, 4294967295))`.
+local function generateNumberType(schema: JsonSchema): Pair<JsonSchema, TypeNode> =
+  let (isInt = schema.type == "integer" || (schema.multipleOf != null && schema.multipleOf == schema.multipleOf?.floor))
+    if (isInt)
+      let (minimum = if (schema.exclusiveMinimum != null) schema.exclusiveMinimum!! + 1 else schema.minimum)
+      let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
+      let (refinedInt = if (minimum == 0 && maximum == math.maxUInt32)
+          utils.declaredType("UInt32")
+        else if (minimum == 0 && maximum == math.maxUInt16)
+          utils.declaredType("UInt16")
+        else if (minimum == 0 && maximum == math.maxUInt8)
+          utils.declaredType("UInt8")
+        else if (minimum == math.minInt32 && maximum == math.maxInt32)
+          utils.declaredType("Int32")
+        else if (minimum == math.minInt16 && maximum == math.maxInt16)
+          utils.declaredType("Int16")
+        else if (minimum == math.minInt8 && maximum == math.maxInt8)
+          utils.declaredType("Int8")
+        else null
+      )
+        let (_schema = (schema) {
+          when (refinedInt != null) {
+            minimum = null
+            maximum = null
+            exclusiveMinimum = null
+            exclusiveMaximum = null
+          }
+          // `multipleOf: 1` is redundant if the type is already [Int].
+          when (schema.multipleOf == 1) {
+            multipleOf = null
+          }
+        })
+          Pair(_schema, refinedInt ?? utils.declaredType("Int"))
+    else
+      Pair(schema, utils.declaredType("Number"))
+
+local function generateStringType(schema: JsonSchema): Pair<JsonSchema, TypeNode> =
+  if (schema.`const` is String)
+    Pair((schema) { `const` = null }, new TypeNode.StringLiteralTypeNode { value = schema.`const` as String })
+  else if (schema.enum != null && schema.enum is String)
+    Pair((schema) { enum = null }, new TypeNode.StringLiteralTypeNode { value = schema.enum as String })
+  else if (schema.enum != null && schema.enum is Listing && schema.enum.length == 1 && schema.enum.toList().first is String)
+    Pair((schema) { enum = null }, new TypeNode.StringLiteralTypeNode { value = (schema.enum as Listing).toList().first })
+  else if (schema.enum != null && schema.enum is Listing && schema.enum.toList().every((val) -> val is String))
+    // Edge case: If `enum` is set to all strings, this should be a union type.
+    Pair(
+      (schema) { enum = null },
+      new TypeNode.UnionTypeNode {
+        members {
+          for (stringValue in schema.enum as Listing) {
+            new TypeNode.StringLiteralTypeNode { value = stringValue }
+          }
+        }
+      }
+    )
+  else if (schema.format == "uri")
+    Pair((schema) { format = null }, utils.declaredType("Uri"))
+  else
+    Pair(schema, utils.declaredType("String"))
+
+local function generateObjectType(schema: JsonSchema, typeNames: Type.TypeNames): TypeNode =
+  // If `patternProperties` has exactly one entry, we can convert this to a `Mapping` where
+  // the key is in the form of `String(matches(...))`.
+  // Otherwise if it has more keys, we can't really express a good constraint for this, because `Mapping`s
+  // have homogenous types for each key-value pair, and classes cannot have entries.
+  // In the latter case, simply fall back to `Dynamic`.
+  if (schema.patternProperties != null && schema.patternProperties.toMap().length == 1)
+    let (pair = schema.patternProperties.toMap().entries.first)
+      (utils.declaredType("Mapping")) {
+        typeArguments {
+          new TypeNode.ConstrainedTypeNode {
+            typeNode = utils.declaredType("String")
+            constraints {
+              new ExpressionNode.MemberAccessExpressionNode {
+                identifier {
+                  value = "matches"
+                }
+                arguments {
+                  new ExpressionNode.MemberAccessExpressionNode {
+                    identifier {
+                      value = "Regex"
+                    }
+                    arguments {
+                      new ExpressionNode.LiteralValueExpressionNode {
+                        value = pair.first
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          generateTypeNode(pair.second, typeNames)
+        }
+      }
+  else if (schema.additionalProperties != null)
+    (utils.declaredType("Mapping")) {
+      typeArguments {
+        utils.declaredType("String")
+        if (schema.additionalProperties is Boolean)
+          utils.declaredType("Any")
+        else
+          generateTypeNode(schema.additionalProperties as JsonSchema, typeNames)
+      }
+    }
+  else
+    utils.declaredType("Dynamic")
+
+local function generateUnionType(schema: JsonSchema, typeNames: Type.TypeNames): Pair<JsonSchema, TypeNode> =
+  // If there are multiple types, the base schema has constraints that apply to each of the subtypes.
+  // We need to generate each one as its own type, with the constraints available on the schema.
+  if (schema.type is Listing)
+    Pair(
+      // Force no further constraints to be added by passing on an empty json schema.
+      new JsonSchema {},
+      new TypeNode.UnionTypeNode {
+        members {
+          for (_type in (schema.type as Listing)) {
+            generateTypeNode((schema) { type = _type }, typeNames)
+          }
+        }
+      }
+    )
+  else
+    Pair(
+      (schema) {
+        oneOf = null
+        anyOf = null
+      },
+      new TypeNode.UnionTypeNode {
+        members {
+          when (schema.oneOf != null) {
+            for (s in schema.oneOf!!) {
+              generateTypeNode(s, typeNames)
+            }
+          }
+          // Not perfect; `anyOf` means that it can match one or more subschema. A union type is not the correct
+          // Pkl type.
+          when (schema.anyOf != null) {
+            for (s in schema.anyOf!!) {
+              generateTypeNode(s, typeNames)
+            }
+          }
+        }
+      }
+    )
+
+local function generateListingType(schema: JsonSchema, typeNames: Type.TypeNames): TypeNode =
+  (utils.declaredType("Listing")) {
+    when (schema.items is JsonSchema) {
+      typeArguments {
+        generateTypeNode(schema.items as JsonSchema, typeNames)
+      }
+    }
+  }
+
+/// Tells if the schema's `enum` or `const` values all satisfy the [predicate].
+///
+/// Used for determining the base type.
+local function constOrEnumsMatch(schema: JsonSchema, predicate: (JsonSchema.JsonSchemaValue?) -> Boolean): Boolean =
+  predicate.apply(schema.`const`)
+    || (schema.enum?.toList()?.every(predicate) ?? predicate.apply(schema.enum))
+
+/// Returns the name of the schema's type if there is only one type.
+///
+/// For example, for these two schemas, `"string"` gets returned.
+/// ```
+/// type = "string"
+/// type { "string" }
+/// ```
+///
+/// If [JsonSchema.type] is a listing with more than one type, [null] gets returned.
+local function unwrappedSingularType(schema: JsonSchema): JsonSchema.JsonSchemaTypeName? =
+  if (schema.type is Listing)
+    if (schema.type.length == 1) schema.type.toList().first
+    else null
+  else
+    schema.type as JsonSchema.JsonSchemaTypeName?
+
+/// Tells if the [schema] should be generated as [Number] or [Integer].
+local function isNumberSchema(schema: JsonSchema) =
+  let (type = unwrappedSingularType(schema))
+    type == "number" || type == "integer" ||  constOrEnumsMatch(schema, (elem) -> elem is Number)
+
+/// Tells if the [schema] should be generated as a [String].
+local function isStringSchema(schema: JsonSchema) =
+  let (type = unwrappedSingularType(schema))
+    type == "string" || constOrEnumsMatch(schema, (elem) -> elem is String)
+
+/// Tells if the [schema] should be generated as a [Boolean].
+local function isBooleanSchema(schema: JsonSchema) =
+  let (type = unwrappedSingularType(schema))
+    type == "boolean" || constOrEnumsMatch(schema, (elem) -> elem is Boolean)
+
+/// Tells if the [schema] should be generated as a [Listing]
+local function isListingSchema(schema: JsonSchema) =
+  let (type = unwrappedSingularType(schema))
+    type == "array" || schema.items != null
+
+/// Tells if the [schema] should be generated as a [Mapping].
+local function isMappingSchema(schema: JsonSchema) =
+  let (type = unwrappedSingularType(schema))
+    type == "object" ||  schema.properties != null || schema.additionalProperties != null
+
+/// Generates the basic declared type (Int, Float, etc).
+///
+/// In some cases, the basic type returns a refined type based off constraints (e.g. UInt8).
+/// If so, the returned [JsonSchema] has those matching constraints (minimum, exclusiveMinimum, etc) removed.
+local function generateBaseType(schema: JsonSchema, typeNames: Type.TypeNames): Pair<JsonSchema, TypeNode> =
+  if (schema.oneOf != null || schema.anyOf != null || schema.type is Listing && schema.type.length > 1)
+    generateUnionType(schema, typeNames)
+  else if (isNumberSchema(schema))
+    generateNumberType(schema)
+  else if (isStringSchema(schema))
+    generateStringType(schema)
+  else if (isBooleanSchema(schema))
+    Pair(schema, utils.declaredType("Boolean"))
+  else if (isListingSchema(schema))
+    Pair(schema, generateListingType(schema, typeNames))
+  else if (isMappingSchema(schema))
+    Pair(schema, generateObjectType(schema, typeNames))
+  else
+    Pair(schema, utils.declaredType("Any"))

@@ -1,0 +1,311 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.json_schema.contrib.tests.ModuleGenerator
+
+amends "pkl:test"
+
+import "@jsonschema/JsonSchema.pkl"
+import "../internal/ModuleGenerator.pkl"
+
+examples {
+  ["basic"] {
+    local schema: JsonSchema = new {
+      type = "object"
+      properties {
+        ["foo"] {
+          type = "string"
+        }
+        ["bar"] {
+          type = "number"
+        }
+      }
+    }
+    new ModuleGenerator {
+      rootSchema = schema
+      moduleName = "com.apple.Example"
+    }.moduleNode.render("")
+  }
+  ["required properties"] {
+    local schema: JsonSchema = new {
+      type = "object"
+      properties {
+        ["foo"] {
+          type = "string"
+        }
+        ["bar"] {
+          type = "number"
+        }
+      }
+      required {
+        "foo"
+        "bar"
+      }
+    }
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["deprecated properties"] {
+    local schema: JsonSchema = new {
+      type = "object"
+      properties {
+        ["foo"] {
+          type = "string"
+          deprecated = true
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["doc comments"] {
+    local schema: JsonSchema = new {
+      type = "object"
+      title = "FooBar"
+      description = "FooBars when foo can bar"
+      properties {
+        ["foo"] {
+          title = "The fooiest of foos"
+          description = "The name of the foo that is really foo-like"
+          type = "string"
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["classes within properties"] {
+    local schema: JsonSchema = new {
+      title = "FooBar"
+      properties {
+        ["foo"] {
+          properties {
+            ["bar"] {
+              type = "string"
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["classes in nested properties"] {
+    local schema: JsonSchema = new {
+      properties {
+        ["foo"] {
+          properties {
+            ["bar"] {
+              properties {
+                ["baz"] {
+                  type = "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["classes in nested additionalProperties"] {
+    local schema: JsonSchema = new {
+      properties {
+        ["foo"] {
+          additionalProperties {
+            oneOf {
+              new JsonSchema {
+                properties {
+                  ["bar"] {
+                    type = "string"
+                  }
+                }
+              }
+              new JsonSchema {
+                properties {
+                  ["baz"] {
+                    type = "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["classes in nested patternProperties"] {
+    local schema: JsonSchema = new {
+      properties {
+        ["foo"] {
+          type = "object"
+          patternProperties {
+            ["[a-z]+"] {
+              oneOf {
+                new JsonSchema {
+                  properties {
+                    ["bar"] {
+                      type = "string"
+                    }
+                  }
+                }
+                new JsonSchema {
+                  properties {
+                    ["baz"] {
+                      type = "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["classes in listings"] {
+    local schema: JsonSchema = new {
+      properties {
+        ["foos"] {
+          type = "array"
+          items {
+            properties {
+              ["bar"] {
+                type = "string"
+              }
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["classes in definitions"] {
+    local schema: JsonSchema = new {
+      local self = this
+      properties {
+        ["foo"] {
+          $ref = "#/definitions/foo"
+          $$baseSchema = self
+        }
+      }
+      definitions {
+        ["foo"] {
+          properties {
+            ["bar"] {
+              type = "string"
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["classes from inline positions"] {
+    local schema: JsonSchema = new {
+      local self = this
+      properties {
+        ["foo"] {
+          $ref = "#/definitions/foo/myfoo"
+          $$baseSchema = self
+        }
+      }
+      definitions {
+        ["foo"] {
+          _inline_ {
+            ["myfoo"] = new JsonSchema {
+              title = "The fooiest of foos"
+              properties {
+                ["bar"] {
+                  type = "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["typealiases in definitions"] {
+    local schema: JsonSchema = new {
+      local self = this
+      properties {
+        ["foo"] {
+          $ref = "#/definitions/foo"
+          $$baseSchema = self
+        }
+      }
+      definitions {
+        ["foo"] {
+          type = "string"
+          minLength = 5
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["typealiases in $defs"] {
+    local schema: JsonSchema = new {
+      local self = this
+      properties {
+        ["foo"] {
+          $ref = "#/$defs/foo"
+          $$baseSchema = self
+        }
+      }
+      $defs {
+        ["foo"] {
+          type = "string"
+          minLength = 5
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["typealiases in subschema definitions"] {
+    local schema: JsonSchema = new {
+      local self = this
+      properties {
+        ["foo"] {
+          type = "string"
+          properties {
+            ["bar"] {
+              $ref = "#/properties/foo/definitions/bar"
+              $$baseSchema = self
+            }
+          }
+          definitions {
+            ["bar"] {
+              type = "string"
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["root schemas that are not objects"] {
+    local schema: JsonSchema = new {
+      type = "array"
+      items {
+        properties {
+          ["foo"] {
+            type = "string"
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+}

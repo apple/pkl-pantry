@@ -1,0 +1,76 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Generate Pkl sources from JSON Schema documents.
+///
+/// Limitations:
+/// - Cannot generate `not`, `allOf`, or `anyOf` combinators correctly due to limitations in Pkl's model.
+///   * Union types exist, but they are logically the same as `oneOf` (only one subschema can match).
+///   * Intersection types do not exist (can use this to model `allOf`).
+/// - Doesn't generate correct types for schemas that use both [JsonSchema.properties] and
+///   [JsonSchema.additionalProperties] because classes cannot contain entries
+///   (known limitation, will be addressed in a future Pkl release). Some possible workarounds:
+///   * Add a child Mapping property to represent "additional properties" and add a renderer to inline them/
+///   * Add an option to the generator to control whether a class or a Mapping gets generated.
+/// - Cannot generate [JsonSchema.patternProperties] fully (this is a limitation of Pkl).
+///   If there is just one pattern property, it gets generated as a [Mapping].
+///   Otherwise, this falls back to [Dynamic], which is the loosest constraint.
+/// - Cannot generate tuple types (this is missing in Pkl).
+/// - Properties called `default` cannot be generated (currently a limitation of the json parser).
+///
+/// TODO:
+/// - Handle usages of `allOf`. We can do this by merging subschemas into a larger schema.
+/// - Copy doc comments from a class or typealias to its usage sites if there isn't a doc comment already.
+/// - Handle if schema root is not an object type (Example: ansible's schema root has `"type": "array"`).
+/// - Handle if schema root should be a mapping (it has `additionalProperties` or `patternProperties` set).
+///
+/// Sample CLI usage:
+///
+/// ```
+/// pkl eval package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@<version>#/generate.pkl \
+///   -m . \
+///   -p source="https://json.schemastore.org/github-action.json"
+/// ```
+@ModuleInfo { minPklVersion = "0.25.0" }
+module org.json_schema.contrib.generate
+
+import "@jsonschema/Parser.pkl"
+import "@jsonschema/JsonSchema.pkl"
+import "@uri/URI.pkl"
+import "internal/ModulesGenerator.pkl"
+
+local sourceProperty = read("prop:source")
+local sourceUri =
+  if (sourceProperty.startsWith(Regex(#"\w+:"#))) sourceProperty      // absolute URI
+  else if (sourceProperty.startsWith("/")) "file://\(sourceProperty)" // absolute file path
+  else "file://\(read("env:PWD"))/\(sourceProperty)"                  // relative file pat
+
+local schema = read(URI.encode(sourceUri))
+
+local parsedJsonSchema = Parser.parse(schema)
+
+local modulesGenerator = new ModulesGenerator {
+  rootSchema = parsedJsonSchema as JsonSchema
+  baseUri = URI.parse(sourceUri)!!
+}
+
+output {
+  text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
+  files {
+    for (mod in modulesGenerator.modules) {
+      ["\(mod.moduleName).pkl"] = mod.moduleNode.output
+    }
+  }
+}

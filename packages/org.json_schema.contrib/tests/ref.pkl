@@ -1,0 +1,57 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.json_schema.contrib.tests.ref
+
+amends "pkl:test"
+
+import "@jsonschema/JsonSchema.pkl"
+import "@uri/URI.pkl"
+import "../ref.pkl"
+
+facts {
+  ["resolveRef()"] {
+    local schema: JsonSchema = new {
+      properties {
+        ["foo"] {
+          type = "string"
+        }
+      }
+      definitions {
+        ["bar"] {
+          properties {
+            ["baz"] {
+              title = "This is a baz"
+              type = "object"
+            }
+          }
+          _inline_ {
+            ["bizzy"] {
+              type = "array"
+            }
+          }
+        }
+      }
+    }
+    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar"; $$baseSchema = schema }) == schema.definitions!!["bar"]
+    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/properties/baz"; $$baseSchema = schema }) == schema.definitions!!["bar"].properties!!["baz"]
+    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/properties/foo"; $$baseSchema = schema }) == schema.properties!!["foo"]
+    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema }) == schema.definitions!!["bar"]._inline_!!["bizzy"]
+    ref.resolveRef(new URI {}, new JsonSchema { description = "This is a bizzy"; $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema }) == new JsonSchema {
+      description = "This is a bizzy"
+      type = "array"
+    }
+  }
+}
