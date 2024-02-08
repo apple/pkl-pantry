@@ -1,0 +1,221 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Logic for singularizing a word.
+@Unlisted
+module org.json_schema.contrib.internal.singularize
+
+
+// Adapted from <https://github.com/plurals/pluralize/blob/master/pluralize.js>
+//
+// Original license:
+// The MIT License (MIT)
+// Copyright (c) 2013 Blake Embrey (hello@blakeembrey.com)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+local ALWAYS_SINGLE_WORDS: Set<String|Regex> = Set(
+  "adulthood",
+  "advice",
+  "agenda",
+  "aid",
+  "aircraft",
+  "alcohol",
+  "ammo",
+  "analytics",
+  "anime",
+  "athletics",
+  "audio",
+  "bison",
+  "blood",
+  "bream",
+  "buffalo",
+  "butter",
+  "carp",
+  "cash",
+  "chassis",
+  "chess",
+  "clothing",
+  "cod",
+  "commerce",
+  "cooperation",
+  "corps",
+  "debris",
+  "diabetes",
+  "digestion",
+  "elk",
+  "energy",
+  "equipment",
+  "excretion",
+  "expertise",
+  "firmware",
+  "flounder",
+  "fun",
+  "gallows",
+  "garbage",
+  "graffiti",
+  "hardware",
+  "headquarters",
+  "health",
+  "herpes",
+  "highjinks",
+  "homework",
+  "housework",
+  "information",
+  "jeans",
+  "justice",
+  "kudos",
+  "labour",
+  "literature",
+  "machinery",
+  "mackerel",
+  "mail",
+  "media",
+  "mews",
+  "moose",
+  "music",
+  "mud",
+  "manga",
+  "news",
+  "only",
+  "pants",
+  "personnel",
+  "pike",
+  "plankton",
+  "pliers",
+  "police",
+  "pollution",
+  "premises",
+  "rain",
+  "research",
+  "rice",
+  "salmon",
+  "scissors",
+  "series",
+  "sewage",
+  "shambles",
+  "sheep",
+  "shrimp",
+  "software",
+  "staff",
+  "swine",
+  "tennis",
+  "traffic",
+  "transportation",
+  "trousers",
+  "trout",
+  "tuna",
+  "wealth",
+  "welfare",
+  "whiting",
+  "wildebeest",
+  "wildlife",
+  "you"
+)
+
+local ALWAYS_SINGLE_WORDS_REG: Set<Regex> = Set(
+  Regex(#"pok[eé]mon$"#),
+  Regex(#"[^aeiou]ese$"#), // "chinese", "japanese"
+  Regex(#"deer$"#), // "deer", "reindeer"
+  Regex(#"fish$"#), // "fish", "blowfish", "angelfish"
+  Regex(#"measles$"#),
+  Regex(#"o[iu]s$"#), // "carnivorous"
+  Regex(#"pox$"#), // "chickpox", "smallpox"
+  Regex(#"sheep$"#)
+)
+
+local SINGULARIZATION_RULES: Mapping<Regex, String> = new {
+  [Regex(#"men$"#)] = "man"
+  [Regex(#"(eau)x?$"#)] = "$1"
+  [Regex(#"(child)ren$"#)] = "$1"
+  [Regex(#"(pe)(rson|ople)$"#)] = "$1rson"
+  [Regex(#"(matr|append)ices$"#)] = "$1ix"
+  [Regex(#"(cod|mur|sil|vert|ind)ices$"#)] = "$1ex"
+  [Regex(#"(alumn|alg|vertebr)ae$"#)] = "$1a"
+  [Regex(#"(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr|automat)a$"#)] = "$1on"
+  [Regex(#"(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi|curricul|quor)a$"#)] = "$1um"
+  [Regex(#"(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)(?:us|i)$"#)] = "$1us"
+  [Regex(#"(test)(?:is|es)$"#)] = "$1is"
+  [Regex(#"(movie|twelve|abuse|e[mn]u)s$"#)] = "$1"
+  [Regex(#"(analy|diagno|parenthe|progno|synop|the|empha|cri|ne)(?:sis|ses)$"#)] = "$1sis"
+  [Regex(#"(x|ch|ss|sh|zz|tto|go|cho|alias|[^aou]us|t[lm]as|gas|(?:her|at|gr)o|[aeiou]ris)(?:es)?$"#)] = "$1"
+  [Regex(#"(seraph|cherub)im$"#)] = "$1"
+  [Regex(#"\b((?:tit)?m|l)ice$"#)] = "$1ouse"
+  [Regex(#"\b(mon|smil)ies$"#)] = "$1ey"
+  [Regex(#"\b(l|(?:neck|cross|hog|aun)?t|coll|faer|food|gen|goon|group|hipp|junk|vegg|(?:pork)?p|charl|calor|cut)ies$"#)] = "$1ie"
+  [Regex(#"(dg|ss|ois|lk|ok|wn|mb|th|ch|ec|oal|is|ck|ix|sser|ts|wb)ies$"#)] = "$1ie"
+  [Regex(#"ies$"#)] = "y"
+  [Regex(#"(ar|(?:wo|[ae])l|[eo][ao])ves$"#)] = "$1f"
+  [Regex(#"(wi|kni|(?:after|half|high|low|mid|non|night|[^\w]|^)li)ves$"#)] = "$1fe"
+  [Regex(#"(ss)$"#)] = "$1"
+  [Regex(#"s$"#)] = ""
+}
+
+// Adapted from https://github.com/plurals/pluralize/blob/master/pluralize.js
+// Original license:
+//
+// The MIT License (MIT)
+//
+// Copyright (c) 2013 Blake Embrey (hello@blakeembrey.com)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+//   The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+/// Singularize (unpluralize) a word.
+function singularize(word: String) =
+  if (ALWAYS_SINGLE_WORDS.contains(word)) word
+  else if (ALWAYS_SINGLE_WORDS_REG.any((r) -> word.matches(r))) word
+  else
+    SINGULARIZATION_RULES
+      .toMap()
+      .entries
+      .fold(Pair(word, false), (pair: Pair<String, Boolean>, rule) ->
+        // Track if we've hit one of the rules. Exit once a rule has been hit.
+        if (pair.second)
+          pair
+        else
+          let (result = pair.first.replaceLast(rule.first, rule.second))
+            Pair(result, result != pair.first)
+      )
+      .first

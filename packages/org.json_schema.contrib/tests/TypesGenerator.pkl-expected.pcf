@@ -1,0 +1,77 @@
+examples {
+  ["numbers"] {
+    "Number"
+    "Number(isBetween(5, 10))"
+    "Number(this <= 5)"
+    "Number(this > 5)"
+    "Number(this < 5)"
+    "Int(this % 5 == 0)"
+    "Number(isPositive)"
+    "Number(isPositive)"
+    "Int"
+    "UInt8"
+  }
+  ["number literals"] {
+    "Number(this == 5)"
+    "Number(this == 5 || this == 6 || this == 7)"
+  }
+  ["strings"] {
+    "String"
+    "String(!isEmpty)"
+    "String(length >= 5)"
+    "String(length <= 10)"
+    "String(length.isBetween(5, 10))"
+    "String(matches(Regex(\"[a-z]\")))"
+    "Uri"
+    "String(isRegex)"
+  }
+  ["string literals"] {
+    "\"Hello\""
+    "\"Hello\""
+    "\"Bart\"|\"Lisa\""
+  }
+  ["booleans"] {
+    "Boolean"
+  }
+  ["boolean literals"] {
+    "Boolean(this == true)"
+    "Boolean(this == false)"
+    "Boolean(this == false)"
+    "Boolean"
+  }
+  ["arrays"] {
+    "Listing"
+    "Listing"
+    "Listing"
+    "Listing(isDistinct)"
+    "Listing<String>"
+    "Listing<String(!isEmpty)>"
+  }
+  ["mappings"] {
+    "Mapping<String, String>"
+    "Mapping<String(matches(Regex(\"[a-z]\"))), Number>"
+  }
+  ["nullables"] {
+    "String(length >= 10)?"
+    "(String(length >= 10)|Number(this >= 10))?"
+  }
+  ["unions"] {
+    "String(length >= 5)|Int(this % 10 == 0)"
+    "String(length >= 5)|Int(this % 10 == 0)"
+  }
+  ["not"] {
+    "String(this != \"foo\")"
+    "String(!length.isBetween(5, 10))"
+  }
+  ["allOf"] {
+    "String(length.isBetween(5, 10))"
+  }
+  ["types from $ref"] {
+    "Foo"
+    "unknown"
+  }
+  ["boolean schemas"] {
+    "Any"
+    "nothing"
+  }
+}

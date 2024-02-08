@@ -1,0 +1,276 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Support for generating classes.
+@ModuleInfo { minPklVersion = "0.25.0" }
+@Unlisted
+module org.json_schema.contrib.internal.ModuleGenerator
+
+import "@syntax/TypeNode.pkl"
+import "@syntax/ExpressionNode.pkl"
+import "@syntax/ClassNode.pkl"
+import "@syntax/ClassOrModuleNode.pkl"
+import "@syntax/TypeAliasNode.pkl"
+import "@syntax/ModuleNode.pkl"
+import "@syntax/DocCommentNode.pkl"
+import "@jsonschema/JsonSchema.pkl"
+import "@uri/URI.pkl"
+import "utils.pkl"
+import "TypesGenerator.pkl"
+import "../ref.pkl"
+import "Type.pkl"
+
+local pcfRenderer = new PcfRenderer { useCustomStringDelimiters = true }
+local jsonRenderer = new JsonRenderer {}
+
+/// The root schema, used to resolve `$ref` values.
+rootSchema: JsonSchema
+
+/// The URI representing the root schema, used to resolve `$ref` values.
+baseUri: URI
+
+/// Existing type names that have been generated prior to generating this module.
+existingTypes: Type.TypeNames
+
+/// The name of this module
+moduleName: String = utils.pascalCase(baseUri.pathSegments.last.replaceAll(".json", ""))
+
+local typesGenerator: TypesGenerator = new { baseUri = module.baseUri; enclosingModuleName = moduleName }
+
+/// The types described directly in this JSON Schema document (excludes types in an external reference).
+moduleTypes: Type.TypeNames = typeAliasSchemas + classSchemas
+
+/// Generate a Pkl [ModuleNode] from a given schema.
+moduleNode: ModuleNode =
+  let (allTypeNames = moduleTypes + existingTypes)
+    new {
+      imports {
+        for (moduleName in existingTypes.values.map((it) -> it.moduleName).toSet()) {
+          new {
+            // TODO: shouldn't include transitive deps
+            value = "\(moduleName.split(".").last).pkl"
+          }
+        }
+      }
+      classes {
+        for (schema, type in classSchemas) {
+          generatePklClass(schema, type, allTypeNames)
+        }
+      }
+      typealiases {
+        for (schema, type in typeAliasSchemas) {
+          generatePklTypeAlias(schema, type, allTypeNames)
+        }
+      }
+      declaration {
+        docComment = getDocComment(rootSchema, "module")
+        when (moduleName != null) {
+          moduleHeader {
+            name {
+              parts {
+                for (part in moduleName.split(".")) {
+                  new { value = part }
+                }
+              }
+            }
+          }
+        }
+      }
+      properties =
+        if (isClassLike(rootSchema))
+          generateClassBody(rootSchema, allTypeNames)
+        else null
+    }
+
+/// Determine the doc comments of a schema.
+///
+/// This combines a schema's title, description and "default" descriptions into one doc comment.
+/// Wraps the comments at 100 columns.
+local function getDocComment(schema: JsonSchema|Boolean, type: "class"|"module"|Null): DocCommentNode? =
+  if (schema is Boolean)
+    null
+  else
+    let (docCommentText: String =
+      List(
+        schema.title,
+        schema.description,
+        if (type is "module") "This module was generated from JSON Schema from <\(baseUri)>." else null,
+        if (type is "class"|"module") getWarnings(schema, type) else null,
+        if (schema.default != null) "Default if undefined: `\(pcfRenderer.renderValue(schema.default))`" else null
+      )
+        .filterNonNull()
+        .join("\n\n")
+    )
+      if (docCommentText.isEmpty) null
+      else new DocCommentNode {
+        value = docCommentText
+        autoWrap = true
+      }
+
+local function getWarnings(schema: JsonSchema, type: "class"|"module"): String? =
+  if (schema.properties != null && (schema.additionalProperties is JsonSchema || schema.patternProperties != null))
+    """
+    WARN: both properties and at least one of additionalProperties and patternProperties are set.
+    This is ambiguously defined; can either be defined as a `Mapping` or a class.
+    """
+  else if (type == "class") null
+  else if (schema.type == "object")
+    "WARN: The root schema describes open-ended properties, but this is not possible to describe at the module level."
+  else if (schema.type != null)
+    "WARN: The root schema's type is `\(jsonRenderer.renderValue(schema.type))`, and cannot be correctly mapped to a Pkl module."
+  else
+    "WARN: unable to determine module-level properties on the root schema."
+
+local function generateClassBody(
+  schema: JsonSchema(this.properties != null),
+  typeNames: Type.TypeNames
+): Listing<ClassOrModuleNode.PropertyDefinitionNode> =
+  if (schema.$$refUri != null)
+    let (referencedSchema = ref.resolveRef(baseUri, schema))
+      if (referencedSchema == null) new {}
+      else if (referencedSchema is Boolean) let (_ = trace("WARN: `$ref` points to a boolean somehow")) new {}
+      else generateClassBody(referencedSchema as JsonSchema, typeNames)
+  else
+    new {
+      for (propName, propSchema in schema.properties!!) {
+        new {
+          name {
+            value = propName
+          }
+          when (propSchema is JsonSchema && propSchema.deprecated == true) {
+            annotations { utils.DEPRECATED }
+          }
+          docComment = getDocComment(propSchema, null)
+          typeAnnotation {
+            // If this property doesn't appear in the `required` array, mark it as nullable.
+            // We can't do this within [TypesGenerator] because it doesn't have enough information available.
+            type = let (underlyingType = typesGenerator.generateTypeNode(propSchema, typeNames))
+              if (schema.required?.toSet()?.contains(propName) ?? false) underlyingType
+              // If the type is already nullable, no need to make it *more* nullable.
+              else if (underlyingType is TypeNode.NullableTypeNode) underlyingType
+              else new TypeNode.NullableTypeNode { typeNode = underlyingType }
+          }
+          defaultValue =
+            if (typeAnnotation.type is TypeNode.UnionTypeNode
+              && (typeAnnotation.type as TypeNode.UnionTypeNode).members[0] is TypeNode.StringLiteralTypeNode
+            )
+              // If the first member is a string literal type, explicitly set the default to Undefined().
+              // We need to do this because the implicit default of a union type is the default of the first member.
+              // However, this is an incorrect way to represent enums in JSON Schema, because there should be no
+              // bias towards any of the values.
+              new ExpressionNode.MemberAccessExpressionNode {
+                identifier {
+                  value = "Undefined"
+                }
+                // empty arguments makes this a function call
+                arguments {}
+              }
+            else null
+        }
+      }
+    }
+
+/// Generates a [ClassNode] from a [JsonSchema].
+local function generatePklClass(schema: JsonSchema, className: Type, typeNames: Type.TypeNames): ClassNode =
+  new {
+    docComment = getDocComment(schema, "class")
+    when (schema.deprecated == true) {
+      annotations { utils.DEPRECATED }
+    }
+    classHeader {
+      name {
+        value = className.name
+      }
+    }
+    properties = generateClassBody(schema, typeNames)
+  }
+
+/// Generates a [TypeAliasNode] from a [JsonSchema].
+local function generatePklTypeAlias(
+  schema: JsonSchema,
+  typeAliasName: Type,
+  typeNames: Type.TypeNames
+): TypeAliasNode = new {
+  name {
+    value = typeAliasName.name
+  }
+  docComment = getDocComment(schema, null)
+  type = typesGenerator.generateTypeNode(schema, typeNames.remove(schema))
+}
+
+function isClassLike(schema: JsonSchema.Schema): Boolean =
+  if (schema is Boolean)
+    false
+  else
+    // Edge case: if `$ref` exists, any other property should be ignored.
+    schema.$ref == null && schema.properties != null
+
+/// Determine the name of a type.
+///
+/// Try to use the parent property's name as part of the class name in case of conflict.
+/// If already at the root, add a number at the end.
+local function determineTypeName(path: List<String>, candidateName: String, existingTypeNames: Set<Type>, index: Int): Type =
+  if (existingTypeNames.contains(utils.pascalCase(candidateName)))
+    if (path.isEmpty)
+      determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
+    else
+      determineTypeName(path.dropLast(1), utils.pascalCase(path.last.capitalize()) + utils.pascalCase(candidateName), existingTypeNames, index)
+  else
+    new { name = utils.pascalCase(candidateName); moduleName = module.moduleName }
+
+/// The schemas that should be rendered as classes.
+///
+/// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not have [JsonSchema.`$ref`] defined.
+local classSchemas: Type.TypeNames =
+  let (schemas = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> elem != rootSchema && isClassLike(elem)))
+    schemas
+      .entries
+      .fold(Map(), (accumulator: Type.TypeNames, pair) ->
+        let (path = pair.first)
+        let (schema = pair.second)
+        let (typeName = determineTypeName(path, path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
+          accumulator.put(schema, typeName)
+      )
+
+local classNames: Set<Type> = classSchemas.values.toSet()
+
+/// The schemas that should be rendered as typealiases.
+///
+/// This is done by traversing schema definintions.
+/// Typealiases get rendered for any [JsonSchema.definitions] or [JsonSchema.`$defs`] that should not be rendered as a class.
+local typeAliasSchemas: Type.TypeNames =
+  // Grab all schemas that have `definitions` or `$defs`
+  let (schemasWithDefinitions = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
+    schemasWithDefinitions
+      .entries
+      // For each schema, return the child json schema properties that are not class-like
+      .flatMap((pair) ->
+        let (path = pair.first)
+        let (schema = pair.second)
+          (schema.definitions ?? schema.$defs ?? new Mapping<String, JsonSchema> {}).toMap()
+            .filter((_, value) -> value is JsonSchema && value.$ref == null && !isClassLike(value))
+            .mapKeys((key, _) -> path.add(key))
+            .entries
+      )
+      .filter((pair) -> pair.second is JsonSchema)
+      .fold(Map(), (accumulator: Type.TypeNames, pair: Pair<List<String>, JsonSchema.Schema>) ->
+        if (pair.second is Boolean)
+          accumulator
+        else
+          let (schema = pair.second as JsonSchema)
+          let (path = pair.first)
+          let (typeName = determineTypeName(path, path.last.capitalize(), accumulator.values.toSet() + classNames, 0))
+            accumulator.put(schema, typeName)
+      )
