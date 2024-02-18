@@ -222,13 +222,14 @@ function isClassLike(schema: JsonSchema.Schema): Boolean =
 /// Try to use the parent property's name as part of the class name in case of conflict.
 /// If already at the root, add a number at the end.
 local function determineTypeName(path: List<String>, candidateName: String, existingTypeNames: Set<Type>, index: Int): Type =
-  if (existingTypeNames.contains(utils.pascalCase(candidateName)))
-    if (path.isEmpty)
-      determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
+  let (candidateType = new Type { name = utils.pascalCase(candidateName); moduleName = module.moduleName })
+    if (existingTypeNames.contains(candidateType))
+      if (path.isEmpty)
+        determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
+      else
+        determineTypeName(path.dropLast(1), utils.pascalCase(path.last.capitalize()) + utils.pascalCase(candidateName), existingTypeNames, index)
     else
-      determineTypeName(path.dropLast(1), utils.pascalCase(path.last.capitalize()) + utils.pascalCase(candidateName), existingTypeNames, index)
-  else
-    new { name = utils.pascalCase(candidateName); moduleName = module.moduleName }
+      candidateType 
 
 /// The schemas that should be rendered as classes.
 ///
@@ -240,7 +241,7 @@ local classSchemas: Type.TypeNames =
       .fold(Map(), (accumulator: Type.TypeNames, pair) ->
         let (path = pair.first)
         let (schema = pair.second)
-        let (typeName = determineTypeName(path, path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
+        let (typeName = determineTypeName(path.dropLast(1), path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
           accumulator.put(schema, typeName)
       )
 
