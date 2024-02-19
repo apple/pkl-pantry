@@ -211,6 +211,46 @@ examples {
     }
     new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
+  ["classes within definition properties"] {
+     local schema: JsonSchema = new {
+      local self = this
+      properties {
+        ["foo"] {
+          $ref = "#/definitions/foo"
+          $$baseSchema = self
+        }
+        ["bar"] {
+          $ref = "#/definitions/bar"
+          $$baseSchema = self
+        }
+      }
+      definitions {
+        ["foo"] {
+          properties {
+            ["waldo"] {
+              properties {
+                ["qux"] {
+                  type = "string"
+                }
+              }
+            }
+          }
+        }
+        ["bar"] {
+          properties {
+            ["waldo"] {
+              properties {
+                ["corge"] {
+                  type = "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
   ["classes from inline positions"] {
     local schema: JsonSchema = new {
       local self = this
