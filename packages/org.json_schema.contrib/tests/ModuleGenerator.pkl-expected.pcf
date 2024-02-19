@@ -163,6 +163,35 @@ examples {
 
     """
   }
+  ["classes within definitions properties"] {
+    """
+    /// This module was generated from JSON Schema from <>.
+    ///
+    /// WARN: unable to determine module-level properties on the root schema.
+    module com.apple.Example
+    
+    foo: Foo?
+    
+    bar: Bar?
+    
+    class Foo {
+      waldo: Waldo?
+    }
+    
+    class Waldo {
+      qux: String?
+    }
+    
+    class Bar {
+      waldo: BarWaldo?
+    }
+    
+    class BarWaldo {
+      corge: String?
+    }
+
+    """
+  }
   ["classes from inline positions"] {
     """
     /// This module was generated from JSON Schema from <>.
