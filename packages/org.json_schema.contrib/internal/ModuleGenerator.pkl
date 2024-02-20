@@ -222,7 +222,7 @@ function isClassLike(schema: JsonSchema.Schema): Boolean =
 /// Try to use the parent property's name as part of the class name in case of conflict.
 /// If already at the root, add a number at the end.
 local function determineTypeName(path: List<String>, candidateName: String, existingTypeNames: Set<Type>, index: Int): Type =
-  if (existingTypeNames.contains(utils.pascalCase(candidateName)))
+  if (existingTypeNames.map((type) -> type.name).contains(utils.pascalCase(candidateName)))
     if (path.isEmpty)
       determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
     else
