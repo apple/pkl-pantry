@@ -19,7 +19,6 @@
 module org.json_schema.contrib.internal.ModuleGenerator
 
 import "@syntax/TypeNode.pkl"
-import "@syntax/ExpressionNode.pkl"
 import "@syntax/ClassNode.pkl"
 import "@syntax/ClassOrModuleNode.pkl"
 import "@syntax/TypeAliasNode.pkl"
@@ -162,22 +161,6 @@ local function generateClassBody(
               else if (underlyingType is TypeNode.NullableTypeNode) underlyingType
               else new TypeNode.NullableTypeNode { typeNode = underlyingType }
           }
-          defaultValue =
-            if (typeAnnotation.type is TypeNode.UnionTypeNode
-              && (typeAnnotation.type as TypeNode.UnionTypeNode).members[0] is TypeNode.StringLiteralTypeNode
-            )
-              // If the first member is a string literal type, explicitly set the default to Undefined().
-              // We need to do this because the implicit default of a union type is the default of the first member.
-              // However, this is an incorrect way to represent enums in JSON Schema, because there should be no
-              // bias towards any of the values.
-              new ExpressionNode.MemberAccessExpressionNode {
-                identifier {
-                  value = "Undefined"
-                }
-                // empty arguments makes this a function call
-                arguments {}
-              }
-            else null
         }
       }
     }
