@@ -29,7 +29,7 @@ class NullableTypeNode extends TypeNode {
 }
 
 class BuiltInTypeNode extends TypeNode {
-  type: "unknown"|"nothing"|"module" = Undefined()
+  type: "unknown"|"nothing"|"module"
   function render(_) = type
 }
 

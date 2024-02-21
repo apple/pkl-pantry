@@ -17,6 +17,6 @@
 amends "../basePklProject.pkl"
 
 package {
-  version = "1.0.0"
+  version = "1.0.1"
   apiTests = import*("tests/*.pkl").keys.toListing()
 }

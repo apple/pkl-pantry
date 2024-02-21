@@ -48,7 +48,7 @@ class BinaryOperatorExpressionNode extends ExpressionNode {
 
   local function hasHigherPrecedence(a: String, b: String) = precedences[a] >= precedences[b]
 
-  operator: operators.BinaryOperator = Undefined()
+  operator: operators.BinaryOperator
 
   /// The right hand side of the expression
   lhs: ExpressionNode
@@ -71,14 +71,14 @@ class BinaryOperatorExpressionNode extends ExpressionNode {
 }
 
 class BuiltInKeywordExpressionNode extends ExpressionNode {
-  keyword: "this"|"outer"|"module" = Undefined()
+  keyword: "this"|"outer"|"module"
 
   function render(_) = keyword
 }
 
 /// Unary operators in the prefix position: "!" and "-".
 class PrefixOperatorExpressionNode extends ExpressionNode {
-  operator: operators.PrefixOperator = Undefined()
+  operator: operators.PrefixOperator
 
   expression: ExpressionNode
 
@@ -90,7 +90,7 @@ class PrefixOperatorExpressionNode extends ExpressionNode {
 
 /// Unary operators in the postfix position: "!!"
 class PostfixOperatorExpressionNode extends ExpressionNode {
-  operator: operators.PostfixOperator = Undefined()
+  operator: operators.PostfixOperator
 
   expression: ExpressionNode
 
