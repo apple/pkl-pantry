@@ -88,7 +88,7 @@ class ModuleHeaderNode extends Node {
 }
 
 class ModuleExtendsOrAmendsClauseNode extends Node {
-  type: "extends"|"amends" = Undefined()
+  type: "extends"|"amends"
   extendedModule: String
   function render() =
     """
