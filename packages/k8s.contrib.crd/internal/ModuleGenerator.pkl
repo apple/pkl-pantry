@@ -16,7 +16,7 @@
 /// Support for generating classes.
 @ModuleInfo { minPklVersion = "0.25.0" }
 @Unlisted
-module org.json_schema.contrib.internal.ModuleGenerator
+module k8s.contrib.crd.internal.ModuleGenerator
 
 import "pkl:reflect"
 import "@jsonschema.contrib/internal/Type.pkl"

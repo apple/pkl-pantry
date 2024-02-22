@@ -55,7 +55,7 @@
 /// To figure out which paths you need to override, try running with `-p logPaths`.
 ///
 @ModuleInfo { minPklVersion = "0.25.0" }
-module org.json_schema.contrib.generate
+module k8s.contrib.crd.generate
 
 import "pkl:yaml"
 import "pkl:semver"
