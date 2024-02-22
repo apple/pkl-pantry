@@ -111,7 +111,10 @@ converters: Mapping<List<String>, Module|Class|TypeAlias>
 baseUri: URI
 
 /// The name of this module
-moduleName: String = crd.spec.group.split(".").reverse().add(crd.spec.names.kind).join(".")
+moduleName: String = crd.spec.group.split(".").reverse()
+  .add(version.name)
+  .add(crd.spec.names.kind)
+  .join(".")
 
 local typesGenerator: TypesGenerator = new { baseUri = new {}; enclosingModuleName = moduleName }
 

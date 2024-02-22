@@ -4,7 +4,7 @@ examples {
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
     /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module dev.restate.RestateCluster
+    module dev.restate.v1.RestateCluster
     
     extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
     
@@ -103,7 +103,7 @@ examples {
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
     /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module dev.restate.RestateCluster
+    module dev.restate.v1.RestateCluster
     
     extends "@k8s/K8sResource.pkl"
     
@@ -202,7 +202,7 @@ examples {
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
     /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module dev.restate.RestateCluster
+    module dev.restate.v1.RestateCluster
     
     extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/K8sResource.pkl"
     
