@@ -1,0 +1,146 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Generate Pkl sources from CustomResourceDefinition documents.
+///
+/// Limitations:
+/// - Cannot generate `not`, `allOf`, or `anyOf` combinators correctly due to limitations in Pkl's model.
+///   * Union types exist, but they are logically the same as `oneOf` (only one subschema can match).
+///   * Intersection types do not exist (can use this to model `allOf`).
+/// - Cannot generate tuple types (this is missing in Pkl).
+/// - Properties called `default` cannot be generated (currently a limitation of the json parser).
+///
+/// TODO:
+/// - Handle usages of `allOf`. We can do this by merging subschemas into a larger schema.
+/// - Copy doc comments from a class or typealias to its usage sites if there isn't a doc comment already.
+/// - Handle if schema root is not an object type (Example: ansible's schema root has `"type": "array"`).
+/// - Handle if schema root should be a mapping (it has `additionalProperties` or `patternProperties` set).
+///
+/// Sample CLI usage:
+///
+/// ```
+/// pkl eval package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd@<version>#/generate.pkl \
+///   -m . \
+///   -p source="https://raw.githubusercontent.com/monzo/egress-operator/master/config/crd/bases/egress.monzo.com_externalservices.yaml"
+/// ```
+///
+/// Setting up replacement of Kube native types with types from the k8s standard library can be done with amending:
+///
+/// ```pkl
+/// amends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd@<version>#/generate.pkl"
+///
+/// import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
+///
+/// source = "https://raw.githubusercontent.com/monzo/egress-operator/master/config/crd/bases/egress.monzo.com_externalservices.yaml"
+///
+/// converters {
+///   ["externalservices.egress.monzo.com"] {
+///     [List("spec", "resources")] = ResourceRequirements
+///   }
+/// }
+/// ```
+///
+/// To figure out which paths you need to override, try running with `-p logPaths`.
+///
+@ModuleInfo { minPklVersion = "0.25.0" }
+module k8s.contrib.crd.generate
+
+import "pkl:yaml"
+import "pkl:semver"
+import "@deepToTyped/deepToTyped.pkl"
+import "@uri/URI.pkl"
+
+import "internal/ModuleGenerator.pkl"
+
+/// The version of the Pkl Kubernetes package to import.
+///
+/// This property is not used if [k8sImportPath] is set directly.
+k8sVersion: String(semver.isValid(this)) = "1.0.1"
+
+/// The base path to use for the Kubernetes imports.
+///
+/// Examples:
+/// ```
+/// // Change the version
+/// k8sImportPath = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.0#"
+///
+/// // Use dependency notation, assuming the dependency is called `@k8s`.
+/// k8sImportPath = "@k8s"
+/// ```
+k8sImportPath: String = "package://pkg.pkl-lang.org/pkl-k8s/k8s@\(k8sVersion)#"
+
+/// Where to find the CRDs; can be a URI (`https:`, `file:` etc), an absolute file path, or a relative file path
+source: String = read("prop:source")
+
+local sourceUri =
+  if (source.startsWith(Regex(#"\w+:"#))) source      // absolute URI
+  else if (source.startsWith("/")) "file://\(source)" // absolute file path
+  else "file://\(read("env:PWD"))/\(source)"          // relative file path
+
+/// The CRD's source contents, as computed from [source].
+sourceContents: String|Resource = read(URI.encode(sourceUri))
+
+/// Whether to log out every path we find in each CRD to aid in setting converters.
+///
+/// Default: `false`.
+logPaths: Boolean? = read?("prop:logPaths")?.toBoolean()
+
+local crds: Listing<ModuleGenerator.CRD> =
+  let (parser = new yaml.Parser { useMapping = true })
+    new {
+      for (crd in parser.parseAll(sourceContents)) {
+        when (crd is Mapping && crd.getOrNull("kind") == "CustomResourceDefinition") {
+          deepToTyped.apply(ModuleGenerator.CRD, crd) as ModuleGenerator.CRD
+        }
+      }
+    }
+
+/// Type conversions when generating property types.
+///
+/// This is a two-dimensional mapping, where top-level entries designate CRD names (for example,
+/// "restateclusters.restate.dev").
+///
+/// The inner mapping specifies how individual paths within a CRD should be mapped to a custom type.
+///
+/// Example:
+/// ```
+/// converters {
+///   ["restateclusters.restate.dev"] {
+///     [List("spec", "compute", "env", "env")] = EnvVar
+///   }
+/// }
+/// ```
+converters: Mapping<String, Mapping<List<String>, Module|Class|TypeAlias>>?
+
+fixed modules: Listing<ModuleGenerator> = new {
+  for (_crd in crds) {
+    new ModuleGenerator {
+      k8sImportPath = module.k8sImportPath
+      crd = _crd
+      baseUri = URI.parse(sourceUri)!!
+      converters = module.converters?.getOrNull(crd.metadata.name) ?? new Mapping {}
+      logPaths = module.logPaths ?? false
+    }
+  }
+}
+
+output {
+  text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
+  files {
+    for (mod in modules) {
+      ["\(mod.moduleName.split(".").last).pkl"] = mod.moduleNode.output
+    }
+  }
+}

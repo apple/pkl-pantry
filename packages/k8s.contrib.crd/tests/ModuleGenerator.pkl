@@ -1,0 +1,66 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module k8s.contrib.crd.tests.ModuleGenerator
+
+amends "pkl:test"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/EnvVar.pkl"
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/networking/v1/NetworkPolicy.pkl"
+
+import "../generate.pkl"
+
+local generator = (generate) {
+  sourceContents = read("fixtures/crds.yaml")
+  source = "dummy://test_uri"
+  converters {
+    ["restateclusters.restate.dev"] {
+      [List("spec", "compute", "env", "env")] = EnvVar
+      [List("spec", "compute", "resources")] = ResourceRequirements
+      [List("spec", "security", "networkPeers", "ingress", "ingres")] = NetworkPolicy.NetworkPolicyPeer
+      [List("spec", "security", "networkPeers", "admin", "admin")] = NetworkPolicy.NetworkPolicyPeer
+      [List("spec", "security", "networkPeers", "metrics", "metric")] = NetworkPolicy.NetworkPolicyPeer
+    }
+  }
+}
+
+local generator2 = (generator) {
+  k8sImportPath = "@k8s"
+}
+
+local generator3 = (generator) {
+  k8sImportPath = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0"
+}
+
+examples {
+  for (filename, value in generator.output.files!!) {
+    [filename] {
+      value.text
+    }
+  }
+
+  for (filename, value in generator2.output.files!!) {
+    ["\(filename) -- dependency notation for k8s"] {
+      value.text
+    }
+  }
+
+  for (filename, value in generator3.output.files!!) {
+    ["\(filename).pkl -- different version of k8s"] {
+      value.text
+    }
+  }
+}
