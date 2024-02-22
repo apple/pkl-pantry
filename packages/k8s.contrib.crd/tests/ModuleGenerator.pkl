@@ -20,7 +20,8 @@ import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/EnvVar.pkl"
 import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/networking/v1/NetworkPolicy.pkl"
 
 local generator = (generate) {
-  source = "file:crds.yaml"
+  sourceContents = read("fixtures/crds.yaml")
+  source = "dummy://test_uri"
   converters {
     ["restateclusters.restate.dev"] {
       [List("spec", "compute", "env", "env")] = EnvVar
@@ -32,10 +33,30 @@ local generator = (generate) {
   }
 }
 
+local generator2 = (generator) {
+  k8sImportPath = "@k8s"
+}
+
+local generator3 = (generator) {
+  k8sImportPath = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0"
+}
+
 examples {
-  for (mod in generator.modules) {
-    [mod.moduleName] = new Listing {
-      mod.moduleNode.output.text
+  for (filename, value in generator.output.files!!) {
+    [filename] {
+      value.text
+    }
+  }
+
+  for (filename, value in generator2.output.files!!) {
+    ["\(filename) -- dependency notation for k8s"] {
+      value.text
+    }
+  }
+
+  for (filename, value in generator3.output.files!!) {
+    ["\(filename).pkl -- different version of k8s"] {
+      value.text
     }
   }
 }

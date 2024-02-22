@@ -57,36 +57,63 @@
 module org.json_schema.contrib.generate
 
 import "pkl:yaml"
+import "pkl:semver"
 import "@deepToTyped/deepToTyped.pkl"
 import "@uri/URI.pkl"
+
 import "internal/ModuleGenerator.pkl"
 
+/// The version of the Pkl Kubernetes package to import.
+///
+/// This property is not used if [k8sImportPath] is set directly.
+k8sVersion: String(semver.isValid(this)) = "1.0.1"
 
+/// The base path to use for the Kubernetes imports.
+///
+/// Examples:
+/// ```
+/// // Change the version
+/// k8sImportPath = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.0#"
+///
+/// // Use dependency notation, assuming the dependency is called `@k8s`.
+/// k8sImportPath = "@k8s"
+/// ```
+k8sImportPath: String = "package://pkg.pkl-lang.org/pkl-k8s/k8s@\(k8sVersion)#"
 
 /// Where to find the CRDs; can be a URI (`https:`, `file:` etc), an absolute file path, or a relative file path
 source: String = read("prop:source")
+
 local sourceUri =
   if (source.startsWith(Regex(#"\w+:"#))) source      // absolute URI
   else if (source.startsWith("/")) "file://\(source)" // absolute file path
   else "file://\(read("env:PWD"))/\(source)"          // relative file path
+
+/// The CRD's source contents, as computed from [source].
+sourceContents: String|Resource = read(URI.encode(sourceUri))
 
 /// Whether to log out every path we find in each CRD to aid in setting converters.
 ///
 /// Default: `false`.
 logPaths: Boolean? = read?("prop:logPaths")?.toBoolean()
 
-local crds: List<ModuleGenerator.CRD> = new yaml.Parser { useMapping = true }
-  .parseAll(read(URI.encode(sourceUri)))
-  .filter((manifest) -> manifest is Mapping && manifest.getOrNull("kind") == "CustomResourceDefinition")
-  .map((crd) -> deepToTyped.apply(ModuleGenerator.CRD, crd) as ModuleGenerator.CRD)
+local crds: Listing<ModuleGenerator.CRD> =
+  let (parser = new yaml.Parser { useMapping = true })
+    new {
+      for (crd in parser.parseAll(sourceContents)) {
+        when (crd is Mapping && crd.getOrNull("kind") == "CustomResourceDefinition") {
+          deepToTyped.apply(ModuleGenerator.CRD, crd) as ModuleGenerator.CRD
+        }
+      }
+    }
 
 /// Converts is a Mapping from the CRD name (eg 'restateclusters.restate.dev') to a mapping from the path to a type
 /// in that CRD (eg 'List("spec", "compute", "env", "env")') to a module, class, or type alias to use as the generated type
 converters: Mapping<String, Mapping<List<String>, Module|Class|TypeAlias>>?
 
-modules = new Listing<ModuleGenerator> {
+modules: Listing<ModuleGenerator> = new {
   for (_crd in crds) {
     new ModuleGenerator {
+      k8sImportPath = module.k8sImportPath
       crd = _crd
       baseUri = URI.parse(sourceUri)!!
       converters = module.converters?.getOrNull(crd.metadata.name) ?? new Mapping {}
@@ -94,11 +121,12 @@ modules = new Listing<ModuleGenerator> {
     }
   }
 }
+
 output {
   text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
   files {
     for (mod in modules) {
-      ["\(mod.moduleName).pkl"] = mod.moduleNode.output
+      ["\(mod.moduleName.split(".").last).pkl"] = mod.moduleNode.output
     }
   }
 }
