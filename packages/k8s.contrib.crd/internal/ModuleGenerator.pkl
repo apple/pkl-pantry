@@ -70,14 +70,15 @@ local filteredRootSchema = (rootSchema) {
 }
 
 // https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#validation
-local function validCRDSchema(schema: (JsonSchema.Schema|Listing<JsonSchema.Schema>)?) = if (schema == null)
-  true
-else if (schema is JsonSchema)
-  validCRDJsonSchema(schema)
-else if (schema is Listing<JsonSchema.Schema>)
-  schema.toList().every((s) -> validCRDSchema(s))
-else
-  true
+local function validCRDSchema(schema: (JsonSchema.Schema|Listing<JsonSchema.Schema>)?) =
+  if (schema == null)
+    true
+  else if (schema is JsonSchema)
+    validCRDJsonSchema(schema)
+  else if (schema is Listing<JsonSchema.Schema>)
+    schema.toList().every((s) -> validCRDSchema(s))
+  else
+    true
 
 local function validCRDJsonSchema(schema: JsonSchema) =
   schema.definitions == null

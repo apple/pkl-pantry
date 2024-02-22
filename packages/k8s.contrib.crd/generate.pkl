@@ -44,6 +44,7 @@
 /// import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
 ///
 /// source = "https://raw.githubusercontent.com/monzo/egress-operator/master/config/crd/bases/egress.monzo.com_externalservices.yaml"
+///
 /// converters {
 ///   ["externalservices.egress.monzo.com"] {
 ///     [List("spec", "resources")] = ResourceRequirements
@@ -106,11 +107,24 @@ local crds: Listing<ModuleGenerator.CRD> =
       }
     }
 
-/// Converts is a Mapping from the CRD name (eg 'restateclusters.restate.dev') to a mapping from the path to a type
-/// in that CRD (eg 'List("spec", "compute", "env", "env")') to a module, class, or type alias to use as the generated type
+/// Type conversions when generating property types.
+///
+/// This is a two-dimensional mapping, where top-level entries designate CRD names (for example,
+/// "restateclusters.restate.dev").
+///
+/// The inner mapping specifies how individual paths within a CRD should be mapped to a custom type.
+///
+/// Example:
+/// ```
+/// converters {
+///   ["restateclusters.restate.dev"] {
+///     [List("spec", "compute", "env", "env")] = EnvVar
+///   }
+/// }
+/// ```
 converters: Mapping<String, Mapping<List<String>, Module|Class|TypeAlias>>?
 
-modules: Listing<ModuleGenerator> = new {
+fixed modules: Listing<ModuleGenerator> = new {
   for (_crd in crds) {
     new ModuleGenerator {
       k8sImportPath = module.k8sImportPath
