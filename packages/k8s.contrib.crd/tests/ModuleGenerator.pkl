@@ -13,11 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
+module k8s.contrib.crd.tests.ModuleGenerator
+
 amends "pkl:test"
-import "../generate.pkl"
+
 import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
 import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/EnvVar.pkl"
 import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/networking/v1/NetworkPolicy.pkl"
+
+import "../generate.pkl"
 
 local generator = (generate) {
   sourceContents = read("fixtures/crds.yaml")
