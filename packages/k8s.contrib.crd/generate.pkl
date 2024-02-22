@@ -51,7 +51,7 @@
 /// }
 /// ```
 ///
-/// To figure out which paths you need to override, try running with `-p logPaths`
+/// To figure out which paths you need to override, try running with `-p logPaths`.
 ///
 @ModuleInfo { minPklVersion = "0.25.0" }
 module org.json_schema.contrib.generate
@@ -63,14 +63,16 @@ import "internal/ModuleGenerator.pkl"
 
 
 
-/// Where to find the CRDs; can be a URI (https:, file: etc), an absolute file path, or a relative file path
+/// Where to find the CRDs; can be a URI (`https:`, `file:` etc), an absolute file path, or a relative file path
 source: String = read("prop:source")
 local sourceUri =
   if (source.startsWith(Regex(#"\w+:"#))) source      // absolute URI
   else if (source.startsWith("/")) "file://\(source)" // absolute file path
-  else "file://\(read("env:PWD"))/\(source)"                  // relative file path
+  else "file://\(read("env:PWD"))/\(source)"          // relative file path
 
-/// If set to true, log out every path we find in each CRD to aid in setting converters
+/// Whether to log out every path we find in each CRD to aid in setting converters.
+///
+/// Default: `false`.
 logPaths: Boolean? = read?("prop:logPaths")?.toBoolean()
 
 local crds: List<ModuleGenerator.CRD> = new yaml.Parser { useMapping = true }

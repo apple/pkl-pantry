@@ -169,7 +169,7 @@ moduleNode: ModuleNode =
             value = """
               Standard object's metadata.
 
-              More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>
+              More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
               """
           }
           typeAnnotation {
@@ -203,7 +203,6 @@ local function getDocComment(schema: JsonSchema|Boolean, type: "class"|"module"|
   else
     let (docCommentText: String =
       List(
-        schema.title,
         schema.description,
         if (type is "module") "This module was generated from the CustomResourceDefinition at <\(baseUri)>." else null,
         if (type is "class"|"module") getWarnings(schema, type) else null,
@@ -283,12 +282,9 @@ local function generatePklClass(schema: JsonSchema, className: Type, typeNames: 
   }
 
 function isClassLike(schema: JsonSchema.Schema): Boolean =
-  if (schema is Boolean)
-    false
-  else
-    schema.properties != null
+  !(schema is Boolean) && schema.properties != null
 
-/// Determine the name of a type.
+/// Determines the name of a type.
 ///
 /// Try to use the parent property's name as part of the class name in case of conflict.
 /// If already at the root, add a number at the end.
@@ -329,9 +325,11 @@ function mapSchema(
   path: Listing<String>,
   f: (JsonSchema.Schema) -> JsonSchema.Schema
 ): JsonSchema.Schema = let (_ = if (path.length > 32) trace("long path \(path)") else null) let (applied = f.apply(schema)) (applied) {
-    properties = if (applied.properties == null) null else new {
-      for (name, property in applied.properties!!) {
-        [name] = mapSchema(property, (path) { name }, f)
+    when (applied.properties != null) {
+      properties = new {
+        for (name, property in applied.properties!!) {
+          [name] = mapSchema(property, (path) { name }, f)
+        }
       }
     }
     additionalProperties = if (applied.additionalProperties == null) null else mapSchema(applied.additionalProperties!!, (path) { "additionalProperties" }, f)
