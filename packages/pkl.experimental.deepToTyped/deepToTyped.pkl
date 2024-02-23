@@ -100,6 +100,8 @@ hidden classHandlers: Mapping<Class, (List<reflect.Type>, Any) -> Any|Conversion
 
   [Boolean] = (_, value) ->
     if (value is Boolean) value else Unexpected("Boolean", value.getClass().simpleName)
+
+  [Any] = (_, value) -> value
 }
 
 local function applyClass(type: reflect.Class, typeArguments: List<reflect.Type>, value: Any): Any|ConversionFailure =
