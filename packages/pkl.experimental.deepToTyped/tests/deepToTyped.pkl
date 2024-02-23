@@ -143,6 +143,10 @@ local class Storage {
   size: DataSize
 }
 
+local class LooselyTyped {
+  anything: Any
+}
+
 facts {
   ["Basic types"] {
     t.apply(Int, 1) == 1
@@ -295,5 +299,23 @@ facts {
         [DataSize] = (_, value) -> (value as Int).toDataSize("b")
       }
     }.apply(Storage, value) == expectedResult
+  }
+
+  ["Supports types containing Any"] {
+    local looselyTypedIntExpected: LooselyTyped = new {
+      anything = 0
+    }
+    local looselyTypedInt = new {
+      anything = 0
+    }
+    t.apply(LooselyTyped, looselyTypedInt) == looselyTypedIntExpected
+
+    local looselyTypedStringExpected: LooselyTyped = new {
+      anything = "anything"
+    }
+    local looselyTypedString = new {
+      anything = "anything"
+    }
+    t.apply(LooselyTyped, looselyTypedString) == looselyTypedStringExpected
   }
 }
