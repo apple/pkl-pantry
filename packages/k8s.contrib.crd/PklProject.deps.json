@@ -1,13 +1,6 @@
 {
   "schemaVersion": 1,
   "resolvedDependencies": {
-    "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {
-      "type": "remote",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1.0.0",
-      "checksums": {
-        "sha256": "ee26debba2f6f4ac25ebc13145ea41f0af217d59fce3c26f6cd63ce146d7b2e7"
-      }
-    },
     "package://pkg.pkl-lang.org/pkl-k8s/k8s@1": {
       "type": "remote",
       "uri": "projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1",
@@ -29,9 +22,14 @@
         "sha256": "12a42da6a2933a802cc79cea7f5541513b5106070ca5f1236009ebefeb3d81b3"
       }
     },
+    "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1.0.1",
+      "path": "../pkl.experimental.deepToTyped"
+    },
     "package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1.0.0",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1.0.1",
       "path": "../org.json_schema.contrib"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/org.json_schema@1": {
