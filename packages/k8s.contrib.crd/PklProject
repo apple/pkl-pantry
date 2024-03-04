@@ -21,6 +21,7 @@ amends "../basePklProject.pkl"
 dependencies {
   ["jsonschema"] = import("../org.json_schema/PklProject")
   ["jsonschema.contrib"] = import("../org.json_schema.contrib/PklProject")
+  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
 
   ["k8s"] { uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1" }
 
@@ -28,9 +29,8 @@ dependencies {
   // version bumps here.
   ["uri"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri@1.0.0" }
   ["syntax"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.0.0" }
-  ["deepToTyped"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1.0.0" }
 }
 
 package {
-  version = "1.0.0"
+  version = "1.0.1"
 }
