@@ -1,0 +1,168 @@
+examples {
+  ["converts a module"] {
+    """
+    {
+      "type": "object",
+      "title": "Swallow",
+      "description": "This is a Swallow",
+      "properties": {
+        "hasGulp": {
+          "type": "boolean",
+          "description": "Does this Swallow have a gulp?"
+        },
+        "variants": {
+          "type": "array",
+          "description": "One of the variants for this swallow.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "African",
+              "European"
+            ]
+          }
+        },
+        "airSpeed": {
+          "type": "number",
+          "description": "What is the air speed of this swallow?",
+          "nullable": true
+        },
+        "isDuck": {
+          "type": "boolean",
+          "description": "Is this Swallow a Duck?\\n\\nThis is deprecated because no swallows are ever ducks.",
+          "nullable": true,
+          "deprecated": true
+        },
+        "age": {
+          "type": "integer",
+          "description": "How old is this Swallow?",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "nicknames": {
+          "type": "array",
+          "description": "What are the nicknames?",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bestFriend": {
+          "type": "object",
+          "title": "SwallowFriend",
+          "description": "Who is the best friend of this Swallow?",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the friend."
+            },
+            "isSwallow": {
+              "type": "boolean",
+              "description": "Is this friend also a Swallow?"
+            },
+            "tags": {
+              "type": "object",
+              "description": "Any extra attributes for the friend.",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "isSwallow",
+            "tags"
+          ]
+        },
+        "friends": {
+          "type": "array",
+          "description": "Who are the friends of this Swallow?",
+          "items": {
+            "type": "object",
+            "title": "SwallowFriend",
+            "description": "A friend of a Swallow.",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the friend."
+              },
+              "isSwallow": {
+                "type": "boolean",
+                "description": "Is this friend also a Swallow?"
+              },
+              "tags": {
+                "type": "object",
+                "description": "Any extra attributes for the friend.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "isSwallow",
+              "tags"
+            ]
+          }
+        },
+        "tags": {
+          "type": "object",
+          "description": "Any extra attributes.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "typicalFlightPathSize": {
+          "type": "string",
+          "title": "DataSize",
+          "description": "The typical size of a flight path of this Swallow."
+        },
+        "list": {
+          "type": "array",
+          "description": "This is a list. It really should not be used, but sometimes people make mistakes. Regardless,\\nit should turn into an array type.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "hasGulp",
+        "variants",
+        "age",
+        "nicknames",
+        "bestFriend",
+        "friends",
+        "tags",
+        "typicalFlightPathSize",
+        "list"
+      ]
+    }
+    
+    """
+  }
+  ["overwrite a property but inherit its type"] {
+    """
+    {
+      "type": "object",
+      "title": "darwins.Finch",
+      "properties": {
+        "beakIsGoodFor": {
+          "type": "string",
+          "description": "What is this beak good for?",
+          "enum": [
+            "nuts",
+            "fruits",
+            "insects"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "beakIsGoodFor"
+      ]
+    }
+    
+    """
+  }
+}
