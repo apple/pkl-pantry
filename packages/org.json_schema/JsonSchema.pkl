@@ -36,7 +36,7 @@ typealias JsonSchemaVersion =
   |"https://json-schema.org/draft/2020-12/schema"
   |String
 
-typealias JsonSchemaValue = Boolean|Number|Null|String|Dynamic|Typed|Listing
+typealias JsonSchemaValue = Boolean|Number|Null|String|Dynamic|Typed|Listing|Mapping
 
 /// A JSON Schema can either be a [JsonSchema] object or a simple boolean.
 ///
