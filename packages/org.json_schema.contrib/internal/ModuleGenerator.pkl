@@ -125,12 +125,13 @@ local function getWarnings(schema: JsonSchema, type: "class"|"module"): String? 
     This is ambiguously defined; can either be defined as a `Mapping` or a class.
     """
   else if (type == "class") null
-  else if (schema.type == "object")
+  else if (schema.type == "object" && schema.additionalProperties != false)
     "WARN: The root schema describes open-ended properties, but this is not possible to describe at the module level."
-  else if (schema.type != null)
+  else if (schema.type != null && schema.type != "object")
     "WARN: The root schema's type is `\(jsonRenderer.renderValue(schema.type))`, and cannot be correctly mapped to a Pkl module."
-  else
+  else if (schema.properties == null)
     "WARN: unable to determine module-level properties on the root schema."
+  else null
 
 local function generateClassBody(
   schema: JsonSchema(this.properties != null),
@@ -212,7 +213,7 @@ local function determineTypeName(path: List<String>, candidateName: String, exis
       else
         determineTypeName(path.dropLast(1), utils.pascalCase(path.last.capitalize()) + utils.pascalCase(candidateName), existingTypeNames, index)
     else
-      candidateType 
+      candidateType
 
 /// The schemas that should be rendered as classes.
 ///
