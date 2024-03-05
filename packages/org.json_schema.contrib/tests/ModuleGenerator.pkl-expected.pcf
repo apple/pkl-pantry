@@ -2,42 +2,33 @@ examples {
   ["basic"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: The root schema describes open-ended properties, but this is not possible to describe at the
-    /// module level.
     module com.apple.Example
-
+    
     foo: String?
-
+    
     bar: Number?
-
+    
     """
   }
   ["required properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: The root schema describes open-ended properties, but this is not possible to describe at the
-    /// module level.
     module com.apple.Example
-
+    
     foo: String
-
+    
     bar: Number
-
+    
     """
   }
   ["deprecated properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: The root schema describes open-ended properties, but this is not possible to describe at the
-    /// module level.
     module com.apple.Example
-
+    
     @Deprecated
     foo: String?
-
+    
     """
   }
   ["doc comments"] {
@@ -47,16 +38,13 @@ examples {
     /// FooBars when foo can bar
     ///
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: The root schema describes open-ended properties, but this is not possible to describe at the
-    /// module level.
     module com.apple.Example
-
+    
     /// The fooiest of foos
     ///
     /// The name of the foo that is really foo-like
     foo: String?
-
+    
     """
   }
   ["classes within properties"] {
@@ -64,110 +52,96 @@ examples {
     /// FooBar
     ///
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Foo?
-
+    
     class Foo {
       bar: String?
     }
-
+    
     """
   }
   ["classes in nested properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Foo?
-
+    
     class Foo {
       bar: Bar?
     }
-
+    
     class Bar {
       baz: String?
     }
-
+    
     """
   }
   ["classes in nested additionalProperties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Mapping<String, FooAlternate0|FooAlternate1>?
-
+    
     class FooAlternate0 {
       bar: String?
     }
-
+    
     class FooAlternate1 {
       baz: String?
     }
-
+    
     """
   }
   ["classes in nested patternProperties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Mapping<String(matches(Regex("[a-z]+"))), FooAlternate0|FooAlternate1>?
-
+    
     class FooAlternate0 {
       bar: String?
     }
-
+    
     class FooAlternate1 {
       baz: String?
     }
-
+    
     """
   }
   ["classes in listings"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foos: Listing<Foo>?
-
+    
     class Foo {
       bar: String?
     }
-
+    
     """
   }
   ["classes in definitions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Foo?
-
+    
     class Foo {
       bar: String?
     }
-
+    
     """
   }
   ["classes within definitions properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
     
     foo: Foo?
@@ -189,68 +163,60 @@ examples {
     class BarWaldo {
       corge: String?
     }
-
+    
     """
   }
   ["classes from inline positions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Myfoo?
-
+    
     /// The fooiest of foos
     class Myfoo {
       bar: String?
     }
-
+    
     typealias Foo = Any
-
+    
     """
   }
   ["typealiases in definitions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Foo?
-
+    
     typealias Foo = String(length >= 5)
-
+    
     """
   }
   ["typealiases in $defs"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Foo?
-
+    
     typealias Foo = String(length >= 5)
-
+    
     """
   }
   ["typealiases in subschema definitions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    ///
-    /// WARN: unable to determine module-level properties on the root schema.
     module com.apple.Example
-
+    
     foo: Foo?
-
+    
     class Foo {
       bar: Bar?
     }
-
+    
     typealias Bar = String
-
+    
     """
   }
   ["root schemas that are not objects"] {
@@ -259,11 +225,11 @@ examples {
     ///
     /// WARN: The root schema's type is `"array"`, and cannot be correctly mapped to a Pkl module.
     module com.apple.Example
-
+    
     class Item {
       foo: String?
     }
-
+    
     """
   }
 }

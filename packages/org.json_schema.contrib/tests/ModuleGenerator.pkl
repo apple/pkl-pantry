@@ -24,6 +24,7 @@ examples {
   ["basic"] {
     local schema: JsonSchema = new {
       type = "object"
+      additionalProperties = false
       properties {
         ["foo"] {
           type = "string"
@@ -49,6 +50,7 @@ examples {
           type = "number"
         }
       }
+      additionalProperties = false
       required {
         "foo"
         "bar"
@@ -59,6 +61,7 @@ examples {
   ["deprecated properties"] {
     local schema: JsonSchema = new {
       type = "object"
+      additionalProperties = false
       properties {
         ["foo"] {
           type = "string"
@@ -73,6 +76,7 @@ examples {
       type = "object"
       title = "FooBar"
       description = "FooBars when foo can bar"
+      additionalProperties = false
       properties {
         ["foo"] {
           title = "The fooiest of foos"
@@ -81,11 +85,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes within properties"] {
     local schema: JsonSchema = new {
       title = "FooBar"
+      additionalProperties = false
       properties {
         ["foo"] {
           properties {
@@ -96,14 +101,17 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes in nested properties"] {
     local schema: JsonSchema = new {
+      additionalProperties = false
       properties {
         ["foo"] {
+          additionalProperties = false
           properties {
             ["bar"] {
+              additionalProperties = false
               properties {
                 ["baz"] {
                   type = "string"
@@ -114,10 +122,11 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes in nested additionalProperties"] {
     local schema: JsonSchema = new {
+      additionalProperties = false
       properties {
         ["foo"] {
           additionalProperties {
@@ -141,10 +150,11 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes in nested patternProperties"] {
     local schema: JsonSchema = new {
+      additionalProperties = false
       properties {
         ["foo"] {
           type = "object"
@@ -171,10 +181,11 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes in listings"] {
     local schema: JsonSchema = new {
+      additionalProperties = false
       properties {
         ["foos"] {
           type = "array"
@@ -188,11 +199,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes in definitions"] {
     local schema: JsonSchema = new {
       local self = this
+      additionalProperties = false
       properties {
         ["foo"] {
           $ref = "#/definitions/foo"
@@ -209,11 +221,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes within definitions properties"] {
-     local schema: JsonSchema = new {
+    local schema: JsonSchema = new {
       local self = this
+      additionalProperties = false
       properties {
         ["foo"] {
           $ref = "#/definitions/foo"
@@ -249,11 +262,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["classes from inline positions"] {
     local schema: JsonSchema = new {
       local self = this
+      additionalProperties = false
       properties {
         ["foo"] {
           $ref = "#/definitions/foo/myfoo"
@@ -275,11 +289,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["typealiases in definitions"] {
     local schema: JsonSchema = new {
       local self = this
+      additionalProperties = false
       properties {
         ["foo"] {
           $ref = "#/definitions/foo"
@@ -293,11 +308,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["typealiases in $defs"] {
     local schema: JsonSchema = new {
       local self = this
+      additionalProperties = false
       properties {
         ["foo"] {
           $ref = "#/$defs/foo"
@@ -311,11 +327,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["typealiases in subschema definitions"] {
     local schema: JsonSchema = new {
       local self = this
+      additionalProperties = false
       properties {
         ["foo"] {
           type = "string"
@@ -333,11 +350,12 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
   ["root schemas that are not objects"] {
     local schema: JsonSchema = new {
       type = "array"
+      additionalProperties = false
       items {
         properties {
           ["foo"] {
@@ -346,6 +364,6 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema ; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
 }
