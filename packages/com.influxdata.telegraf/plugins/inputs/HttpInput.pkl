@@ -26,7 +26,7 @@ extends "./Input.pkl"
 import "../parsers/InputDataFormat.pkl"
 
 /// One or more URLs from which to read formatted metrics.
-urls: List<String>
+urls: Listing<String>
 
 /// HTTP method.
 method: "GET"|"POST"|"PUT"|"PATCH"
@@ -64,7 +64,7 @@ insecure_skip_verify: Boolean?
 timeout: Duration?
 
 /// List of success status codes.
-success_status_codes: List<UInt>?
+success_status_codes: Listing<UInt>?
 
 /// Data format to consume.
 ///

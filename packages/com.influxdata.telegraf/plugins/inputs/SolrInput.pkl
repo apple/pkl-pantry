@@ -13,14 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+/// The [Solr input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/solr/README.md)
+/// collcts stats via the [MBean Request Handler](https://solr.apache.org/guide/6_6/mbean-request-handler.html).
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.plugins.inputs.SolrInput
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
-}
+extends "./Input.pkl"
 
-package {
-  version = "1.1.0"
-}
+/// One or more URLs of Solr servers
+servers: Listing<String>(!isEmpty)
+
+/// Optional list of one or more Solr cores
+///
+/// Defaults to all
+cores: Listing<String>?
+
+/// Optional HTTP Basic Auth Credentials.
+username: String?
+password: String?

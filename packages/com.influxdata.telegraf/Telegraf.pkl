@@ -1,0 +1,254 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Definitions for a [Telegraf configuration](https://docs.influxdata.com/telegraf/v1.17/administration/configuration/).
+///
+/// This API nests data formats as a child object of plugins.
+/// For instance, here is an example of a socket listener which uses the json data format:
+/// ```
+/// import "package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf@<version>#/plugins/parsers/JsonInputDataFormat.pkl"
+///
+/// inputs {
+///   socket_listener {
+///     new {
+///       service_address = "tcp://:8085"
+///       data_format = new JsonInputDataFormat {
+///         json_query = "foo.bar"
+///         tag_keys {
+///           "my-tag-1"
+///           "my-tag-2"
+///         }
+///         json_name_key = "my_measurement"
+///         json_time_key = "time"
+///       }
+///     }
+///   }
+/// }
+/// ```
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.Telegraf
+
+import "plugins/inputs/FileInput.pkl"
+import "plugins/inputs/HttpInput.pkl"
+import "plugins/inputs/SocketListenerInput.pkl"
+import "plugins/inputs/PrometheusInput.pkl"
+import "plugins/inputs/DiskInput.pkl"
+import "plugins/inputs/CpuInput.pkl"
+import "plugins/inputs/NetInput.pkl"
+import "plugins/inputs/ExecInput.pkl"
+import "plugins/inputs/SolrInput.pkl"
+import "plugins/outputs/FileOutput.pkl"
+import "plugins/outputs/DiscardOutput.pkl"
+import "plugins/outputs/PrometheusClientOutput.pkl"
+import "plugins/processors/StarlarkProcessor.pkl"
+
+import "plugins/Plugin.pkl"
+
+/// Telegraf has a few options you can configure under the [agent] section of the config.
+agent: AgentConfig?
+
+/// Output plugins write metrics to a location.
+///
+/// Outputs commonly write to databases, network services, and messaging systems.
+outputs: Outputs?
+
+/// Input plugins gather and create metrics.
+///
+/// They support both polling and event driven operation.
+inputs: Inputs?
+
+/// Processor plugins process metrics as they pass through and immediately emit results
+/// based on the values they process.
+///
+/// For example, this could be printing all metrics or adding a tag to all metrics that pass through.
+processors: Processors?
+
+/// All metrics being gathered on this host will be tagged with the tags specified here.
+global_tags: Mapping<String, String>?
+
+open class Outputs {
+  /// This plugin writes telegraf metrics to files.
+  file: Listing<FileOutput>?
+
+  /// This output plugin simply drops all metrics that are sent to it.
+  ///
+  /// It is only meant to be used for testing purposes.
+  discard: Listing<DiscardOutput>?
+
+  prometheus_client: Listing<PrometheusClientOutput>?
+}
+
+open class Inputs {
+  /// The file plugin parses the complete contents of a file every interval using the selected input data format.
+  ///
+  /// Note: If you wish to parse only newly appended lines use the tail input plugin instead.
+  /// <https://github.com/influxdata/telegraf/blob/master/plugins/inputs/file>
+  file: Listing<FileInput>?
+
+  /// The prometheus input plugin gathers metrics from HTTP servers exposing metrics in Prometheus format.
+  ///
+  /// <https://github.com/influxdata/telegraf/blob/release-1.17/plugins/inputs/prometheus/README.md>
+  prometheus: Listing<PrometheusInput>?
+
+  /// The Socket Listener is a service input plugin that listens for messages
+  /// from streaming (tcp, unix) or datagram (udp, unixgram) protocols.
+  ///
+  /// The plugin expects messages in the
+  /// [Telegraf Input Data Formats](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md).
+  socket_listener: Listing<SocketListenerInput>?
+
+  /// The [Disk input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/disk/README.md)
+  /// gathers metrics about disk usage by mount point.
+  disk: Listing<DiskInput>?
+
+  /// The [CPU input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/cpu/README.md)
+  /// gathers metrics about cpu usage.
+  cpu: Listing<CpuInput>?
+
+  /// The [HTTP input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/http/README.md)
+  /// collects metrics from one or more HTTP(S) endpoints.
+  ///
+  /// The endpoint should have metrics formatted in one of the supported input data formats.
+  /// Each data format has its own unique set of configuration options which can be added to the input configuration.
+  http: Listing<HttpInput>?
+
+  /// The [net input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/net/NET_README.md)
+  /// gathers metrics about network interface and protocol usage (Linux only).
+  net: Listing<NetInput>?
+
+  /// The [exec input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/exec/README.md)
+  /// read metrics from one or more commands that can output to stdout.
+  exec: Listing<ExecInput>?
+
+  /// The [Solr input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/solr/README.md)
+  /// gathers metrics from one or more Solr servers
+  solr: Listing<SolrInput>?
+}
+
+open class Processors {
+  /// The [starlark processor](https://github.com/influxdata/telegraf/tree/master/plugins/processors/starlark) calls a
+  /// Starlark function for each matched metric, allowing for custom programmatic metric processing.
+  starlark: Listing<StarlarkProcessor>?
+}
+
+open class AgentConfig {
+  /// Default data collection interval for all inputs.
+  interval: Duration?
+
+  /// Rounds collection interval to [interval].
+  ///
+  /// For example, `interval = 10.s` collects on :00, :10, :20, etc.
+  round_interval: Boolean?
+
+  /// Telegraf will send metrics to outputs in batches of at most [metric_batch_size] metrics.
+  ///
+  /// This controls the size of writes that Telegraf sends to output plugins.
+  metric_batch_size: Int?
+
+  /// Maximum number of unwritten metrics per output.
+  ///
+  /// Increasing this value allows for longer periods of output downtime
+  /// without dropping metrics at the cost of higher maximum memory usage.
+  metric_buffer_limit: Int?
+
+  /// Collection jitter is used to jitter the collection by a random [interval].
+  ///
+  /// Each plugin will sleep for a random time within jitter before collecting.
+  /// This can be used to avoid many plugins querying things like sysfs
+  /// at the same time, which can have a measurable effect on the system.
+  collection_jitter: Duration?
+
+  /// Default flushing [interval] for all outputs.
+  ///
+  /// Maximum flush interval is `flush_interval + flush_jitter`.
+  flush_interval: Duration?
+
+  /// Default flush jitter for all outputs.
+  ///
+  /// This jitters the flush [interval] by a random amount.
+  /// This is primarily to avoid large write spikes for users running a large number of telegraf instances.
+  /// For example, a jitter of 5s and interval 10s means flushes will happen every 10-15s.
+  flush_jitter: Duration?
+
+  /// Collected metrics are rounded to the precision specified as an [interval].
+  ///
+  /// Precision will NOT be used for service inputs.
+  /// It is up to each individual service input to set the timestamp at the appropriate precision.
+  precision: ("ns"|"us"|"ms"|"s")?
+
+  /// Log at debug level.
+  debug: Boolean?
+
+  /// Log only error level messages.
+  quiet: Boolean?
+
+  /// Name of the file to be logged to when using the "file" logtarget.
+  ///
+  /// If set to the empty string, logs are written to stderr.
+  logfile: String?
+
+  /// The logfile will be rotated after the time interval specified.
+  ///
+  /// When set to `0.s`, no time based rotation is performed.
+  logfile_rotation_interval: Duration?
+
+  /// The logfile will be rotated when it becomes larger than the specified size.
+  ///
+  /// When set to `0.b`, no size based rotation is performed.
+  logfile_rotation_max_size: DataSize?
+
+  /// Maximum number of rotated archives to keep, any older logs are deleted.
+  ///
+  /// If set to -1, no archives are removed.
+  logfile_rotation_max_archives: Int?
+
+  /// Override default hostname, if empty use os.Hostname().
+  hostname: String?
+
+  /// If set to true, do no set the "host" tag in the telegraf agent.
+  omit_hostname: Boolean?
+}
+
+/// Telegraf uses golang's built-in `time.ParseDuration` underneath the hood.
+/// <https://golang.org/pkg/time/#ParseDuration>
+local durationConverter = (dur: Duration) ->
+  // Golang doesn't support days, so convert down to hours.
+  if (dur.unit == "d")
+    durationConverter.apply(dur.toUnit("h"))
+  else
+    let (unit = dur.unit)
+      // Most of Pkl's unit names are exact matches for Golang's unit names, except `min` needs to turn into `m`.
+      let (telegrafUnit = if (unit == "min") "m" else unit)
+        "\(dur.value)\(telegrafUnit)"
+
+/// Telegraf uses github.coim/alecthomas/units to parse data sizes.
+/// The parser is pretty lenient; see tests here:
+/// <https://github.com/alecthomas/units/blob/master/bytes_test.go>
+local dataSizeConverter = (size: DataSize) ->
+    let (unit = size.unit)
+      let (telegrafUnit =
+        if (unit.length == 3) unit[0].toUpperCase() + unit[1] + unit[2].toUpperCase()
+        else if (unit.length == 2) unit.toUpperCase()
+        else "")
+        "\(size.value)\(telegrafUnit)"
+
+output {
+  renderer = (Plugin.output.renderer) {
+    converters {
+      [Duration] = durationConverter
+      [DataSize] = dataSizeConverter
+    }
+  }
+}

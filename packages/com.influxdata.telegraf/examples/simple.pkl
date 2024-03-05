@@ -13,14 +13,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+amends "../Telegraf.pkl"
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
+import "../plugins/serializers/JsonOutputDataFormat.pkl"
+
+global_tags {
+  ["user"] = "alice"
 }
 
-package {
-  version = "1.1.0"
+inputs {
+  http {
+    new {
+      method = "GET"
+      urls {
+        "https://server.company.org/metrics"
+      }
+    }
+  }
+  cpu {
+    new {
+      percpu = false
+      totalcpu = true
+      tags {
+        ["tag1"] = "foo"
+        ["tag2"] = "bar"
+      }
+    }
+  }
+}
+
+outputs {
+  file {
+    new {
+      files {
+        "my/file.txt"
+      }
+      data_format = new JsonOutputDataFormat {
+        json_timestamp_units = 5.s
+      }
+    }
+  }
 }

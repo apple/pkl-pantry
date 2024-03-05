@@ -13,14 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+module com.influxdata.telegraf.tests.Telegraf
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
-}
+amends "pkl:test"
 
-package {
-  version = "1.1.0"
+local allExamples = import*("../examples/*.pkl")
+
+examples {
+  for (name in allExamples.keys) {
+    [name.drop("../examples".length + 1).replaceLast("pkl", "toml")] {
+      allExamples[name].output.text
+    }
+  }
 }

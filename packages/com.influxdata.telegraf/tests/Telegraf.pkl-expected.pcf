@@ -1,0 +1,25 @@
+examples {
+  ["simple.toml"] {
+    """
+    [[outputs.file]]
+    data_format = "json"
+    json_timestamp_units = "5s"
+    
+    
+    [[inputs.cpu]]
+    percpu = false
+    totalcpu = true
+    
+    [inputs.cpu.tags]
+    tag1 = "foo"
+    tag2 = "bar"
+    
+    [[inputs.http]]
+    urls = [ "https://server.company.org/metrics" ]
+    method = "GET"
+    
+    [global_tags]
+    user = "alice"
+    """
+  }
+}
