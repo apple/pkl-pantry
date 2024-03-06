@@ -1,0 +1,200 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Adapdation of <https://circleci.com/docs/sample-config/#sample-configuration-with-fan-infan-out-workflow>
+///
+///
+/// This example uses [OrbStep] for ad-hoc usage of orbs.
+/// Alternatively, orb steps can be defined as their own classes that extend [AbstractStep].
+/// For an example of that, see file `typed_orb_steps.pkl`.
+module com.circleci.v2.examples.fan_in_fan_out_workflow
+
+amends "../Config.pkl"
+
+orbs {
+  ["docker"] = "circleci/docker@1.0.1"
+}
+
+jobs {
+  ["prepare-dependencies"] {
+    docker {
+      new { image = "node:current-alpine" }
+    }
+    steps {
+      "checkout"
+      new RunStep {
+        name = "Compute version number"
+        command = #"echo "0.0.${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7}" | tee version.txt"#
+      }
+      new RestoreCacheStep {
+        keys {
+          #"yarn-deps-{{ checksum "yarn.lock" }}"#
+          "yarn-deps"
+        }
+      }
+      new RunStep {
+        name = "yarn install"
+        command = "yarn install"
+      }
+      new SaveCacheStep {
+        paths {
+          "node_modules"
+        }
+        key = #"yarn-deps-{{ checksum "yarn.lock" }}-{{ epoch }}"#
+      }
+      new StoreArtifacts {
+        path = "yarn.lock"
+      }
+      new PersistToWorkspaceStep {
+        root = "."
+        paths { "." }
+      }
+    }
+  }
+  ["build-production"] {
+    docker {
+      new { image = "node:current-alpine" }
+    }
+    steps {
+      new AttachWorkspaceStep { at = "." }
+      new RunStep {
+        name = "Production build"
+        command = """
+          export __BUILD_VERSION="$(cat version.txt)"
+          yarn build
+          """
+      }
+      new StoreArtifacts { path = "dist/server.js" }
+      new PersistToWorkspaceStep {
+        root = "."
+        paths { "." }
+      }
+    }
+  }
+  ["build-docker-image"] {
+    machine {
+      image = "ubuntu-2004:current"
+    }
+    steps {
+      new AttachWorkspaceStep { at = "." }
+      new RunStep {
+        name = "Setup __BUILD_VERSION envvar"
+        command = """
+          echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
+          """
+      }
+      (module.OrbStep("docker/check")) {
+        registry = "$DOCKER_REGISTRY"
+      }
+      (module.OrbStep("docker/build")) {
+        image = "$DOCKER_IMAGE_NAME"
+        tag = "$__BUILD_VERSION"
+        registry = "$DOCKER_REGISTRY"
+      }
+      (module.OrbStep("docker/push")) {
+        image = "$DOCKER_IMAGE_NAME"
+        tag = "$__BUILD_VERSION"
+        registry = "$DOCKER_REGISTRY"
+      }
+    }
+  }
+  ["test"] {
+    docker {
+      new { image = "node:current-alpine" }
+    }
+    parallelism = 2
+    steps {
+      new AttachWorkspaceStep { at = "." }
+      new RunStep {
+        name = "Run tests"
+        command = #"""
+          circleci tests glob '**/*.test.ts' | circleci tests split --split-by timings | xargs yarn test:ci
+          """#
+      }
+      new StoreArtifacts { path = "test-results" }
+      new StoreTestResults { path = "test-results" }
+    }
+  }
+  ["deploy-docker-image"] {
+    machine {
+      image = "ubuntu-2004:current"
+    }
+    steps {
+      new AttachWorkspaceStep { at = "." }
+      new RunStep {
+        name = "Setup __BUILD_VERSION envvar"
+        command = """
+          echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
+          """
+      }
+      (module.OrbStep("docker/check")) {
+        registry = "$DOCKER_REGISTRY"
+      }
+      (module.OrbStep("docker/pull")) {
+        images = "$DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$__BUILD_VERSION"
+      }
+      new RunStep {
+        name = "Tag the image as latest"
+        command = """
+          docker tag $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$__BUILD_VERSION $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:latest
+          """
+      }
+      (module.OrbStep("docker/push")) {
+        image = "$DOCKER_IMAGE_NAME"
+        tag = "latest"
+        registry = "$DOCKER_REGISTRY"
+      }
+    }
+  }
+}
+
+workflows {
+  ["build-test-deploy"] {
+    jobs {
+      "prepare-dependencies"
+      new {
+        ["build-production"] {
+          requires {
+            "prepare-dependencies"
+          }
+        }
+      }
+      new {
+        ["build-docker-image"] {
+          context = "docker-hub"
+          requires {
+            "build-production"
+          }
+        }
+      }
+      new {
+        ["test"] {
+          requires {
+            "prepare-dependencies"
+          }
+        }
+      }
+      new {
+        ["deploy-docker-image"] {
+          context = "docker-hub"
+          requires {
+            "build-docker-image"
+            "test"
+          }
+        }
+      }
+    }
+  }
+}

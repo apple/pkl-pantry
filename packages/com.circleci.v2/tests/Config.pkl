@@ -13,9 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for defining [CircleCI](https://circleci.com) configuration.
-amends "../basePklProject.pkl"
+module com.circleci.v2.tests.Config
 
-package {
-  version = "1.1.1"
+amends "pkl:test"
+
+local allExamples = import*("../examples/*.pkl")
+
+examples {
+  for (example in allExamples.keys) {
+    [example.drop("../examples/".length).replaceLast("pkl", "yaml")] {
+      allExamples[example].output.text
+    }
+  }
 }

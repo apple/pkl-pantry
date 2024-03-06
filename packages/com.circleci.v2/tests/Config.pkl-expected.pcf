@@ -1,0 +1,172 @@
+examples {
+  ["concurrent_workflow.yaml"] {
+    """
+    # Generated from CircleCI.pkl. DO NOT EDIT.
+    version: '2.1'
+    jobs:
+      build:
+        steps:
+        - checkout
+        - run:
+            command: echo "this is the build job"
+        docker:
+        - image: cimg/base:2023.03
+      test:
+        steps:
+        - checkout
+        - run:
+            command: echo "this is the build job"
+        docker:
+        - image: cimg/base:2023.03
+    workflows:
+      build_and_test:
+        jobs:
+        - build
+        - test
+    
+    """
+  }
+  ["fan_in_fan_out_workflow.yaml"] {
+    """
+    # Generated from CircleCI.pkl. DO NOT EDIT.
+    version: '2.1'
+    orbs:
+      docker: circleci/docker@1.0.1
+    jobs:
+      prepare-dependencies:
+        steps:
+        - checkout
+        - run:
+            command: echo "0.0.${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7}" | tee version.txt
+            name: Compute version number
+        - restore_cache:
+            keys:
+            - yarn-deps-{{ checksum "yarn.lock" }}
+            - yarn-deps
+        - run:
+            command: yarn install
+            name: yarn install
+        - save_cache:
+            paths:
+            - node_modules
+            key: yarn-deps-{{ checksum "yarn.lock" }}-{{ epoch }}
+        - store_artifacts:
+            path: yarn.lock
+        - persist_to_workspace:
+            root: '.'
+            paths:
+            - '.'
+        docker:
+        - image: node:current-alpine
+      build-production:
+        steps:
+        - attach_workspace:
+            at: '.'
+        - run:
+            command: |-
+              export __BUILD_VERSION="$(cat version.txt)"
+              yarn build
+            name: Production build
+        - store_artifacts:
+            path: dist/server.js
+        - persist_to_workspace:
+            root: '.'
+            paths:
+            - '.'
+        docker:
+        - image: node:current-alpine
+      build-docker-image:
+        steps:
+        - attach_workspace:
+            at: '.'
+        - run:
+            command: echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
+            name: Setup __BUILD_VERSION envvar
+        - docker/check:
+            registry: $DOCKER_REGISTRY
+        - docker/build:
+            image: $DOCKER_IMAGE_NAME
+            tag: $__BUILD_VERSION
+            registry: $DOCKER_REGISTRY
+        - docker/push:
+            image: $DOCKER_IMAGE_NAME
+            tag: $__BUILD_VERSION
+            registry: $DOCKER_REGISTRY
+        machine:
+          image: ubuntu-2004:current
+      test:
+        steps:
+        - attach_workspace:
+            at: '.'
+        - run:
+            command: circleci tests glob '**/*.test.ts' | circleci tests split --split-by timings | xargs yarn test:ci
+            name: Run tests
+        - store_artifacts:
+            path: test-results
+        - store_test_results:
+            path: test-results
+        parallelism: 2
+        docker:
+        - image: node:current-alpine
+      deploy-docker-image:
+        steps:
+        - attach_workspace:
+            at: '.'
+        - run:
+            command: echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
+            name: Setup __BUILD_VERSION envvar
+        - docker/check:
+            registry: $DOCKER_REGISTRY
+        - docker/pull:
+            images: $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$__BUILD_VERSION
+        - run:
+            command: docker tag $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$__BUILD_VERSION $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:latest
+            name: Tag the image as latest
+        - docker/push:
+            image: $DOCKER_IMAGE_NAME
+            tag: latest
+            registry: $DOCKER_REGISTRY
+        machine:
+          image: ubuntu-2004:current
+    workflows:
+      build-test-deploy:
+        jobs:
+        - prepare-dependencies
+        - build-production:
+            requires:
+            - prepare-dependencies
+        - build-docker-image:
+            requires:
+            - build-production
+            context: docker-hub
+        - test:
+            requires:
+            - prepare-dependencies
+        - deploy-docker-image:
+            requires:
+            - build-docker-image
+            - test
+            context: docker-hub
+    
+    """
+  }
+  ["typed_orb_steps.yaml"] {
+    """
+    # Generated from CircleCI.pkl. DO NOT EDIT.
+    version: '2.1'
+    jobs:
+      test:
+        steps:
+        - checkout
+        - node/install:
+            node-version: v20.11.1
+        - run:
+            command: npm install
+        - run:
+            command: npm test
+        machine:
+          image: ubuntu-2004:current
+    
+    """
+  }
+}
