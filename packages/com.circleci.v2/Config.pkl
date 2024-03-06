@@ -34,6 +34,14 @@ setup: Boolean?
 /// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
 orbs: Mapping<String, Orb|String>?
 
+/// Executors define the execution environment in which the steps of a job will be run,
+/// allowing you to reuse a single executor definition across multiple jobs.
+///
+/// See [executors in the CircleCI documentation](https://circleci.com/docs/configuration-reference/#executors).
+/// Also see [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on
+/// how to use executors to share state between jobs.
+executors: Mapping<String, Executor>?
+
 /// A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
 /// a single command definition across multiple jobs.
 ///
@@ -46,7 +54,7 @@ commands: Mapping<String, Command>?
 /// Jobs are specified in the jobs map, see
 /// [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
 /// The name of the job is the key in the map, and the value is a map describing the job.
-jobs: Mapping<String, Job>?
+jobs: Mapping<String(matches(Regex("^[A-Za-z][A-Za-z\\s\\d_-]*$"))), Job>?
 
 /// Used for orchestrating all jobs.
 ///
@@ -85,6 +93,31 @@ class Orb {
   jobs: Mapping<String, Job>?
 }
 
+class Executor {
+  /// Which resource class to use which further determines the amount of CPU and RAM allocated to each container in a
+  /// job.
+  resource_class: ResourceClass?
+
+  /// Shell to use for execution command in all steps.
+  /// Can be overridden by shell in each step (default: See [Default Shell Options](https://circleci.com/docs/configuration-reference/#default-shell-options))
+  shell: String?
+
+  /// In which directory to run the steps. Will be interpreted as an absolute path.
+  working_directory: String?
+
+  /// A map of environment variable names and values.
+  environment: Mapping<String, String>?
+
+  /// Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
+  docker: Listing<DockerImage>(!isEmpty)?(onlyOneSet(List(this, macos, machine)))
+
+  /// Options for [macOS executor](https://circleci.com/docs/configuration-reference/#macos)
+  macos: MacOSExecutor?
+
+  /// Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
+  machine: Machine?
+}
+
 class Job {
   /// Shell to use for execution command in all steps.
   ///
@@ -93,6 +126,13 @@ class Job {
 
   /// A list of [steps](https://circleci.com/docs/configuration-reference/#steps) to be performed
   steps: Listing<Step>(!isEmpty)
+
+  /// A pre-defined executor from the defined executors or orbs in which to execute this job.
+  ///
+  /// Can be used to share data between jobs.
+  /// See [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on how to
+  /// use executors to share state between jobs.
+  executor: String?
 
   /// In which directory to run the steps.
   ///
