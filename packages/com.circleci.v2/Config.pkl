@@ -53,7 +53,7 @@ commands: Mapping<String, Command>?
 /// Jobs are specified in the jobs map, see
 /// [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
 /// The name of the job is the key in the map, and the value is a map describing the job.
-jobs: Mapping<String, Job>?
+jobs: Mapping<String(matches(Regex("^[A-Za-z][A-Za-z\\s\\d_-]*$"))), Job>?
 
 /// Used for orchestrating all jobs.
 ///
