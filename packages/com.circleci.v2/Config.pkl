@@ -36,6 +36,7 @@ orbs: Mapping<String, Orb|String>?
 
 /// Executors define the execution environment in which the steps of a job will be run,
 /// allowing you to reuse a single executor definition across multiple jobs.
+///
 /// See [executors in the CircleCI documentation](https://circleci.com/docs/configuration-reference/#executors).
 /// Also see [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on
 /// how to use executors to share state between jobs.
@@ -126,8 +127,9 @@ class Job {
   /// A list of [steps](https://circleci.com/docs/configuration-reference/#steps) to be performed
   steps: Listing<Step>(!isEmpty)
 
-  /// A pre-defined executor from the defined executors or orbs in which to execute this job. Can be used to share
-  /// data between jobs.
+  /// A pre-defined executor from the defined executors or orbs in which to execute this job.
+  ///
+  /// Can be used to share data between jobs.
   /// See [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on how to
   /// use executors to share state between jobs.
   executor: String?
