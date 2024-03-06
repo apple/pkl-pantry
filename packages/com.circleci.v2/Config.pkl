@@ -34,6 +34,13 @@ setup: Boolean?
 /// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
 orbs: Mapping<String, Orb|String>?
 
+/// Executors define the execution environment in which the steps of a job will be run,
+/// allowing you to reuse a single executor definition across multiple jobs.
+/// See [executors in the CircleCI documentation](https://circleci.com/docs/configuration-reference/#executors).
+/// Also see [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on
+/// how to use executors to share state between jobs.
+executors: Mapping<String, Executor>?
+
 /// A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
 /// a single command definition across multiple jobs.
 ///
@@ -85,6 +92,31 @@ class Orb {
   jobs: Mapping<String, Job>?
 }
 
+class Executor {
+  /// Which resource class to use which further determines the amount of CPU and RAM allocated to each container in a
+  /// job.
+  resource_class: ResourceClass?
+
+  /// Shell to use for execution command in all steps.
+  /// Can be overridden by shell in each step (default: See [Default Shell Options](https://circleci.com/docs/configuration-reference/#default-shell-options))
+  shell: String?
+
+  /// In which directory to run the steps. Will be interpreted as an absolute path.
+  working_directory: String?
+
+  /// A map of environment variable names and values.
+  environment: Mapping<String, String>?
+
+  /// Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
+  docker: Listing<DockerImage>(!isEmpty)?(onlyOneSet(List(this, macos, machine)))
+
+  /// Options for [macOS executor](https://circleci.com/docs/configuration-reference/#macos)
+  macos: MacOSExecutor?
+
+  /// Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
+  machine: Machine?
+}
+
 class Job {
   /// Shell to use for execution command in all steps.
   ///
@@ -93,6 +125,12 @@ class Job {
 
   /// A list of [steps](https://circleci.com/docs/configuration-reference/#steps) to be performed
   steps: Listing<Step>(!isEmpty)
+
+  /// A pre-defined executor from the defined executors or orbs in which to execute this job. Can be used to share
+  /// data between jobs.
+  /// See [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on how to
+  /// use executors to share state between jobs.
+  executor: String?
 
   /// In which directory to run the steps.
   ///
@@ -199,14 +237,14 @@ class DockerImage {
   /// The command used as executable when launching the container.
   ///
   /// [entrypoint] overrides the image’s `ENTRYPOINT`
-  entrypoint: (*Listing<String>|String)?
+  entrypoint: (* Listing<String>|String)?
 
   /// The command used as pid 1 (or args for entrypoint) when launching the container.
   ///
   /// [command] overrides the image’s `COMMAND`.
   /// It will be used as arguments to the image `ENTRYPOINT` if it has one, or as the executable
   /// if the image has no `ENTRYPOINT`.
-  command: (*Listing<String>|String)?
+  command: (* Listing<String>|String)?
 
   /// Which user to run commands as within the Docker container
   user: String?
@@ -254,24 +292,24 @@ class ScheduleTriggerFilter {
 
 class ScheduleTriggerFilterBranches {
   /// Either a single branch specifier, or a list of branch specifiers
-  only: *Listing<String>|String
+  only: * Listing<String>|String
 
   /// Either a single branch specifier, or a list of branch specifiers
-  ignore: (*Listing<String>|String)?
+  ignore: (* Listing<String>|String)?
 }
 
 class Workflow {
   /// A job can have the keys `requires`, `name`, `context`, `type`, and `filters`.
-  jobs: Listing<*Mapping<String, WorkflowJob>(length == 1)|String>(!isEmpty)
+  jobs: Listing<* Mapping<String, WorkflowJob>(length == 1)|String>(!isEmpty)
 
   /// Specifies which triggers will cause this workflow to be executed.
   ///
   /// Default behavior is to trigger the workflow when pushing to a branch
   triggers: Listing<ScheduleTrigger>?
 
-  `when`: (*LogicStatement|Boolean|String)?
+  `when`: (* LogicStatement|Boolean|String)?
 
-  `unless`: (*LogicStatement|Boolean|String)?
+  `unless`: (* LogicStatement|Boolean|String)?
 }
 
 class WorkflowJob {
@@ -301,7 +339,7 @@ class WorkflowJob {
   /// Each context name must be unique.
   /// If using CircleCI Server, only a single Context per workflow is supported.
   /// Note: A maximum of 100 unique contexts across all workflows is allowed
-  context: (*Listing<String>|String)?
+  context: (* Listing<String>|String)?
 
   /// A job may have a type of `approval` indicating it must be manually approved before downstream
   /// jobs may proceed.
@@ -510,7 +548,7 @@ class WhenStep {
   fixed hidden __name__ = "when"
 
   /// The logic statement that determines whether to execute.
-  condition: (*LogicStatement|Boolean|String)?
+  condition: (* LogicStatement|Boolean|String)?
 
   /// A list of steps to execute when the condition is true
   steps: Listing<AbstractStep|SimpleStepName>?
@@ -527,7 +565,7 @@ class UnlessStep {
   fixed hidden __name__ = "unless"
 
   /// The logic statement that determines whether to execute.
-  condition: (*LogicStatement|Boolean|String)?
+  condition: (* LogicStatement|Boolean|String)?
 
   /// A list of steps to execute when the condition is true
   steps: Listing<AbstractStep|SimpleStepName>?
@@ -598,13 +636,13 @@ class StoreArtifacts extends AbstractStep {
 /// before the workflow is run.
 class LogicStatement {
   /// True if all arguments are truthy.
-  and: Listing<*LogicStatement|Boolean|String>?(onlyOneSet(List(this, or, not, equal, matches)))
+  and: Listing<* LogicStatement|Boolean|String>?(onlyOneSet(List(this, or, not, equal, matches)))
 
   /// True if any arguments are truthy.
-  or: Listing<*LogicStatement|Boolean|String>?
+  or: Listing<* LogicStatement|Boolean|String>?
 
   /// True if the argument is not truthy.
-  not: (*LogicStatement|Boolean|String)?
+  not: (* LogicStatement|Boolean|String)?
 
   /// True if all arguments evaluate to equal values.
   equal: Listing<Boolean|String|Number>?
