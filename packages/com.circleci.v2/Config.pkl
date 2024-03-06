@@ -292,7 +292,7 @@ class ScheduleTriggerFilter {
 
 class ScheduleTriggerFilterBranches {
   /// Either a single branch specifier, or a list of branch specifiers
-  only: * Listing<String>|String
+  only: *Listing<String>|String
 
   /// Either a single branch specifier, or a list of branch specifiers
   ignore: (*Listing<String>|String)?
@@ -300,7 +300,7 @@ class ScheduleTriggerFilterBranches {
 
 class Workflow {
   /// A job can have the keys `requires`, `name`, `context`, `type`, and `filters`.
-  jobs: Listing<* Mapping<String, WorkflowJob>(length == 1)|String>(!isEmpty)
+  jobs: Listing<*Mapping<String, WorkflowJob>(length == 1)|String>(!isEmpty)
 
   /// Specifies which triggers will cause this workflow to be executed.
   ///
