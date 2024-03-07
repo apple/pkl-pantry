@@ -13,16 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A reference to other components in the specification, internally and externally.
+/// The Header Object follows the structure of the Parameter Object with the
+/// following changes:
 ///
-/// The Reference Object is defined by [JSON Reference](https://datatracker.ietf.org/doc/html/draft-pbryan-zyp-json-ref-03)
-/// and follows the same structure, behavior and rules.
-///
-/// For this specification, reference resolution is accomplished as defined by the JSON Reference specification
-/// and not by the JSON Schema specification.
-///
-/// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#reference-object
-module org.openapis.v3.Reference
+/// * name MUST NOT be specified, it is given in the corresponding headers map.
+/// * in MUST NOT be specified, it is implicitly in header.
+/// * All traits that are affected by the location MUST be applicable to a 
+///   location of header (for example, style).
+module org.openapis.v3.Header
 
-/// The reference URI
-`$ref`: Uri
+extends "BaseParameter.pkl"
+
+import "Schema.pkl"
+import "Reference.pkl"
+
+/// Determines whether this parameter is mandatory. 
+required: Boolean?
+
+/// Describes how the parameter value will be serialized depending on the type of the parameter value.
+///
+/// In this case, it's a header, so it should always be "simple".
+style: "simple"?
+
+/// The schema defining the type used for the parameter.
+schema: *Schema|Reference?

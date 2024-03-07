@@ -13,16 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A reference to other components in the specification, internally and externally.
-///
-/// The Reference Object is defined by [JSON Reference](https://datatracker.ietf.org/doc/html/draft-pbryan-zyp-json-ref-03)
-/// and follows the same structure, behavior and rules.
-///
-/// For this specification, reference resolution is accomplished as defined by the JSON Reference specification
-/// and not by the JSON Schema specification.
-///
-/// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#reference-object
-module org.openapis.v3.Reference
+module org.openapis.v3.RequestBody
 
-/// The reference URI
-`$ref`: Uri
+import "MediaType.pkl"
+
+/// A brief description of the request body.
+///
+/// This could contain examples of use. CommonMark syntax MAY be used for rich text representation.
+@SourceCode { language = "Markdown" }
+description: String?
+
+/// The content of the request body.
+///
+/// The key is a media type or media type range and the value describes it. For requests that match multiple
+/// keys, only the most specific key is applicable. e.g. text/plain overrides text/*
+content: Mapping<String, MediaType>?
+
+/// Determines if the request body is required in the request.
+///
+/// Defaults to false.
+required: Boolean?

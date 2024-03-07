@@ -13,16 +13,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A reference to other components in the specification, internally and externally.
-///
-/// The Reference Object is defined by [JSON Reference](https://datatracker.ietf.org/doc/html/draft-pbryan-zyp-json-ref-03)
-/// and follows the same structure, behavior and rules.
-///
-/// For this specification, reference resolution is accomplished as defined by the JSON Reference specification
-/// and not by the JSON Schema specification.
-///
-/// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#reference-object
-module org.openapis.v3.Reference
+/// Various security data types.
+module org.openapis.v3.Security
 
-/// The reference URI
-`$ref`: Uri
+/// Lists the required security schemes to execute this operation.
+///
+/// The name used for each property MUST correspond to a security scheme declared in the Security Schemes under the
+/// Components Object.
+///
+/// Security Requirement Objects that contain multiple schemes require that all schemes MUST be satisfied for a
+/// request to be authorized. This enables support for scenarios where multiple query parameters or HTTP headers
+/// are required to convey security information.
+///
+/// When a list of Security Requirement Objects is defined on the OpenAPI Object or Operation Object, only one of the
+/// Security Requirement Objects in the list needs to be satisfied to authorize the request.
+typealias Requirement = Mapping<String, Listing<String>>

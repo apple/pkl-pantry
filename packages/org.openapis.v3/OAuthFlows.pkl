@@ -13,16 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A reference to other components in the specification, internally and externally.
-///
-/// The Reference Object is defined by [JSON Reference](https://datatracker.ietf.org/doc/html/draft-pbryan-zyp-json-ref-03)
-/// and follows the same structure, behavior and rules.
-///
-/// For this specification, reference resolution is accomplished as defined by the JSON Reference specification
-/// and not by the JSON Schema specification.
-///
-/// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#reference-object
-module org.openapis.v3.Reference
+/// Specific OAuth flow types.
+module org.openapis.v3.OAuthFlows
 
-/// The reference URI
-`$ref`: Uri
+import "OAuthFlow.pkl"
+
+/// Configuration for the OAuth Implicit flow.
+implicit: OAuthFlow.WithAuthorizationUrl
+
+/// Configuration for the OAuth Resource Owner Password flow.
+password: OAuthFlow.WithTokenUrl
+
+/// Configuration for the OAuth Client Credentials flow.
+///
+/// Previously called application in OpenAPI 2.0.
+clientCredentials: OAuthFlow.WithTokenUrl
+
+/// Configuration for the OAuth Authorization Code flow.
+///
+/// Previously called accessCode in OpenAPI 2.0.
+authorizationCode: OAuthFlow.WithTokenAndAuthorizationUri

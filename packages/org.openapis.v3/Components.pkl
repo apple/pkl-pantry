@@ -1,0 +1,63 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Contact information for the exposed API.
+module org.openapis.v3.Reference
+
+import "OpenAPI.pkl"
+import "Example.pkl"
+import "Header.pkl"
+import "Link.pkl"
+import "Parameter.pkl"
+import "Reference.pkl"
+import "RequestBody.pkl"
+import "Response.pkl"
+import "Schema.pkl"
+import "SecurityScheme.pkl"
+import "PathItem.pkl"
+
+/// Component type name for use with component reference helpers.
+typealias ComponentType = "schemas"|"responses"|"parameters"|"examples"|"requestBodies"|"headers"|"links"
+
+// all component mapping keys need to match this regex
+local componentKeyConstraint = (it: String) ->
+  it.matches(Regex(#"^[a-zA-Z0-9\.\-_]+$"#))
+
+/// An object to hold reusable Schema Objects.
+schemas: Mapping<String(componentKeyConstraint), *Schema|Reference>?
+
+/// An object to hold reusable Response Objects.
+responses: Mapping<String(componentKeyConstraint), *Response|Reference>?
+
+/// An object to hold reusable Parameter Objects.
+parameters: Mapping<String(componentKeyConstraint), *Parameter|Reference>?
+
+/// An object to hold reusable Example Objects.
+examples: Mapping<String(componentKeyConstraint), *Example|Reference>?
+
+/// An object to hold reusable RequestBody Objects.
+requestBodies: Mapping<String(componentKeyConstraint), *RequestBody|Reference>?
+
+/// An object to hold reusable Header Objects.
+headers: Mapping<String(componentKeyConstraint), *Header|Reference>?
+
+/// An object to hold reusable Security Scheme Objects.
+securitySchemes: Mapping<String(componentKeyConstraint), *SecurityScheme|Reference>?
+
+/// An object to hold reusable Link Objects.
+links: Mapping<String(componentKeyConstraint), *Link|Reference>?
+
+/// An object to hold reusable Callback Objects.
+callbacks: Mapping<String(componentKeyConstraint), *Mapping<OpenAPI.Expression, PathItem>|Reference>?

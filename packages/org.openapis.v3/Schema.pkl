@@ -29,7 +29,6 @@
 /// For example, [nullable] is valid on v3.0, but is invalid in v3.1.
 ///
 /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#schema-object>
-@ModuleInfo { minPklVersion = "0.25.0" }
 open module org.openapis.v3.Schema
 
 import "Schema.pkl"
