@@ -13,9 +13,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for defining [CircleCI](https://circleci.com) configuration.
-amends "../basePklProject.pkl"
+module com.circleci.v2.examples.concurrent_workflow
 
-package {
-  version = "1.1.1"
+// Adapdation of https://circleci.com/docs/sample-config/#concurrent-workflow
+amends "../Config.pkl"
+
+jobs {
+  ["build"] {
+    docker {
+      new { image = "cimg/base:2023.03" }
+    }
+    steps {
+      "checkout"
+      module.run(#"echo "this is the build job""#)
+    }
+  }
+  ["test"] {
+    docker {
+      new { image = "cimg/base:2023.03"}
+    }
+    steps {
+      "checkout"
+      module.run(#"echo "this is the build job""#)
+    }
+  }
+}
+
+workflows {
+  ["build_and_test"] {
+    jobs {
+      "build"
+      "test"
+    }
+  }
 }

@@ -390,12 +390,18 @@ class FilterSpec {
   ignore: (String|Listing<String>)?
 }
 
-typealias Step = AbstractStep|SimpleStepName
+typealias Step = AbstractStep|SimpleStepName|OrbStep
 
 typealias SimpleStepName = "checkout"|"setup_remote_docker"|"add_ssh_keyes"|String
 
-local abstract class AbstractStep {
+abstract class AbstractStep {
   fixed hidden __name__: String
+}
+
+typealias OrbStep = Dynamic(hasProperty("__name__"))
+
+function OrbStep(name: String): OrbStep = new {
+  __name__ = name
 }
 
 function run(_command: String): RunStep = new {
@@ -761,6 +767,10 @@ output {
   renderer = new YamlRenderer {
     converters {
       [AbstractStep] = (it) -> Map(it.__name__, it.toMap())
+      [Dynamic] = (it) ->
+        if (it.hasProperty("__name__"))
+          Map(it.__name__, it.toMap().remove("__name__"))
+        else it
     }
   }
 }
