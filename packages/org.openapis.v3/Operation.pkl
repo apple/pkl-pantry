@@ -55,13 +55,11 @@ operationId: String?
 /// The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a name and
 /// location. The list can use the Reference Object to link to parameters that are defined at the OpenAPI Object's
 /// components/parameters.
-parameters: Mapping<String, Parameters>?
+parameters: Parameters?
 
 // follow the uniqueness standard for parameters set forth by the spec
 typealias Parameters = Listing<*Parameter|Reference>(
-    isDistinctBy((it) ->
-      if (it is Parameter) "\(it.name)\(it.`in`)" else it.`$ref`)
-    || throw("params must be unique by name and location"))
+  isDistinctBy((it) -> if (it is Parameter) "\(it.name)\(it.`in`)" else it.`$ref`))
 
 /// The request body applicable for this operation.
 ///
