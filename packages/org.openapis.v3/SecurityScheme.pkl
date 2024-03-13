@@ -22,10 +22,10 @@ import "OAuthFlows.pkl"
 typealias SecuritySchemeType = "apiKey"|"http"|"oauth2"|"openIdConnect"
 
 /// The type of the security scheme.
-type: SecuritySchemeType((it) ->
-    if (it == "oauth") flows != null
-    else if (it == "openIdConnect") openIdConnectUrl != null
-    else true)
+type: SecuritySchemeType(
+        if (this == "oauth") flows != null
+        else if (this == "openIdConnect") openIdConnectUrl != null
+        else true)
 
 /// A short description for security scheme.
 ///
@@ -39,9 +39,7 @@ name: String
 /// The location of the API key.
 `in`: "query"|"header"|"cookie"
 
-scheme: String((it) ->
-    if (it == "bearer") bearerFormat != null
-    else true)
+scheme: String((this == "bearer").implies(bearerFormat != null))
 
 /// A hint to the client to identify how the bearer token is formatted.
 ///

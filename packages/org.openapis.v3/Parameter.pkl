@@ -33,7 +33,7 @@ import "MediaType.pkl"
 name: String
 
 /// The location of the parameter.
-`in`: "query" | "header" | "path" | "cookie"
+`in`: "query"|"header"|"path"|"cookie"
 
 /// Determines whether the parameter value SHOULD allow reserved characters, as defined by RFC3986 :/?#[]@!$&'()*+,;=
 /// to be included without percent-encoding.
@@ -45,7 +45,7 @@ allowReserved: Boolean(implies(`in` == "query"))?
 ///
 /// If the parameter location is "path", this property is REQUIRED and its value MUST be true. Otherwise, the property
 /// MAY be included and its default value is false.
-required: Boolean((it) -> `in` != "query" || it == true)?
+required: Boolean?((`in` == "path").implies(this == true))
 
 /// Allowed values for a parameter's style.
 typealias Style = "matrix"|"label"|"form"|"simple"|"spaceDelimited"|"pipeDelimited"|"deepObject"
@@ -65,7 +65,7 @@ style: Style((it) ->
 /// The schema defining the type used for the parameter.
 schema: *Schema|Reference?
 
-/// A map containing the representations for the parameter. 
-/// 
+/// A map containing the representations for the parameter.
+///
 /// The key is the media type and the value describes it. The map MUST only contain one entry.
-content: Mapping<String, MediaType>(length == 1)?
+content: Mapping<MediaType.MediaTypeName, MediaType>(length == 1)?

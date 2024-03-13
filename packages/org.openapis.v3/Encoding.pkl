@@ -17,6 +17,7 @@ module org.openapis.v3.Encoding
 
 import "Header.pkl"
 import "Reference.pkl"
+import "MediaType.pkl"
 
 /// The Content-Type for encoding a specific property.
 ///
@@ -24,7 +25,7 @@ import "Reference.pkl"
 /// other primitive types – text/plain; for object - application/json; for array – the default is defined based on
 /// the inner type. The value can be a specific media type (e.g. application/json), a wildcard media type
 /// (e.g. image/*), or a comma-separated list of the two types.
-contentType: String?
+contentType: MediaType.MediaTypeName?
 
 /// A map allowing additional information to be provided as headers, for 
 /// example Content-Disposition.
