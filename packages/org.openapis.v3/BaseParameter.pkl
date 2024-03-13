@@ -22,8 +22,7 @@ abstract module org.openapis.v3.Reference
 @SourceCode { language = "Markdown" }
 description: String?
 
-/// Specifies that a parameter is deprecated and SHOULD be transitioned 
-/// out of usage.
+/// Specifies that a parameter is deprecated and SHOULD be transitioned out of usage.
 ///
 /// Default value is false.
 deprecated: Boolean?
@@ -49,11 +48,11 @@ explode: Boolean?
 /// an example, the example value SHALL override the  example provided by the schema. To represent examples of media
 /// types that  cannot naturally be represented in JSON or YAML, a string value can contain the example with escaping
 /// where necessary.
-example: Any(examples == null)?
+example: Any?(!(this != null && examples != null))
 
 /// Examples of the parameter's potential value.
 ///
 /// Each example SHOULD contain a value in the correct format as specified in the parameter encoding. The examples
 /// field is mutually exclusive of the example field. Furthermore, if referencing a schema that contains an example,
 /// the examples value SHALL override the example provided by the schema.
-examples: Mapping<String, Any>(example == null)?
+examples: Mapping<String, Any>?

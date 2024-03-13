@@ -16,7 +16,7 @@
 /// Describes a single API operation on a path.
 module org.openapis.v3.Operation
 
-import "OpenAPI.pkl"
+import "expressions.pkl"
 import "ExternalDocs.pkl"
 import "Parameter.pkl"
 import "Reference.pkl"
@@ -73,7 +73,7 @@ requestBody: *RequestBody|Reference?
 /// The list of possible responses as they are returned from executing this operation.
 ///
 /// Any HTTP status code can be used as the property name, but only one property per code, to describe the expected
-/// response for that HTTP statuscode. You should use const values of _HTTPResponse.Code_ for this, eg.
+/// response for that HTTP statuscode. You can use const values of [HTTPResponse] for this, eg.
 ///
 /// ```pkl
 /// [HTTPResponse.OK] { ... }
@@ -90,7 +90,7 @@ responses: Mapping<*HTTPResponse.Code|HTTPResponse.CodeWildcard|"default", Respo
 ///
 /// The key is a unique identifier for the Callback Object. Each value in the map is a Callback Object that describes a
 /// request that may be initiated by the API provider and the expected responses.
-callbacks: Map<String, *Mapping<OpenAPI.Expression, PathItem>|Reference>?
+callbacks: Mapping<String, *Mapping<expressions.Expression, PathItem>|Reference>?
 
 /// Declares this operation to be deprecated.
 ///

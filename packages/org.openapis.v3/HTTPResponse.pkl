@@ -23,7 +23,7 @@ module org.openapis.v3.HTTPResponse
 /// the HTTP specification.
 ///
 /// Context: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
-typealias Code = (
+typealias Code =
     // 1xx
     "100"|"101"|"102"|"103"|
     // 2xx
@@ -35,7 +35,6 @@ typealias Code = (
     "421"|"422"|"423"|"424"|"425"|"426"|"427"|"428"|"429"|"431"|"451"|
     // 5xx
     "500"|"501"|"502"|"503"|"504"|"505"|"506"|"507"|"508"|"510"|"511"
-)
 
 /// Only these wildcard strings are allowed to be used as operation response
 /// keys.

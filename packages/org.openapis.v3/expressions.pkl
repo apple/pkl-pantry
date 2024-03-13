@@ -1,0 +1,120 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.openapis.v3.expressions
+
+import "expressions.pkl"
+
+/// A string that complies with the OpenAPI expression grammar.
+typealias Expression = String((it) ->
+    if (List("$url", "$method", "$statusCode").contains(it))
+      true
+    else if (it.startsWith("$request."))
+      let (src = it.substring(9, it.length))
+        expressions.expSourceConstraint.apply(src)
+    else if (it.startsWith("$response."))
+      let (src = it.substring(10, it.length))
+        expressions.expSourceConstraint.apply(src)
+    else
+      false)
+
+// source = ( header-reference / query-reference / path-reference / body-reference )
+hidden expSourceConstraint = (it) ->
+    // header-reference = "header." token
+    if (it.startsWith("header."))
+      let (token = it.substring(7, it.length))
+        expressions.expTokenConstraint.apply(token)
+    // query-reference = "query." name
+    else if (it.startsWith("query."))
+      let (name = it.substring(6, it.length))
+        expressions.expJSONNameConstraint.apply(name)
+    // path-reference = "path." name
+    else if (it.startsWith("path."))
+      let (name = it.substring(5, it.length))
+        expressions.expJSONNameConstraint.apply(name)
+    // body-reference = "body" ["#" json-pointer ]
+    else if (it.startsWith("body"))
+      let (suffix = it.substring(4, it.length))
+        if (suffix == "")
+          true
+        else
+          expressions.expBodyReferenceConstraint.apply(suffix)
+    else
+      false
+
+// token = 1*tchar
+// tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
+//   "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+hidden expTokenConstraint = (it) -> it.matches(Regex(#"[0-9A-z!#$%&'+\-.^_`|~]+"#))
+
+//   unescaped       = %x00-2E / %x30-7D / %x7F-10FFFF
+//      ; %x2F ('/') and %x7E ('~') are excluded from 'unescaped'
+hidden expIsUnescapedCodePoint = (it) -> (it >= 0x00 && it <= 0x2E)
+    || (it >= 0x30 && it <= 0x7D)
+    || (it >= 0x7F && it <= 0x10FFFF)
+
+//   escaped         = "~" ( "0" / "1" )
+//     ; representing '~' and '/', respectively
+
+// body-reference = "body" ["#" json-pointer ]
+hidden expBodyReferenceConstraint = (it) ->
+    if (it.startsWith("#"))
+      let (suffix = it.substring(1, it.length))
+        expressions.expJSONPointerConstraint.apply(suffix)
+    else
+      false
+
+// json-pointer = *( "/" reference-token )
+hidden expJSONPointerConstraint = (it) ->
+    if (it.length == 0)
+      true
+    else if (it.startsWith("/"))
+      let (suffix = it.substring(1, it.length))
+        if (suffix.indexOfOrNull("/") != null)
+          let (pre = suffix.substring(0, suffix.indexOf("/")))
+            let (post = suffix.substring(suffix.indexOf("/"), suffix.length))
+              expressions.expReferenceTokenConstraint.apply(pre)
+                && expressions.expJSONPointerConstraint.apply(post)
+        else
+          expressions.expReferenceTokenConstraint.apply(suffix)
+    else
+      false
+
+// reference-token = *( unescaped / escaped )
+hidden expReferenceTokenConstraint = (it) ->
+  it.codePoints.fold(Pair(true, false), (acc, c) ->
+    Pair(
+      acc.first && if (acc.second)
+          (c == 0x60 || c == 0x61) // escaped values
+        else
+          (c == 0x7E || expressions.expIsUnescapedCodePoint.apply(c)), // unescaped values
+      !acc.second && c == 0x7E // only escape if we're not already escaped
+    )).first
+
+// JSON string spec: https://datatracker.ietf.org/doc/html/rfc7159#section-7
+//
+// NOTE: we don't need to match %x75 separately, because all we're doing here
+// is validating that the input is correct. Hex digits should be okay
+// regardless of whether they're escaped.
+hidden expJSONNameConstraint = (it) ->
+    it.length > 0 && it.codePoints.fold(Pair(true, false), (acc, c) ->
+        Pair(
+          acc.first &&
+            if (acc.second)
+              List(0x22, 0x5C, 0x2F, 0x62, 0x66, 0x6E, 0x72, 0x74, 0x75).contains(c) // escaped values
+            else
+              c == 0x5C || (c == 0x20 || c == 0x21 || (c >= 0x23 && c <= 0x5B) || (c >= 0x5D && c <= 0x10FFFF)), // unescaped values
+          !acc.second && c == 0x5C // only escape if we're not already escaped
+        )).first

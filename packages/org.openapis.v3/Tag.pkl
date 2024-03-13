@@ -30,4 +30,4 @@ name: String
 description: String?
 
 /// Additional external documentation for this tag.
-externalDocs: ExternalDocs
+externalDocs: ExternalDocs?

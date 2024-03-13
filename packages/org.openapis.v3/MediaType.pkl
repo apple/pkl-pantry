@@ -30,14 +30,14 @@ schema: *Schema|Reference?
 /// example provided by the schema. To represent examples of media types that 
 /// cannot naturally be represented in JSON or YAML, a string value can contain 
 /// the example with escaping where necessary.
-example: Any(examples == null)?
+example: Any?(!(this != null && examples != null))
 
 /// Examples of the parameter's potential value. Each example SHOULD contain 
 /// a value in the correct format as specified in the parameter encoding. 
 /// The examples field is mutually exclusive of the example field. 
 /// Furthermore, if referencing a schema that contains an example, 
 /// the examples value SHALL override the example provided by the schema.
-examples: Map<String, Any>(example == null)?
+examples: Mapping<String, Any>?
 
 /// A map between a property name and its encoding information. The key, being 
 /// the property name, MUST exist in the schema as a property. The encoding 

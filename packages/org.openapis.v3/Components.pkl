@@ -16,7 +16,7 @@
 /// Contact information for the exposed API.
 module org.openapis.v3.Reference
 
-import "OpenAPI.pkl"
+import "expressions.pkl"
 import "Example.pkl"
 import "Header.pkl"
 import "Link.pkl"
@@ -28,36 +28,44 @@ import "Schema.pkl"
 import "SecurityScheme.pkl"
 import "PathItem.pkl"
 
+/// Component mapping key type used to reference all component values.
+typealias ComponentKey = String(matches(Regex(#"[a-zA-Z0-9.\-_]+"#)))
+
 /// Component type name for use with component reference helpers.
 typealias ComponentType = "schemas"|"responses"|"parameters"|"examples"|"requestBodies"|"headers"|"links"
 
-// all component mapping keys need to match this regex
-local componentKeyConstraint = (it: String) ->
-  it.matches(Regex(#"^[a-zA-Z0-9\.\-_]+$"#))
-
 /// An object to hold reusable Schema Objects.
-schemas: Mapping<String(componentKeyConstraint), *Schema|Reference>?
+schemas: Mapping<ComponentKey, *Schema|Reference>?
 
 /// An object to hold reusable Response Objects.
-responses: Mapping<String(componentKeyConstraint), *Response|Reference>?
+responses: Mapping<ComponentKey, *Response|Reference>?
 
 /// An object to hold reusable Parameter Objects.
-parameters: Mapping<String(componentKeyConstraint), *Parameter|Reference>?
+parameters: Mapping<ComponentKey, *Parameter|Reference>?
 
 /// An object to hold reusable Example Objects.
-examples: Mapping<String(componentKeyConstraint), *Example|Reference>?
+examples: Mapping<ComponentKey, *Example|Reference>?
 
 /// An object to hold reusable RequestBody Objects.
-requestBodies: Mapping<String(componentKeyConstraint), *RequestBody|Reference>?
+requestBodies: Mapping<ComponentKey, *RequestBody|Reference>?
 
 /// An object to hold reusable Header Objects.
-headers: Mapping<String(componentKeyConstraint), *Header|Reference>?
+headers: Mapping<ComponentKey, *Header|Reference>?
 
 /// An object to hold reusable Security Scheme Objects.
-securitySchemes: Mapping<String(componentKeyConstraint), *SecurityScheme|Reference>?
+securitySchemes: Mapping<ComponentKey, *SecurityScheme|Reference>?
 
 /// An object to hold reusable Link Objects.
-links: Mapping<String(componentKeyConstraint), *Link|Reference>?
+links: Mapping<ComponentKey, *Link|Reference>?
 
 /// An object to hold reusable Callback Objects.
-callbacks: Mapping<String(componentKeyConstraint), *Mapping<OpenAPI.Expression, PathItem>|Reference>?
+callbacks: Mapping<ComponentKey, *Mapping<expressions.Expression, PathItem>|Reference>?
+
+/// Component reference helper function. This reference will point to the named component in the local document's
+/// "components" fields.
+function componentRef(type: ComponentType, name: String): Reference =
+  // TODO: can we throw an error if the referenced component does not exist? This would be extremely useful.
+  // We may need to check for reference consistencey in the render step.
+  new Reference {
+    `$ref` = "#/components/\(type)/\(name)"
+  }
