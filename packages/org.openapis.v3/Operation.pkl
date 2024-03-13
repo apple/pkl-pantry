@@ -66,7 +66,7 @@ typealias Parameters = Listing<*Parameter|Reference>(
 /// The requestBody is only supported in HTTP methods where the HTTP 1.1 specification RFC7231 has explicitly defined
 /// semantics for request bodies. In other cases where the HTTP spec is vague, requestBody SHALL be ignored by
 /// consumers.
-requestBody: *RequestBody|Reference?
+requestBody: (*RequestBody|Reference)?
 
 /// The list of possible responses as they are returned from executing this operation.
 ///
@@ -82,7 +82,7 @@ requestBody: *RequestBody|Reference?
 /// wildcard character X. For example, 2XX represents all response codes between [200-299]. Only the following range
 /// definitions are allowed: 1XX, 2XX, 3XX, 4XX, and 5XX. If a response is defined using an explicit code, the explicit
 /// code definition takes precedence over the range definition for that code.
-responses: Mapping<*HTTPResponse.Code|HTTPResponse.CodeWildcard|"default", Response>?
+responses: Mapping<HTTPResponse.Code|HTTPResponse.CodeWildcard|"default", Response>?
 
 /// A map of possible out-of band callbacks related to the parent operation.
 ///

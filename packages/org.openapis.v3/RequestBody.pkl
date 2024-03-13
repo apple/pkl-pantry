@@ -27,7 +27,7 @@ description: String?
 ///
 /// The key is a media type or media type range and the value describes it. For requests that match multiple
 /// keys, only the most specific key is applicable. e.g. text/plain overrides text/*
-content: Mapping<String, MediaType>?
+content: Mapping<MediaType.MediaTypeName, MediaType>?
 
 /// Determines if the request body is required in the request.
 ///
