@@ -31,7 +31,7 @@ typealias MediaTypeName =
   |String
 
 /// The schema defining the content of the request, response, or parameter.
-schema: *Schema|Reference?
+schema: (*Schema|Reference)?
 
 /// Example of the parameter's potential value. The example SHOULD match the 
 /// specified schema and encoding properties if present. The example field is 
@@ -49,8 +49,8 @@ example: Any?(!(this != null && examples != null))
 /// the examples value SHALL override the example provided by the schema.
 examples: Mapping<String, Any>?
 
-/// A map between a property name and its encoding information. The key, being 
-/// the property name, MUST exist in the schema as a property. The encoding 
-/// object SHALL only apply to requestBody objects when the media type is 
+/// A map between a property name and its encoding information. The key, being
+/// the property name, MUST exist in the schema as a property. The encoding
+/// object SHALL only apply to requestBody objects when the media type is
 /// multipart or application/x-www-form-urlencoded.
 encoding: Mapping<String, Encoding>?
