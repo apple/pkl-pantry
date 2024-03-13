@@ -27,7 +27,7 @@ extends "BaseParameter.pkl"
 import "Schema.pkl"
 import "Reference.pkl"
 
-/// Determines whether this parameter is mandatory. 
+/// Determines whether this parameter is mandatory.
 required: Boolean?
 
 /// Describes how the parameter value will be serialized depending on the type of the parameter value.
@@ -36,4 +36,4 @@ required: Boolean?
 style: "simple"?
 
 /// The schema defining the type used for the parameter.
-schema: *Schema|Reference?
+schema: (*Schema|Reference)?
