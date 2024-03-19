@@ -1,0 +1,299 @@
+examples {
+  ["link-example"] {
+    """
+    {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Link Example",
+        "version": "1.0.0"
+      },
+      "paths": {
+        "/2.0/users/{username}": {
+          "get": {
+            "operationId": "getUserByName",
+            "parameters": [
+              {
+                "name": "username",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "The User",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/user"
+                    }
+                  }
+                },
+                "links": {
+                  "userRepositories": {
+                    "$ref": "#/components/links/UserRepositories"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/2.0/repositories/{username}": {
+          "get": {
+            "operationId": "getRepositoriesByOwner",
+            "parameters": [
+              {
+                "name": "username",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "repositories owned by the supplied user",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/repository"
+                      }
+                    }
+                  }
+                },
+                "links": {
+                  "userRepository": {
+                    "$ref": "#/components/links/UserRepository"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "components": {
+        "links": {
+          "UserRepositories": {
+            "operationId": "getRepositoriesByOwner",
+            "parameters": {
+              "username": "$response.body#/username"
+            }
+          },
+          "UserRepository": {
+            "operationId": "getRepository",
+            "parameters": {
+              "username": "$response.body#/username",
+              "slug": "$response.body#/slug"
+            }
+          },
+          "RepositoryPullRequests": {
+            "operationId": "getPullRequestsByRepository",
+            "parameters": {
+              "username": "$response.body#/owner/username",
+              "slug": "$response.body#/slug"
+            }
+          },
+          "PullRequestMerge": {
+            "operationId": "mergePullRequest",
+            "parameters": {
+              "username": "$response.body#/author/username",
+              "slug": "$response.body#/repository/slug",
+              "pid": "$response.body#/id"
+            }
+          }
+        }
+      }
+    }
+    
+    """
+  }
+  ["petstore"] {
+    """
+    {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Swagger Petstore",
+        "version": "1.0.0",
+        "license": {
+          "name": "MIT"
+        }
+      },
+      "servers": [
+        {
+          "url": "http://petstore.swagger.io/v1"
+        }
+      ],
+      "paths": {
+        "/pets": {
+          "get": {
+            "tags": [
+              "pets"
+            ],
+            "summary": "List all pets",
+            "operationId": "listPets",
+            "parameters": [
+              {
+                "description": "How many items to return at one time (max 100)",
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "maximum": 100
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "A paged array of pets",
+                "headers": {
+                  "x-next": {
+                    "description": "A link to the next page of responses",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Pets"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "post": {
+            "tags": [
+              "pets"
+            ],
+            "summary": "Create a pet",
+            "operationId": "createPets",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Pet"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "201": {
+                "description": "Null resposne"
+              },
+              "default": {
+                "description": "unexpected error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/pets/{petId}": {
+          "get": {
+            "tags": [
+              "pets"
+            ],
+            "summary": "Info for a specific pet",
+            "operationId": "showPetById",
+            "parameters": [
+              {
+                "description": "The id of the pet to retrieve",
+                "name": "petId",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Expected response to a valid request",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Pet"
+                    }
+                  }
+                }
+              },
+              "default": {
+                "description": "unexpected error",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "components": {
+        "schemas": {
+          "Pet": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "name": {
+                "type": "string"
+              },
+              "tag": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "Pets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pet"
+            },
+            "maxItems": 100
+          },
+          "Error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        }
+      }
+    }
+    
+    """
+  }
+}

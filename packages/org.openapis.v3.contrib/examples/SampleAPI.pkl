@@ -1,0 +1,99 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.openapis.v3_0.examples.SampleAPI
+
+amends "@openapi/Document.pkl"
+
+import "@openapi/Components.pkl"
+import "@openapi/HTTPResponse.pkl"
+import "../SchemaGenerator.pkl"
+
+// User schema
+local class User {
+  firstName: String
+  middleName: String?
+  lastName: String
+}
+
+info {
+  title = "Sample API"
+  description = "Example API to demonstrate the form of an OpenAPI PKL document"
+  version = "0.1.0"
+}
+
+servers {
+  // staging
+  new {
+    url = "https://staging-api.example.com"
+    description = "Staging server"
+  }
+
+  // production
+  new {
+    url = "https://api.example.com/{basePath}"
+    description = "Production server"
+    variables {
+      ["basePath"] {
+        default = "v1"
+      }
+    }
+  }
+}
+
+paths {
+  ["/users"] {
+    get {
+      summary = "Returns a list of users"
+      description = """
+        This is an endpoint that returns a list of users from the configured storage backend.
+        Blah blah blah.
+        """
+      responses {
+        [HTTPResponse.OK] {
+          description = "A JSON array of usernames"
+          content {
+            ["application/json"] {
+              schema = Components.componentRef("schemas", "UserList")
+            }
+          }
+        }
+        ["4XX"] {
+          description = "Any client-side error"
+        }
+      }
+    }
+  }
+}
+
+// define components
+components {
+  schemas {
+    ["User"] = SchemaGenerator.generate(User)
+    ["UserList"] {
+      type = "array"
+      items = Components.componentRef("schemas", "User")
+    }
+  }
+  links {
+    ["someLink"] {
+      requestBody = "$url#/foo/bar"
+    }
+  }
+}
+
+output {
+  renderer = new JsonRenderer {}
+}

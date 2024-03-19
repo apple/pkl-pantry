@@ -13,16 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A reference to other components in the specification, internally and externally.
+/// Adds metadata to a single tag that is used by the Operation Object.
 ///
-/// The Reference Object is defined by [JSON Reference](https://datatracker.ietf.org/doc/html/draft-pbryan-zyp-json-ref-03)
-/// and follows the same structure, behavior and rules.
-///
-/// For this specification, reference resolution is accomplished as defined by the JSON Reference specification
-/// and not by the JSON Schema specification.
-///
-/// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#reference-object
-module org.openapis.v3.Reference
+/// It is not mandatory to have a Tag Object per tag defined in the Operation Object instances.
+module org.openapis.v3.Tag
 
-/// The reference URI
-`$ref`: Uri
+import "ExternalDocs.pkl"
+
+/// The name of the tag.
+name: String
+
+/// A short description for the tag.
+///
+/// CommonMark syntax MAY be used for rich text representation.
+@SourceCode { language = "Markdown" }
+description: String?
+
+/// Additional external documentation for this tag.
+externalDocs: ExternalDocs?

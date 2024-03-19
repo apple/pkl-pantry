@@ -1,0 +1,57 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+abstract module org.openapis.v3.BaseParameter
+
+/// A brief description of the parameter.
+///
+/// This could contain examples of use. CommonMark syntax MAY be used for rich text representation.
+@SourceCode { language = "Markdown" }
+description: String?
+
+/// Specifies that a parameter is deprecated and SHOULD be transitioned out of usage.
+///
+/// Default value is false.
+deprecated: Boolean?
+
+/// Sets the ability to pass empty-valued parameters.
+///
+/// This is valid only for query parameters and allows sending a parameter with an empty value. Default value is
+/// false. If style is used, and if behavior is n/a (cannot be serialized), the value of allowEmptyValue SHALL be
+/// ignored. Use of this property is NOT RECOMMENDED, as it is likely to be removed in a later revision.
+allowEmptyValue: Boolean?
+
+/// When this is true, parameter values of type array or object generate separate parameters for each value of the
+/// array or key-value pair of the map.
+///
+/// For other types of parameters this property has no effect. When style is form, the default value is true. For all
+/// other styles, the default value is false.
+explode: Boolean?
+
+/// Example of the parameter's potential value. The example SHOULD match the specified schema and encoding properties
+/// if present.
+///
+/// The example field is  mutually exclusive of the examples field. Furthermore, if referencing a  schema that contains
+/// an example, the example value SHALL override the  example provided by the schema. To represent examples of media
+/// types that  cannot naturally be represented in JSON or YAML, a string value can contain the example with escaping
+/// where necessary.
+example: Any?(!(this != null && examples != null))
+
+/// Examples of the parameter's potential value.
+///
+/// Each example SHOULD contain a value in the correct format as specified in the parameter encoding. The examples
+/// field is mutually exclusive of the example field. Furthermore, if referencing a schema that contains an example,
+/// the examples value SHALL override the example provided by the schema.
+examples: Mapping<String, Any>?

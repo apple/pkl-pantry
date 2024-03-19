@@ -1,0 +1,74 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Holds a set of reusable objects for different aspects of the OAS.
+///
+/// All objects defined within the components object will have no effect on the API unless they are explicitly
+/// referenced from properties outside the components object.
+module org.openapis.v3.Components
+
+import "expressions.pkl"
+import "Example.pkl"
+import "Header.pkl"
+import "Link.pkl"
+import "Parameter.pkl"
+import "Reference.pkl"
+import "RequestBody.pkl"
+import "Response.pkl"
+import "Schema.pkl"
+import "SecurityScheme.pkl"
+import "PathItem.pkl"
+
+/// Component mapping key type used to reference all component values.
+typealias ComponentKey = String(matches(Regex(#"[a-zA-Z0-9.\-_]+"#)))
+
+/// Component type name for use with component reference helpers.
+typealias ComponentType = "schemas"|"responses"|"parameters"|"examples"|"requestBodies"|"headers"|"links"
+
+/// An object to hold reusable Schema Objects.
+schemas: Mapping<ComponentKey, *Schema|Reference>?
+
+/// An object to hold reusable Response Objects.
+responses: Mapping<ComponentKey, *Response|Reference>?
+
+/// An object to hold reusable Parameter Objects.
+parameters: Mapping<ComponentKey, *Parameter|Reference>?
+
+/// An object to hold reusable Example Objects.
+examples: Mapping<ComponentKey, *Example|Reference>?
+
+/// An object to hold reusable RequestBody Objects.
+requestBodies: Mapping<ComponentKey, *RequestBody|Reference>?
+
+/// An object to hold reusable Header Objects.
+headers: Mapping<ComponentKey, *Header|Reference>?
+
+/// An object to hold reusable Security Scheme Objects.
+securitySchemes: Mapping<ComponentKey, *SecurityScheme|Reference>?
+
+/// An object to hold reusable Link Objects.
+links: Mapping<ComponentKey, *Link|Reference>?
+
+/// An object to hold reusable Callback Objects.
+callbacks: Mapping<ComponentKey, *Mapping<expressions.Expression, PathItem>|Reference>?
+
+/// Component reference helper function. This reference will point to the named component in the local document's
+/// "components" fields.
+function componentRef(type: ComponentType, name: String): Reference =
+  // TODO: can we throw an error if the referenced component does not exist? This would be extremely useful.
+  // We may need to check for reference consistencey in the render step.
+  new Reference {
+    `$ref` = "#/components/\(type)/\(name)"
+  }

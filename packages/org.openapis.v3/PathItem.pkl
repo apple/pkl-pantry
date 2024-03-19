@@ -1,0 +1,74 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Describes the operations available on a single path.
+///
+/// A Path Item MAY be empty, due to ACL constraints. The path itself is still exposed to the documentation viewer but
+/// they will not know which operations and parameters are available.
+module org.openapis.v3.PathItem
+
+import "Operation.pkl"
+import "Server.pkl"
+import "Parameter.pkl"
+import "Reference.pkl"
+
+/// Allows for an external definition of this path item.
+///
+/// The referenced structure MUST be in the format of a Path Item Object. In case a Path Item Object field appears
+/// both in the defined object and the referenced object, the behavior is undefined.
+`$ref`: Uri?
+
+/// An optional, string summary, intended to apply to all operations in this path.
+summary: String?
+
+/// An optional, string description, intended to apply to all operations in this path.
+///
+/// CommonMark syntax MAY be used for rich text representation.
+@SourceCode { language = "Markdown" }
+description: String?
+
+/// A definition of a GET operation on this path.
+get: Operation?
+
+/// A definition of a PUT operation on this path.
+put: Operation?
+
+/// A definition of a POST operation on this path.
+post: Operation?
+
+/// A definition of a DELETE operation on this path.
+`delete`: Operation?
+
+/// A definition of an OPTIONS operation on this path.
+options: Operation?
+
+/// A definition of a HEAD operation on this path.
+head: Operation?
+
+/// A definition of a PATCH operation on this path.
+patch: Operation?
+
+/// A definition of a TRACE operation on this path.
+`trace`: Operation?
+
+/// An alternative server array to service all operations in this path.
+servers: Listing<Server>?
+
+/// A list of parameters that are applicable for all the operations described under this path.
+///
+/// These parameters can be overridden at the operation level, but cannot be removed there. The list MUST NOT include
+/// duplicated parameters. A unique parameter is defined by a combination of a name and location. The list can use the
+/// Reference Object to link to parameters that are defined at the OpenAPI Object's components/parameters.
+parameters: Listing<*Parameter|Reference>?

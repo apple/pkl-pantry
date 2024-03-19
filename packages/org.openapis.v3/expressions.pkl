@@ -1,0 +1,90 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.openapis.v3.expressions
+
+import "expressions.pkl"
+
+/// A string representing an OpenAPI [Runtime Expression](https://spec.openapis.org/oas/v3.0.3#runtime-expressions).
+typealias Expression =
+  "$url"
+  |"$method"
+  |"$statusCode"
+  |HeaderReferenceExpression
+  |QueryOrPathReferenceExpression
+  |BodyReferenceExpression
+
+/// A string representing a reference to a header of a request or response.
+typealias HeaderReferenceExpression =
+  String(matches(Regex(#"\$(?:request|response)\.header\.[0-9A-z!#$%&'+\-.^_`|~]+"#)))
+
+/// A string representing a reference to a query param, or a path segment.
+typealias QueryOrPathReferenceExpression =
+  String(expressions.isQueryOrPathReference)
+
+hidden isQueryOrPathReference = (it) ->
+  let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.(?:query|path)\."#), ""))
+    if (suffix == it) false
+    else expressions.isJsonName(it)
+
+/// A string representing a reference to a segment in the body of a request or response.
+typealias BodyReferenceExpression =
+  "$request.body"
+  |"$response.body"
+  |String(expressions.isBodyReference)
+
+/// Tells if this string is `body-reference` of a Runtime Expression.
+///
+/// <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+hidden isBodyReference = (it: String) ->
+  let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.body#"#), ""))
+    if (suffix == it) false
+    else expressions.isJsonPointer(suffix)
+
+// json-pointer = *( "/" reference-token )
+function isJsonPointer(it: String) =
+  it.startsWith("/")
+  && !it.endsWith("/")
+  && it.split("/").every(isReferenceToken)
+
+/// Tells if the input string is a `reference-token` in a Runtime Expression.
+///
+/// <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+local isReferenceToken = (it) ->
+  // language=regexp
+  it.matches(Regex(#"""
+    (?x) # extended mode
+    (?:
+      ~0
+      |~1
+      |[\x00-\x2E]
+      |[\x30-\x7D]
+      |[\x7f-\x{10ffff}]
+    )*
+    """#))
+
+/// Tells if the input string is valid JSON name.
+///
+/// JSON string spec: <https://datatracker.ietf.org/doc/html/rfc7159#section-7>
+function isJsonName(it) =
+  // language=regexp
+  it.matches(Regex(#"""
+    (?x) # extended mode
+    (?:
+      [\x20-\x21\x23-\x5B\x5D-\x{10ffff}]      # unescaped char (%x20-21 / %x23-5B / %x5D-10FFFF)
+      |\\["\\/bfnrt]                           # escaped char (e.g. `\n`)
+      |\\u[0-9a-f]{4}                          # code point literal
+    )*
+    """#))

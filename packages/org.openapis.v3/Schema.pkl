@@ -29,7 +29,6 @@
 /// For example, [nullable] is valid on v3.0, but is invalid in v3.1.
 ///
 /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#schema-object>
-@ModuleInfo { minPklVersion = "0.25.0" }
 open module org.openapis.v3.Schema
 
 import "Schema.pkl"
@@ -186,7 +185,7 @@ maxProperties: UInt(type == "object")?
 /// certain schema.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/object.html#properties>
-properties: Mapping<String, PropertySchema|Reference>(type == "object")?
+properties: Mapping<String, *PropertySchema|Reference>(type == "object")?
 
 /// Represent an object that has additional properties.
 ///
@@ -197,7 +196,7 @@ properties: Mapping<String, PropertySchema|Reference>(type == "object")?
 /// properties will be allowed.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/object.html#additional-properties>
-additionalProperties: (Boolean|PropertySchema|Reference)(type == "object")?
+additionalProperties: (*PropertySchema|Boolean|Reference)(type == "object")?
 
 /// Represent an object that has certain properties defined on it.
 ///

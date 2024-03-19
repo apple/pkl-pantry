@@ -1,0 +1,56 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Each Media Type Object provides schema and examples for the media type identified by its key.
+module org.openapis.v3.MediaType
+
+import "Schema.pkl"
+import "Encoding.pkl"
+import "Reference.pkl"
+
+/// Common media types that are used with OpenAPI specs.
+typealias MediaTypeName =
+  "application/json"
+  |"application/xml"
+  |"application/x-www-form-urlencoded"
+  |"multipart/form-data"
+  |"text/plain; charset=utf-8"
+  |"text/html"
+  |String
+
+/// The schema defining the content of the request, response, or parameter.
+schema: (*Schema|Reference)?
+
+/// Example of the parameter's potential value. The example SHOULD match the 
+/// specified schema and encoding properties if present. The example field is 
+/// mutually exclusive of the examples field. Furthermore, if referencing a 
+/// schema that contains an example, the example value SHALL override the 
+/// example provided by the schema. To represent examples of media types that 
+/// cannot naturally be represented in JSON or YAML, a string value can contain 
+/// the example with escaping where necessary.
+example: Any?(!(this != null && examples != null))
+
+/// Examples of the parameter's potential value. Each example SHOULD contain 
+/// a value in the correct format as specified in the parameter encoding. 
+/// The examples field is mutually exclusive of the example field. 
+/// Furthermore, if referencing a schema that contains an example, 
+/// the examples value SHALL override the example provided by the schema.
+examples: Mapping<String, Any>?
+
+/// A map between a property name and its encoding information. The key, being
+/// the property name, MUST exist in the schema as a property. The encoding
+/// object SHALL only apply to requestBody objects when the media type is
+/// multipart or application/x-www-form-urlencoded.
+encoding: Mapping<String, Encoding>?
