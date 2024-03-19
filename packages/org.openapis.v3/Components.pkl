@@ -13,8 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Contact information for the exposed API.
-module org.openapis.v3.Reference
+/// Holds a set of reusable objects for different aspects of the OAS.
+///
+/// All objects defined within the components object will have no effect on the API unless they are explicitly
+/// referenced from properties outside the components object.
+module org.openapis.v3.Components
 
 import "expressions.pkl"
 import "Example.pkl"

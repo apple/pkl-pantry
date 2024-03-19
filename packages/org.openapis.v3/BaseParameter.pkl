@@ -13,8 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Contact information for the exposed API.
-abstract module org.openapis.v3.Reference
+abstract module org.openapis.v3.BaseParameter
 
 /// A brief description of the parameter.
 ///
