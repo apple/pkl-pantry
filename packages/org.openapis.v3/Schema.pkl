@@ -185,7 +185,7 @@ maxProperties: UInt(type == "object")?
 /// certain schema.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/object.html#properties>
-properties: Mapping<String, PropertySchema|Reference>(type == "object")?
+properties: Mapping<String, *PropertySchema|Reference>(type == "object")?
 
 /// Represent an object that has additional properties.
 ///
@@ -196,7 +196,7 @@ properties: Mapping<String, PropertySchema|Reference>(type == "object")?
 /// properties will be allowed.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/object.html#additional-properties>
-additionalProperties: (Boolean|PropertySchema|Reference)(type == "object")?
+additionalProperties: (*PropertySchema|Boolean|Reference)(type == "object")?
 
 /// Represent an object that has certain properties defined on it.
 ///

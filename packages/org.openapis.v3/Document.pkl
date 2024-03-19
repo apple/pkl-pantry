@@ -22,6 +22,8 @@ import "Components.pkl"
 import "Security.pkl"
 import "Tag.pkl"
 import "ExternalDocs.pkl"
+import "Reference.pkl" as _Reference
+import "HTTPResponse.pkl" as _HttpResponse
 
 /// This string MUST be the semantic version number of the OpenAPI Specification version that the OpenAPI document
 /// uses.
@@ -76,6 +78,9 @@ tags: Listing<Tag>(isDistinct)?
 
 /// Additional external documentation.
 externalDocs: ExternalDocs?
+
+// re-export types so they are available without import
+typealias Reference = _Reference
 
 // noinspection TypeMismatch
 /// The output format to render.

@@ -13,12 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../basePklProject.pkl"
+amends "pkl:test"
 
-package {
-  version = "1.0.1"
-}
+import "../expressions.pkl"
 
-dependencies {
-  ["openapi"] = import("../org.openapis.v3/PklProject")
+facts {
+  ["Expression"] {
+    "$method" is expressions.Expression
+    "$request.header.accept" is expressions.Expression
+    "$request.path.id" is expressions.Expression
+    "$request.body#/user/uuid" is expressions.Expression
+    "$url" is expressions.Expression
+    "$response.body#/status" is expressions.Expression
+    "$response.header.Server" is expressions.Expression
+    !("bar" is expressions.Expression)
+    !("$request.header.über" is expressions.Expression)
+  }
 }

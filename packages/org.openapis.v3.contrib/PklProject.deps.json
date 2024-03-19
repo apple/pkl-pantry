@@ -3,7 +3,7 @@
   "resolvedDependencies": {
     "package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3@2": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3@2.0.0",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3@2.1.0",
       "path": "../org.openapis.v3"
     }
   }

@@ -13,12 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../basePklProject.pkl"
+amends "pkl:test"
 
-package {
-  version = "1.0.1"
-}
+local allExamples = import*("../examples/*.pkl")
 
-dependencies {
-  ["openapi"] = import("../org.openapis.v3/PklProject")
+examples {
+  for (example in allExamples.keys) {
+    [example.drop("../examples/".length).dropLast(4)] {
+      allExamples[example].output.text
+    }
+  }
 }
