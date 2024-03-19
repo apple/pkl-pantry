@@ -35,9 +35,9 @@ typealias QueryOrPathReferenceExpression =
   String(expressions.isQueryOrPathReference)
 
 hidden isQueryOrPathReference = (it) ->
-    let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.(?:query|path)\."#), ""))
-      if (suffix == it) false
-      else expressions.isJsonName(it)
+  let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.(?:query|path)\."#), ""))
+    if (suffix == it) false
+    else expressions.isJsonName(it)
 
 /// A string representing a reference to a segment in the body of a request or response.
 typealias BodyReferenceExpression =
@@ -49,10 +49,9 @@ typealias BodyReferenceExpression =
 ///
 /// <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
 hidden isBodyReference = (it: String) ->
-    let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.body#"#), ""))
-      if (suffix == it) false
-      else
-        expressions.isJsonPointer(suffix)
+  let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.body#"#), ""))
+    if (suffix == it) false
+    else expressions.isJsonPointer(suffix)
 
 // json-pointer = *( "/" reference-token )
 function isJsonPointer(it: String) =
@@ -85,7 +84,7 @@ function isJsonName(it) =
     (?x) # extended mode
     (?:
       [\x20-\x21\x23-\x5B\x5D-\x{10ffff}]      # unescaped char (%x20-21 / %x23-5B / %x5D-10FFFF)
-      |\["\\/bfnrt]                            # escaped char (e.g. `\n`)
+      |\\["\\/bfnrt]                           # escaped char (e.g. `\n`)
       |\\u[0-9a-f]{4}                          # code point literal
     )*
     """#))

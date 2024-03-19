@@ -53,17 +53,18 @@ typealias Style = "matrix"|"label"|"form"|"simple"|"spaceDelimited"|"pipeDelimit
 /// Describes how the parameter value will be serialized depending on the type of the parameter value.
 ///
 /// Default values (based on value of in): for query - form; for path - simple; for header - simple; for cookie - form.
-style: Style((it) ->
-    if (List("matrix", "label").contains(it))
-        `in` == "path"
-    else if (it == "form")
-        List("query", "cookie").contains(`in`)
-    else if (it == "simple")
-        List("header", "path").contains(`in`)
-    else `in` == "query")?
+style: Style(
+  if (List("matrix", "label").contains(this))
+    `in` == "path"
+  else if (this == "form")
+    List("query", "cookie").contains(`in`)
+  else if (this == "simple")
+    List("header", "path").contains(`in`)
+  else `in` == "query"
+)?
 
 /// The schema defining the type used for the parameter.
-schema: *Schema|Reference?
+schema: (*Schema|Reference)?
 
 /// A map containing the representations for the parameter.
 ///

@@ -16,6 +16,22 @@
 /// Specific OAuth flow types.
 module org.openapis.v3.OAuthFlows
 
+/// Configuration for the OAuth Implicit flow.
+implicit: OAuthFlow(authorizationUrl != null)?
+
+/// Configuration for the OAuth Resource Owner Password flow.
+password: OAuthFlow(tokenUrl != null)?
+
+/// Configuration for the OAuth Client Credentials flow.
+///
+/// Previously called application in OpenAPI 2.0.
+clientCredentials: OAuthFlow(tokenUrl != null)?
+
+/// Configuration for the OAuth Authorization Code flow.
+///
+/// Previously called accessCode in OpenAPI 2.0.
+authorizationCode: OAuthFlow(tokenUrl != null && authorizationUrl != null)?
+
 /// Definition of an OAuth flow.
 class OAuthFlow {
 
@@ -37,19 +53,3 @@ class OAuthFlow {
   /// This MUST be in the form of a URL.
   tokenUrl: Uri?
 }
-
-/// Configuration for the OAuth Implicit flow.
-implicit: OAuthFlow(authorizationUrl != null)?
-
-/// Configuration for the OAuth Resource Owner Password flow.
-password: OAuthFlow(tokenUrl != null)?
-
-/// Configuration for the OAuth Client Credentials flow.
-///
-/// Previously called application in OpenAPI 2.0.
-clientCredentials: OAuthFlow(tokenUrl != null)?
-
-/// Configuration for the OAuth Authorization Code flow.
-///
-/// Previously called accessCode in OpenAPI 2.0.
-authorizationCode: OAuthFlow(tokenUrl != null && authorizationUrl != null)?

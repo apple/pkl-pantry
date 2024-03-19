@@ -83,6 +83,7 @@ externalDocs: ExternalDocs?
 /// OpenAPI documents can be defined in either JSON or YAML.
 /// This is a Pkl-only property that is excluded from OpenAPI output.
 hidden __format__: "json"|"yaml" = read?("prop:pkl.outputFormat") ?? "json"
+
 output {
   renderer =
     if (__format__ == "json")
