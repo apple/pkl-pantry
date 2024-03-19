@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-module org.openapis.v3.tests.expression
+module org.openapis.v3.tests.expressions
 
 amends "pkl:test"
 
