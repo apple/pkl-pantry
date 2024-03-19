@@ -17,104 +17,75 @@ module org.openapis.v3.expressions
 
 import "expressions.pkl"
 
-/// A string that complies with the OpenAPI expression grammar.
-typealias Expression = String((it) ->
-    if (List("$url", "$method", "$statusCode").contains(it))
-      true
-    else if (it.startsWith("$request."))
-      let (src = it.substring(9, it.length))
-        expressions.expSourceConstraint.apply(src)
-    else if (it.startsWith("$response."))
-      let (src = it.substring(10, it.length))
-        expressions.expSourceConstraint.apply(src)
-    else
-      false)
+/// A string representing an OpenAPI [Runtime Expression](https://spec.openapis.org/oas/v3.0.3#runtime-expressions).
+typealias Expression =
+  "$url"
+  |"$method"
+  |"$statusCode"
+  |HeaderReferenceExpression
+  |QueryOrPathReferenceExpression
+  |BodyReferenceExpression
 
-// source = ( header-reference / query-reference / path-reference / body-reference )
-hidden expSourceConstraint = (it) ->
-    // header-reference = "header." token
-    if (it.startsWith("header."))
-      let (token = it.substring(7, it.length))
-        expressions.expTokenConstraint.apply(token)
-    // query-reference = "query." name
-    else if (it.startsWith("query."))
-      let (name = it.substring(6, it.length))
-        expressions.expJSONNameConstraint.apply(name)
-    // path-reference = "path." name
-    else if (it.startsWith("path."))
-      let (name = it.substring(5, it.length))
-        expressions.expJSONNameConstraint.apply(name)
-    // body-reference = "body" ["#" json-pointer ]
-    else if (it.startsWith("body"))
-      let (suffix = it.substring(4, it.length))
-        if (suffix == "")
-          true
-        else
-          expressions.expBodyReferenceConstraint.apply(suffix)
-    else
-      false
+/// A string representing a reference to a header of a request or response.
+typealias HeaderReferenceExpression =
+  String(matches(Regex(#"\$(?:request|response)\.header\.[0-9A-z!#$%&'+\-.^_`|~]+"#)))
 
-// token = 1*tchar
-// tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
-//   "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
-hidden expTokenConstraint = (it) -> it.matches(Regex(#"[0-9A-z!#$%&'+\-.^_`|~]+"#))
+/// A string representing a reference to a query param, or a path segment.
+typealias QueryOrPathReferenceExpression =
+  String(expressions.isQueryOrPathReference)
 
-//   unescaped       = %x00-2E / %x30-7D / %x7F-10FFFF
-//      ; %x2F ('/') and %x7E ('~') are excluded from 'unescaped'
-hidden expIsUnescapedCodePoint = (it) -> (it >= 0x00 && it <= 0x2E)
-    || (it >= 0x30 && it <= 0x7D)
-    || (it >= 0x7F && it <= 0x10FFFF)
+hidden isQueryOrPathReference = (it) ->
+    let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.(?:query|path)\."#), ""))
+      if (suffix == it) false
+      else expressions.isJsonName(it)
 
-//   escaped         = "~" ( "0" / "1" )
-//     ; representing '~' and '/', respectively
+/// A string representing a reference to a segment in the body of a request or response.
+typealias BodyReferenceExpression =
+  "$request.body"
+  |"$response.body"
+  |String(expressions.isBodyReference)
 
-// body-reference = "body" ["#" json-pointer ]
-hidden expBodyReferenceConstraint = (it) ->
-    if (it.startsWith("#"))
-      let (suffix = it.substring(1, it.length))
-        expressions.expJSONPointerConstraint.apply(suffix)
-    else
-      false
+/// Tells if this string is `body-reference` of a Runtime Expression.
+///
+/// <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+hidden isBodyReference = (it: String) ->
+    let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.body#"#), ""))
+      if (suffix == it) false
+      else
+        expressions.isJsonPointer(suffix)
 
 // json-pointer = *( "/" reference-token )
-hidden expJSONPointerConstraint = (it) ->
-    if (it.length == 0)
-      true
-    else if (it.startsWith("/"))
-      let (suffix = it.substring(1, it.length))
-        if (suffix.indexOfOrNull("/") != null)
-          let (pre = suffix.substring(0, suffix.indexOf("/")))
-            let (post = suffix.substring(suffix.indexOf("/"), suffix.length))
-              expressions.expReferenceTokenConstraint.apply(pre)
-                && expressions.expJSONPointerConstraint.apply(post)
-        else
-          expressions.expReferenceTokenConstraint.apply(suffix)
-    else
-      false
+function isJsonPointer(it: String) =
+  it.startsWith("/")
+  && !it.endsWith("/")
+  && it.split("/").every(isReferenceToken)
 
-// reference-token = *( unescaped / escaped )
-hidden expReferenceTokenConstraint = (it) ->
-  it.codePoints.fold(Pair(true, false), (acc, c) ->
-    Pair(
-      acc.first && if (acc.second)
-          (c == 0x60 || c == 0x61) // escaped values
-        else
-          (c == 0x7E || expressions.expIsUnescapedCodePoint.apply(c)), // unescaped values
-      !acc.second && c == 0x7E // only escape if we're not already escaped
-    )).first
+/// Tells if the input string is a `reference-token` in a Runtime Expression.
+///
+/// <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+local isReferenceToken = (it) ->
+  // language=regexp
+  it.matches(Regex(#"""
+    (?x) # extended mode
+    (?:
+      ~0
+      |~1
+      |[\x00-\x2E]
+      |[\x30-\x7D]
+      |[\x7f-\x{10ffff}]
+    )*
+    """#))
 
-// JSON string spec: https://datatracker.ietf.org/doc/html/rfc7159#section-7
-//
-// NOTE: we don't need to match %x75 separately, because all we're doing here
-// is validating that the input is correct. Hex digits should be okay
-// regardless of whether they're escaped.
-hidden expJSONNameConstraint = (it) ->
-    it.length > 0 && it.codePoints.fold(Pair(true, false), (acc, c) ->
-        Pair(
-          acc.first &&
-            if (acc.second)
-              List(0x22, 0x5C, 0x2F, 0x62, 0x66, 0x6E, 0x72, 0x74, 0x75).contains(c) // escaped values
-            else
-              c == 0x5C || (c == 0x20 || c == 0x21 || (c >= 0x23 && c <= 0x5B) || (c >= 0x5D && c <= 0x10FFFF)), // unescaped values
-          !acc.second && c == 0x5C // only escape if we're not already escaped
-        )).first
+/// Tells if the input string is valid JSON name.
+///
+/// JSON string spec: <https://datatracker.ietf.org/doc/html/rfc7159#section-7>
+function isJsonName(it) =
+  // language=regexp
+  it.matches(Regex(#"""
+    (?x) # extended mode
+    (?:
+      [\x20-\x21\x23-\x5B\x5D-\x{10ffff}]      # unescaped char (%x20-21 / %x23-5B / %x5D-10FFFF)
+      |\["\\/bfnrt]                            # escaped char (e.g. `\n`)
+      |\\u[0-9a-f]{4}                          # code point literal
+    )*
+    """#))
