@@ -111,12 +111,13 @@ val createPackages = tasks.named("createPackages") {
 val isInCircleCi = System.getenv("CIRCLE_PROJECT_REPONAME") != null
 
 val prepareCiGit by tasks.registering {
-    enabled = isInCircleCi
-    exec {
-        commandLine("git", "config", "user.email", "pkl-oss@groups.apple.com")
-    }
-    exec {
-        commandLine("git", "config", "user.name", "The Pkl Team (automation)")
+    if (isInCircleCi) {
+        exec {
+            commandLine("git", "config", "user.email", "pkl-oss@groups.apple.com")
+        }
+        exec {
+            commandLine("git", "config", "user.name", "The Pkl Team (automation)")
+        }
     }
 }
 
