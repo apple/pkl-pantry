@@ -301,7 +301,7 @@ class DnsSdConfig {
   type: ("SRV"|"A"|"AAAA"|"MX"|"NS")?
 
   /// The port number used if the query type is not SRV.
-  port: UInt16?((type != "SRV").implies(this != null))
+  port: UInt16?((type != null && type != "SRV").implies(this != null))
 
   /// The time after which the provided names are refreshed.
   ///
