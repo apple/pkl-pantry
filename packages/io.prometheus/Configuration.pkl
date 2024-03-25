@@ -290,7 +290,7 @@ class FileSdConfig {
 /// DNS-based service discovery configuration allows specifying a set of DNS domain names which
 /// are periodically queried to discover a list of targets.
 ///
-/// https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dns_sd_config
+/// <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dns_sd_config>
 class DnsSdConfig {
   /// A list of DNS domain names to be queried.
   name: Listing<String>
