@@ -296,17 +296,17 @@ class DnsSdConfig {
   name: Listing<String>
 
   /// The type of DNS query to perform. One of SRV, A, AAAA, MX or NS.
-  type: *"SRV"|"A"|"AAAA"|"MX"|"NS"
+  ///
+  /// Default if unspecified: `"SRV"`
+  type: ("SRV"|"A"|"AAAA"|"MX"|"NS")?
 
   /// The port number used if the query type is not SRV.
-  port: Int(isBetween(0, 65535))?
+  port: UInt16?((type != "SRV").implies(this != null))
 
   /// The time after which the provided names are refreshed.
+  ///
+  /// Default if unspecified: `30.s`
   refresh_internal: Duration?
-}
-
-class NamespaceSpec {
-  names: Listing<String>
 }
 
 class NamespaceSpec {
