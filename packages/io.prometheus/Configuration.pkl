@@ -179,6 +179,9 @@ open class ScrapeConfig {
   /// List of file service discovery configurations.
   file_sd_configs: Listing<FileSdConfig>?
 
+  /// List of DNS-based service discovery configurations.
+  dns_sd_configs: Listing<DnsSdConfig>?
+
   /// List of labeled statically configured targets for this job.
   static_configs: Listing<StaticConfig>?
 
@@ -282,6 +285,28 @@ class FileSdConfig {
   ///
   /// Defaults to `5.m`.
   refresh_interval: Duration?
+}
+
+/// DNS-based service discovery configuration allows specifying a set of DNS domain names which
+/// are periodically queried to discover a list of targets.
+///
+/// <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dns_sd_config>
+class DnsSdConfig {
+  /// A list of DNS domain names to be queried.
+  name: Listing<String>
+
+  /// The type of DNS query to perform. One of SRV, A, AAAA, MX or NS.
+  ///
+  /// Default if unspecified: `"SRV"`
+  type: ("SRV"|"A"|"AAAA"|"MX"|"NS")?
+
+  /// The port number used if the query type is not SRV.
+  port: UInt16?((type != null && type != "SRV").implies(this != null))
+
+  /// The time after which the provided names are refreshed.
+  ///
+  /// Default if unspecified: `30.s`
+  refresh_internal: Duration?
 }
 
 class NamespaceSpec {
