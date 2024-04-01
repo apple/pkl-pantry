@@ -29,7 +29,23 @@ const hidden decByte: String = #"(25[0-5]|2[0-4]\d|[01]?\d\d?)"#
 // language=RegExp
 const hidden ipv4String = #"(\#(decByte)\.){3}\#(decByte)"#
 // language=RegExp
-const hidden ipv6String = #"((\#(hex){1,4}:){7}\#(hex){1,4}|(\#(hex){1,4}:){1,7}:|(\#(hex){1,4}:){1,6}:\#(hex){1,4}|(\#(hex){1,4}:){1,5}(:\#(hex){1,4}){1,2}|(\#(hex){1,4}:){1,4}(:\#(hex){1,4}){1,3}|(\#(hex){1,4}:){1,3}(:\#(hex){1,4}){1,4}|(\#(hex){1,4}:){1,2}(:\#(hex){1,4}){1,5}|\#(hex){1,4}:((:\#(hex){1,4}){1,6})|:((:\#(hex){1,4}){1,7}|:)|fe80:(:\#(hex){0,4}){0,4}%\#(hex){1,}|::(ffff(:0{1,4}){0,1}:){0,1}(\#(decByte)\.){3,3}\#(decByte)|(\#(hex){1,4}:){1,4}:(\#(decByte)\.){3,3}\#(decByte))"#
+const hidden ipv6String = #"""
+  (?x)
+  (
+    (\#(hex){1,4}:){7}\#(hex){1,4}           # x:x:x:x:x:x:x:x
+  | (\#(hex){1,4}:){1,7}:                    # x:: … x:x:x:x:x:x:x::
+  | (\#(hex){1,4}:){1,6}:\#(hex){1,4}        # x::x … x:x:x:x:x:x::x
+  | (\#(hex){1,4}:){1,5}(:\#(hex){1,4}){1,2} # x::x … x:x:x:x:x::x:x
+  | (\#(hex){1,4}:){1,4}(:\#(hex){1,4}){1,3} # x::x … x:x:x:x::x:x:x
+  | (\#(hex){1,4}:){1,3}(:\#(hex){1,4}){1,4} # x::x … x:x:x::x:x:x:x
+  | (\#(hex){1,4}:){1,2}(:\#(hex){1,4}){1,5} # x::x … x:x::x:x:x:x:x
+  | \#(hex){1,4}:((:\#(hex){1,4}){1,6})      # x::x … x::x:x:x:x:x:x
+  | :((:\#(hex){1,4}){1,7}|:)                # ::x … ::x:x:x:x:x:x:x, ::
+  | fe80:(:\#(hex){0,4}){0,4}%\#(hex){1,}                       # fe80::%d … fe80::x:x:x:x%d
+  | ::(ffff(:0{1,4}){0,1}:){0,1}(\#(decByte)\.){3,3}\#(decByte) # ::d.d.d.d, ::ffff:d.d.d.d, ::ffff:0:d.d.d.d
+  | (\#(hex){1,4}:){1,4}:(\#(decByte)\.){3,3}\#(decByte)        # x::d.d.d.d … x:x:x:x::d.d.d.d
+  )
+  """#
 
 ///	A string that contains a MAC address
 // language=RegExp
