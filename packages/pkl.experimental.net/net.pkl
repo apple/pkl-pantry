@@ -25,7 +25,7 @@ import "./net.pkl"
 // language=RegExp
 const hidden hex: String = "[0-9a-fA-F]"
 // language=RegExp
-const hidden decByte: String = #"(25[0-5]|2[0-4]\d|[01]?\d\d?)"#
+const hidden decByte: String = #"(25[0-5]|2[0-4][0-9]|[01]?[0-9]{1,2})"#
 // language=RegExp
 const hidden ipv4String = #"(\#(decByte)\.){3}\#(decByte)"#
 // language=RegExp
@@ -71,17 +71,17 @@ typealias IPv6AddressString = String(matches(Regex(net.ipv6String)))
 
 /// A string that contains an IPv4 address and port.
 // language=RegExp
-typealias IPv4AddressPortString = String(matches(Regex(#"\#(net.ipv4String):\d{1,5}"#)))
+typealias IPv4AddressPortString = String(matches(Regex(#"\#(net.ipv4String):[0-9]{1,5}"#)))
 /// A string that contains an IPv6 address and port.
 // language=RegExp
-typealias IPv6AddressPortString = String(matches(Regex(#"\[\#(net.ipv6String)\]:\d{1,5}"#)))
+typealias IPv6AddressPortString = String(matches(Regex(#"\[\#(net.ipv6String)\]:[0-9]{1,5}"#)))
 
 /// A string that contains an IPv4 address.
 // language=RegExp
-typealias IPv4CIDRString = String(matches(Regex(#"\#(net.ipv4String)/\d{1,2}"#)))
+typealias IPv4CIDRString = String(matches(Regex(#"\#(net.ipv4String)/[0-9]{1,2}"#)))
 /// A string that contains an IPv6 address.
 // language=RegExp
-typealias IPv6CIDRString = String(matches(Regex(#"\#(net.ipv6String)/\d{1,3}"#)))
+typealias IPv6CIDRString = String(matches(Regex(#"\#(net.ipv6String)/[0-9]{1,3}"#)))
 
 /// Creates an [IPAddress] from an [IPAddressString].
 function IP(ip: IPAddressString): IPAddress =
