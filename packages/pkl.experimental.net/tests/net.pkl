@@ -25,4 +25,165 @@ facts {
   ["MACAddress"] {
     net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toString() == "0000:0000:0000:0000:3673:5aff:fefa:af22"
   }
+  ["IPv4AddressString"] {
+    "0.0.0.0" is net.IPv4AddressString
+    "127.0.0.1" is net.IPv4AddressString
+    "1.1.1.1" is net.IPv4AddressString
+    "000.000.000.000" is net.IPv4AddressString
+    "255.255.255.255" is net.IPv4AddressString
+    !("0000.0.0.0" is net.IPv4AddressString)
+    !("256.0.0.0" is net.IPv4AddressString)
+    !("260.0.0.0" is net.IPv4AddressString)
+    !("300.0.0.0" is net.IPv4AddressString)
+    !("1.1.1" is net.IPv4AddressString)
+    !("1.1.1." is net.IPv4AddressString)
+    !("1.1.1.1." is net.IPv4AddressString)
+    !("1.a.1.1" is net.IPv4AddressString)
+    !("1..1.1" is net.IPv4AddressString)
+    !("1..1.1.1" is net.IPv4AddressString)
+    !(".1.1.1" is net.IPv4AddressString)
+    !(".1.1.1.1" is net.IPv4AddressString)
+    !("" is net.IPv4AddressString)
+  }
+  ["IPv6AddressString (pure IPv6)"] {
+    "0:0:0:0:0:0:0:0" is net.IPv6AddressString
+    "1:2:3:4:5:6:7:8" is net.IPv6AddressString
+    "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" is net.IPv6AddressString
+    "ffff::" is net.IPv6AddressString
+    "::" is net.IPv6AddressString
+    "::1" is net.IPv6AddressString
+    "::1:2:3:4:5:6:7" is net.IPv6AddressString
+    "1::" is net.IPv6AddressString
+    "1:2:3:4:5:6:7::" is net.IPv6AddressString
+    "::1" is net.IPv6AddressString
+    "::1:2:3:4:5:6:7" is net.IPv6AddressString
+    "1:2:3:4:5:6::7" is net.IPv6AddressString
+    "1:2:3:4:5::6:7" is net.IPv6AddressString
+    "1:2:3:4::5:6:7" is net.IPv6AddressString
+    "1:2:3::4:5:6:7" is net.IPv6AddressString
+    "1:2::3:4:5:6:7" is net.IPv6AddressString
+    "1::2:3:4:5:6:7" is net.IPv6AddressString
+    "1:2:3:4:5::6" is net.IPv6AddressString
+    "1:2:3:4::5" is net.IPv6AddressString
+    "1:2:3::4" is net.IPv6AddressString
+    "1:2::3" is net.IPv6AddressString
+    "1::2" is net.IPv6AddressString
+    !("1:2:3:4:5:6:7:8:9" is net.IPv6AddressString)
+    !("1:2:3:4:5:6:7:" is net.IPv6AddressString)
+    !("1:2:3:4:5:6:7:8:" is net.IPv6AddressString)
+    !(":1:2:3:4:5:6:7" is net.IPv6AddressString)
+    !(":1:2:3:4:5:6:7:8" is net.IPv6AddressString)
+    !("::1:2:3:4:5:6:7:8" is net.IPv6AddressString)
+    !("1:2:3:4:5:6:7:8::" is net.IPv6AddressString)
+    !("1::2::" is net.IPv6AddressString)
+    !("::1::2" is net.IPv6AddressString)
+    !("1::g" is net.IPv6AddressString)
+    !("1:::2" is net.IPv6AddressString)
+    !("FFFFF::" is net.IPv6AddressString)
+    !("1.2.3.4" is net.IPv6AddressString)
+    !("" is net.IPv6AddressString)
+  }
+  ["IPv6AddressString (IPv4-compatible)"] {
+    "::0.0.0.0" is net.IPv6AddressString
+    "::000.000.000.000" is net.IPv6AddressString
+    "::255.255.255.255" is net.IPv6AddressString
+    !("::256.0.0.0" is net.IPv6AddressString)
+    !("::260.0.0.0" is net.IPv6AddressString)
+    !("::300.0.0.0" is net.IPv6AddressString)
+    !("::0000.0.0.0" is net.IPv6AddressString)
+    !("::a.0.0.0" is net.IPv6AddressString)
+    !("::0.0.0" is net.IPv6AddressString)
+    !("::0.0.0." is net.IPv6AddressString)
+    !("::0.0.0.0." is net.IPv6AddressString)
+    !("::0.0.0.0.0" is net.IPv6AddressString)
+  }
+  ["IPv6AddressString (IPv4-mapped)"] {
+    "::ffff:0.0.0.0" is net.IPv6AddressString
+    "::ffff:000.000.000.000" is net.IPv6AddressString
+    "::ffff:255.255.255.255" is net.IPv6AddressString
+    !("::ffff:256.0.0.0" is net.IPv6AddressString)
+    !("::ffff:260.0.0.0" is net.IPv6AddressString)
+    !("::ffff:300.0.0.0" is net.IPv6AddressString)
+    !("::ffff:0000.0.0.0" is net.IPv6AddressString)
+    !("::ffff:a.0.0.0" is net.IPv6AddressString)
+    !("::ffff:0.0.0" is net.IPv6AddressString)
+    !("::ffff:0.0.0." is net.IPv6AddressString)
+    !("::ffff:0.0.0.0." is net.IPv6AddressString)
+    !("::ffff:0.0.0.0.0" is net.IPv6AddressString)
+  }
+  ["IPv6AddressString (IPv4-translated)"] {
+    "::ffff:0:0.0.0.0" is net.IPv6AddressString
+    "::ffff:0000:0.0.0.0" is net.IPv6AddressString
+    "::ffff:0:255.255.255.255" is net.IPv6AddressString
+    "::ffff:0:000.000.000.000" is net.IPv6AddressString
+    !("::ffff:0:256.0.0.0" is net.IPv6AddressString)
+    !("::ffff:0:260.0.0.0" is net.IPv6AddressString)
+    !("::ffff:0:300.0.0.0" is net.IPv6AddressString)
+    !("::ffff:0:0000.0.0.0" is net.IPv6AddressString)
+    !("::ffff:0:a.0.0.0" is net.IPv6AddressString)
+    !("::ffff:0:0.0.0" is net.IPv6AddressString)
+    !("::ffff:0:0.0.0." is net.IPv6AddressString)
+    !("::ffff:0:0.0.0.0." is net.IPv6AddressString)
+    !("::ffff:0:0.0.0.0.0" is net.IPv6AddressString)
+  }
+  ["IPv6AddressString (IPv4-embedded)"] {
+    "64:ff9b::0.0.0.0" is net.IPv6AddressString
+    "0::0.0.0.0" is net.IPv6AddressString
+    "0:0:0:0::0.0.0.0" is net.IPv6AddressString
+    "ffff:ffff:ffff:ffff::255.255.255.255" is net.IPv6AddressString
+    "64:ff9b::255.255.255.255" is net.IPv6AddressString
+    "64:ff9b::000.000.000.000" is net.IPv6AddressString
+    !("64:ff9b::256.0.0.0" is net.IPv6AddressString)
+    !("64:ff9b::260.0.0.0" is net.IPv6AddressString)
+    !("64:ff9b::300.0.0.0" is net.IPv6AddressString)
+    !("64:ff9b::0000.0.0.0" is net.IPv6AddressString)
+    !("64:ff9b::a.0.0.0" is net.IPv6AddressString)
+    !("64:ff9b::0.0.0" is net.IPv6AddressString)
+    !("64:ff9b::0.0.0." is net.IPv6AddressString)
+    !("64:ff9b::0.0.0.0." is net.IPv6AddressString)
+    !("64:ff9b::0.0.0.0.0" is net.IPv6AddressString)
+  }
+  ["IPv4CIDRString"] {
+    "0.0.0.0/1" is net.IPv4CIDRString
+    "255.255.255.255/32" is net.IPv4CIDRString
+    !("0.0.0.0/" is net.IPv4CIDRString)
+    !("0.0.0.0/100" is net.IPv4CIDRString)
+    !("0.0.0.0/a" is net.IPv4CIDRString)
+    !("/10" is net.IPv4CIDRString)
+    !("" is net.IPv4CIDRString)
+  }
+  ["IPv6CIDRString"] {
+    "fe80::/10" is net.IPv6CIDRString
+    "::1/128" is net.IPv6CIDRString
+    "::1.2.3.4/96" is net.IPv6CIDRString
+    !("fe80::/" is net.IPv6CIDRString)
+    !("fe80::/1000" is net.IPv6CIDRString)
+    !("fe80::/a" is net.IPv6CIDRString)
+    !("/10" is net.IPv6CIDRString)
+    !("" is net.IPv6CIDRString)
+    !("0.0.0.0/10" is net.IPv6CIDRString)
+  }
+  ["IPv4AddressPortString"] {
+    "0.0.0.0:0" is net.IPv4AddressPortString
+    "255.255.255.255:65535" is net.IPv4AddressPortString
+    !("0.0.0.0:" is net.IPv4AddressPortString)
+    !("0.0.0.0:123456" is net.IPv4AddressPortString)
+    !(":1" is net.IPv4AddressPortString)
+    !("" is net.IPv4AddressPortString)
+    !("0.0.0.0:a" is net.IPv4AddressPortString)
+    !("[0.0.0.0]:1" is net.IPv4AddressPortString)
+  }
+  ["IPv6AddressPortString"] {
+    "[::1]:80" is net.IPv6AddressPortString
+    "[::]:1" is net.IPv6AddressPortString
+    "[fe80::]:65535" is net.IPv6AddressPortString
+    !("[::1]:" is net.IPv6AddressPortString)
+    !("[::1]:123456" is net.IPv6AddressPortString)
+    !(":1" is net.IPv6AddressPortString)
+    !("" is net.IPv6AddressPortString)
+    !("[::1]:a" is net.IPv6AddressPortString)
+    !("0.0.0.0:1" is net.IPv6AddressPortString)
+    !("[0.0.0.0]:1" is net.IPv6AddressPortString)
+    !("::1:10" is net.IPv6AddressPortString)
+  }
 }
