@@ -186,4 +186,45 @@ facts {
     !("[0.0.0.0]:1" is net.IPv6AddressPortString)
     !("::1:10" is net.IPv6AddressPortString)
   }
+  ["IPv4AddressString can't contain unicode digits"] {
+    // U+FF11 is FULLWIDTH DIGIT ONE
+    !("25\u{FF11}.0.0.0" is net.IPv4AddressString)
+    !("20\u{FF11}.0.0.0" is net.IPv4AddressString)
+    !("2\u{FF11}0.0.0.0" is net.IPv4AddressString)
+    !("10\u{FF11}.0.0.0" is net.IPv4AddressString)
+    !("1\u{FF11}0.0.0.0" is net.IPv4AddressString)
+    !("\u{FF11}00.0.0.0" is net.IPv4AddressString)
+    !("00\u{FF11}.0.0.0" is net.IPv4AddressString)
+    !("0\u{FF11}0.0.0.0" is net.IPv4AddressString)
+    !("0\u{FF11}.0.0.0" is net.IPv4AddressString)
+    !("\u{FF11}0.0.0.0" is net.IPv4AddressString)
+    !("\u{FF11}.0.0.0" is net.IPv4AddressString)
+  }
+  ["IPv6AddressString can't contain unicode digits"] {
+    !("\u{FF11}::" is net.IPv6AddressString)
+    !("fe80::%\u{FF11}" is net.IPv6AddressString)
+    !("::25\u{FF11}.0.0.0" is net.IPv6AddressString)
+    !("::20\u{FF11}.0.0.0" is net.IPv6AddressString)
+    !("::2\u{FF11}0.0.0.0" is net.IPv6AddressString)
+    !("::10\u{FF11}.0.0.0" is net.IPv6AddressString)
+    !("::1\u{FF11}0.0.0.0" is net.IPv6AddressString)
+    !("::\u{FF11}00.0.0.0" is net.IPv6AddressString)
+    !("::00\u{FF11}.0.0.0" is net.IPv6AddressString)
+    !("::0\u{FF11}0.0.0.0" is net.IPv6AddressString)
+    !("::0\u{FF11}.0.0.0" is net.IPv6AddressString)
+    !("::\u{FF11}0.0.0.0" is net.IPv6AddressString)
+    !("::\u{FF11}.0.0.0" is net.IPv6AddressString)
+  }
+  ["IPv4AddressPortString can't contain unicode digits in the port"] {
+    !("127.0.0.1:\u{FF11}" is net.IPAddressPortString)
+  }
+  ["IPv6AddressPortString can't contain unicode digits in the port"] {
+    !("[::1]:\u{FF11}" is net.IPAddressPortString)
+  }
+  ["IPv4CIDRString can't contain unicode digits in the suffix"] {
+    !("10.0.0.0/\u{FF11}" is net.IPv4CIDRString)
+  }
+  ["IPv6CIDRString can't contain unicode digits in the suffix"] {
+    !("::1/\u{FF11}" is net.IPv6CIDRString)
+  }
 }
