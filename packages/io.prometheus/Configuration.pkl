@@ -293,7 +293,7 @@ class FileSdConfig {
 /// <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dns_sd_config>
 class DnsSdConfig {
   /// A list of DNS domain names to be queried.
-  name: Listing<String>
+  names: Listing<String>
 
   /// The type of DNS query to perform. One of SRV, A, AAAA, MX or NS.
   ///
