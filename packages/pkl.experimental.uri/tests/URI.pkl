@@ -34,6 +34,7 @@ facts {
     URI.encode(safeChars) == safeChars
     URI.encode("\u{ffff}") == "%EF%BF%BF"
     URI.encode("🏀") == "%F0%9F%8F%80"
+    URI.encode("\n") == "%0A"
   }
   ["encodeComponent"] {
     URI.encodeComponent("https://example.com/some path") == "https%3A%2F%2Fexample.com%2Fsome%20path"
