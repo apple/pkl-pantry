@@ -20,12 +20,10 @@ amends "../basePklProject.pkl"
 
 dependencies {
   ["jsonschema"] = import("../org.json_schema/PklProject")
-  // intentionally a remote dependency to reduce churn. Otherwise any changes to pkl.experimental.* will require
-  // version bumps here.
-  ["uri"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri@1.0.0" }
-  ["syntax"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.0.0" }
+  ["uri"] = import("../pkl.experimental.uri/PklProject")
+  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
 }
 
 package {
-  version = "1.0.3"
+  version = "1.0.4"
 }

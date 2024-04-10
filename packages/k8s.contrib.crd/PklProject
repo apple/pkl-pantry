@@ -22,15 +22,12 @@ dependencies {
   ["jsonschema"] = import("../org.json_schema/PklProject")
   ["jsonschema.contrib"] = import("../org.json_schema.contrib/PklProject")
   ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
+  ["uri"] = import("../pkl.experimental.uri/PklProject")
+  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
 
   ["k8s"] { uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1" }
-
-  // intentionally a remote dependency to reduce churn. Otherwise any changes to pkl.experimental.* will require
-  // version bumps here.
-  ["uri"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri@1.0.0" }
-  ["syntax"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.0.0" }
 }
 
 package {
-  version = "1.0.2"
+  version = "1.0.3"
 }
