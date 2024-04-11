@@ -1,10 +1,16 @@
+import groovy.json.JsonSlurper
+import org.jetbrains.kotlin.utils.sure
 import org.pkl.core.Version
+import org.pkl.gradle.task.ProjectPackageTask
 import java.io.OutputStream
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.net.ssl.HttpsURLConnection
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.isDirectory
+import kotlin.io.path.name
+import kotlin.io.path.pathString
 import kotlin.math.ceil
 import kotlin.math.log10
 
@@ -101,12 +107,67 @@ pkl {
 
 val resolveProjects = tasks.named("resolveProjects") {
     group = "build"
+    inputs.files(fileTree("packages/") { include("PklProject") })
+    outputs.files(fileTree("packages/") { include("PklProject.deps.json") })
 }
 
-val createPackages = tasks.named("createPackages") {
+val createPackages = tasks.named<ProjectPackageTask>("createPackages") {
     group = "build"
-    dependsOn.add(resolveProjects)
 }
+
+/**
+ * Return the set of packages that are dependents of the input package.
+ */
+@Suppress("UNCHECKED_CAST")
+fun gatherDependentPackages(packageDirName: String): List<String> {
+    return buildList {
+        for (pkg in Files.list(file("packages/").toPath())) {
+            if (pkg.name == packageDirName || !pkg.isDirectory()) {
+                continue
+            }
+            val jsonFile = pkg.resolve("PklProject.deps.json")
+            val json = JsonSlurper().parse(jsonFile) as Map<String, Any>
+            val dependencies = json["resolvedDependencies"] as Map<String, Map<String, String>>
+            for ((_, value) in dependencies) {
+                if (value["path"] == "../$packageDirName") {
+                    add(pkg.name)
+                }
+            }
+        }
+    }
+}
+
+val decorateFailureWithDependentPackageInformation by tasks.registering {
+    onlyIf {
+        @Suppress("SENSELESS_COMPARISON")
+        createPackages.get().state.failure != null
+    }
+    doLast {
+        val createPackagesTask = createPackages.get()
+        @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
+        val failureMessage = createPackagesTask.state.failure!!.cause?.message ?: return@doLast
+        if (!failureMessage.contains("was already published with different contents")) {
+            return@doLast
+        }
+        val packageName = Regex("`(.+)`").find(failureMessage)?.groups?.get(1)?.value ?: return@doLast
+        val dirName = packageName.drop("package://pkg.pkl-lang.org/pkl-pantry/".length)
+            .dropLastWhile { it != '@' }
+            .dropLast(1)
+        val dependentPackages = gatherDependentPackages(dirName)
+        if (dependentPackages.isEmpty()) {
+            return@doLast
+        }
+        val msg = buildString {
+            appendLine("The following packages depend on this package, and also need to have their version updated:")
+            for (pkgName in dependentPackages) {
+                appendLine("* $pkgName")
+            }
+        }
+        createPackagesTask.state.addFailure(TaskExecutionException(createPackagesTask, RuntimeException(msg)))
+    }
+}
+
+createPackages.get().finalizedBy(decorateFailureWithDependentPackageInformation)
 
 val isInCircleCi = System.getenv("CIRCLE_PROJECT_REPONAME") != null
 
