@@ -1,0 +1,347 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.lua.tests.lua
+
+amends "pkl:test"
+
+import "../lua.pkl"
+
+local function RenderDirective(text_: String): RenderDirective = new { text = text_ }
+local function LuaRenderDirective(before_: String?, value_: Any, after_: String?): lua.LuaRenderDirective = new { before = before_; value = value_; after = after_ }
+
+facts {
+  ["RenderDirective"] {
+    new lua.Renderer {}.renderDocument(RenderDirective("foo")) == "foo\n"
+    new lua.Renderer {}.renderDocument(new Dynamic { [RenderDirective("foo bar")] = 1}) == "foo bar = 1\n"
+    new lua.Renderer {}.renderValue(Map(RenderDirective("a.b"), 1)) == "{ a.b = 1; }"
+    new lua.Renderer {}.renderValue(Map(RenderDirective("]["), 1)) == "{ ][ = 1; }"
+    new lua.Renderer {}.renderValue(Map(RenderDirective("a"), 1)) == #"{ a = 1; }"#
+    new lua.Renderer {}.renderValue(List(1, RenderDirective("foo bar"), 2)) == "{ 1, foo bar, 2 }"
+    new lua.Renderer {}.renderValue(Map("a", RenderDirective("1 + 2"))) == "{ a = 1 + 2; }"
+    new lua.Renderer { multilineThreshold = 1 }.renderValue(new Dynamic { a { [RenderDirective("a\nb")] = RenderDirective("c\nd") }}) == "{\n  a = {\n    a\nb = c\nd;\n  };\n}"
+  }
+  ["LuaRenderDirective"] {
+    new lua.Renderer {}.renderDocument(LuaRenderDirective(null, 1, null)) == "1\n"
+    new lua.Renderer {}.renderDocument(LuaRenderDirective(null, new Dynamic { a = 1 }, null)) == "{ a = 1; }\n"
+    new lua.Renderer {}.renderDocument(LuaRenderDirective("x", new Dynamic { a = 1 }, "y")) == "x{ a = 1; }y\n"
+    new lua.Renderer {}.renderDocument(new Dynamic { a = LuaRenderDirective(null, 1, null) }) == "a = 1\n"
+    new lua.Renderer {}.renderDocument(new Dynamic { a = LuaRenderDirective("x", 1, "y") }) == "a = x1y\n"
+    new lua.Renderer {}.renderDocument(new Dynamic { [LuaRenderDirective(null, "a", null)] = 1 }) == #"_ENV["a"] = 1\#n"#
+    new lua.Renderer {}.renderDocument(new Dynamic { [LuaRenderDirective("x", "a", "y")] = 1 }) == #"_ENV[x"a"y] = 1\#n"#
+    new lua.Renderer {}.renderDocument(new Dynamic { [LuaRenderDirective("x", RenderDirective("a"), "y")] = 1 }) == #"_ENV[xay] = 1\#n"#
+    new lua.Renderer {}.renderValue(new Dynamic { [LuaRenderDirective(null, "a", null)] = 1 }) == #"{ ["a"] = 1; }"#
+    new lua.Renderer {}.renderValue(new Dynamic { [LuaRenderDirective("x", "a", "y")] = 1 }) == #"{ [x"a"y] = 1; }"#
+    new lua.Renderer {}.renderValue(new Dynamic { [LuaRenderDirective("x", RenderDirective("a"), "y")] = 1 }) == #"{ [xay] = 1; }"#
+  }
+  ["Lua indexes are 1-based"] {
+    new lua.Renderer {}.renderDocument(new Dynamic { 1; 2 }) == "_ENV[1] = 1\n_ENV[2] = 2\n"
+  }
+  ["omitNullProperties"] {
+    new lua.Renderer { omitNullProperties = true }.renderDocument(new Dynamic {
+      type = "Dynamic"
+      a = 1
+      b = null
+      ["c"] = null // language limitation means this is treated like a property
+      [42] = null
+      [true] = null
+      nest {
+        a = 1
+        b = null
+        ["c"] = null // language limitation means this is treated like a property
+        [42] = null
+        [true] = null
+        mapping = new Mapping {
+          ["a"] = 1
+          ["b"] = null
+          [42] = null
+          [true] = null
+        }
+        map = Map("a", 1, "b", null)
+        listing = new Listing {
+          1
+          null
+        }
+        list = List(1, null)
+      }
+      foo = new Foo {
+        a = 1
+      }
+    }) == new lua.Renderer {}.renderDocument(new Dynamic {
+      type = "Dynamic"
+      a = 1
+      [42] = null
+      [true] = null
+      nest {
+        a = 1
+        [42] = null
+        [true] = null
+        mapping = new Mapping {
+          ["a"] = 1
+          ["b"] = null
+          [42] = null
+          [true] = null
+        }
+        map = Map("a", 1, "b", null)
+        listing = new Listing {
+          1
+          null
+        }
+        list = List(1, null)
+      }
+      foo {
+        type = "class Foo"
+        a = 1
+      }
+    })
+    new lua.Renderer { omitNullProperties = true }.renderDocument(new Mapping {
+      ["type"] = "Mapping"
+      ["a"] = 1
+      ["b"] = null // this is a Mapping, it won't be omitted
+      ["dynamic"] {
+        a = 1
+        b = null
+        ["c"] = null // language limitation means this is treated like a property
+      }
+      ["foo"] = new Foo {
+        a = 1
+      }
+    }) == new lua.Renderer {}.renderDocument(new Mapping {
+      ["type"] = "Mapping"
+      ["a"] = 1
+      ["b"] = null
+      ["dynamic"] {
+        a = 1
+      }
+      ["foo"] {
+        type = "class Foo"
+        a = 1
+      }
+    })
+  }
+  ["default key"] {
+    // A Typed with a `default` key should render just fine even though Dynamic has `hidden default`
+    local renderer = new lua.Renderer { omitNullProperties = true }
+    // Check Dynamic with ["default"] first so ensure we can use Dynamic to generate valid cases
+    renderer.renderDocument(new Dynamic { ["default"] = 1 }) == "default = 1\n"
+    renderer.renderValue(new Dynamic { ["default"] = 1 }) == "{ default = 1; }"
+    // Now everything else can just validate against the equivalent Dynamic
+    // Note that we need to use entries exclusively for ordering reasons
+    renderer.renderDocument(new WithDefault { default = 1 }) == renderer.renderDocument(new Dynamic { ["default"] = 1 })
+    renderer.renderDocument(new WithDefault { default = 1; a = 2 }) == renderer.renderDocument(new Dynamic { ["default"] = 1; ["a"]= 2 })
+    renderer.renderDocument(new Dynamic { a = new WithDefault { default = 1 } }) == renderer.renderDocument(new Dynamic { ["a"] { ["default"] = 1 } })
+    renderer.renderDocument(new Dynamic { a = new WithDefault { default = 1; a = 2 } }) == renderer.renderDocument(new Dynamic { ["a"] { ["default"] = 1; ["a"] = 2 } })
+    renderer.renderValue(new WithDefault { default = 1 }) == renderer.renderValue(new Dynamic { ["default"] = 1 })
+    renderer.renderValue(new WithDefault { default = 1; a = 2 }) == renderer.renderValue(new Dynamic { ["default"] = 1; ["a"] = 2 })
+  }
+  ["path converters"] {
+    new lua.Renderer {
+      converters {
+        ["^"] = (it) -> new Dynamic { a = 1 }
+      }
+    }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
+    new lua.Renderer {
+      converters {
+        [""] = (it) -> new Dynamic { a = 1 }
+      }
+    }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
+    new lua.Renderer {
+      converters {
+        ["*"] = (it) -> if (it is Int) it + 1 else it
+      }
+    }.renderDocument(new Dynamic { 1; a = 1; b { 1; c = 1; d { e = 1 } } }) == new lua.Renderer {}.renderDocument(new Dynamic { 1; a = 2; b { 1; c = 2; d { e = 2 } } })
+    new lua.Renderer {
+      converters {
+        ["a.b"] = (it) -> it + 1
+      }
+    }.renderDocument(new Dynamic { a { b = 1; c { b = 1 } }; b = 1; c { a { b = 1 } } }) == new lua.Renderer {}.renderDocument(new Dynamic { a { b = 2; c { b = 1 } }; b = 1; c { a { b = 2 } } })
+    new lua.Renderer {
+      converters {
+        ["^a.b"] = (it) -> it + 1
+      }
+    }.renderDocument(new Dynamic { a { b = 1; c { b = 1 } }; b = 1; c { a { b = 1 } } }) == new lua.Renderer {}.renderDocument(new Dynamic { a { b = 2; c { b = 1 } }; b = 1; c { a { b = 1 } } })
+    new lua.Renderer {
+      converters {
+        ["a"] = (it) -> new Dynamic { b = it }
+        ["b"] = (it) -> new Dynamic { c = it }
+      }
+    }.renderDocument(new Dynamic { a = 1 }) == new lua.Renderer {}.renderDocument(new Dynamic { a { b { c = 1 } } })
+    new lua.Renderer {
+      converters {
+        ["[*]"] = (it) -> if (it is Int) it + 1 else it
+      }
+    }.renderDocument(new Mapping { ["a"] = 1; ["b"] = new Mapping { ["c"] = 1 } }) == new lua.Renderer {}.renderDocument(new Dynamic { a = 2; b { c = 2 } })
+    new lua.Renderer {
+      converters {
+        ["[*]"] = (it) -> if (it is Int) it + 1 else it
+      }
+    }.renderDocument(new Dynamic { a = 1; 1; new Listing { 1; 2 }; 2 }) == new lua.Renderer {}.renderDocument(new Dynamic { a = 1; 2; new Listing { 2; 3 }; 3 })
+    new lua.Renderer {
+      converters {
+        ["[a]"] = (it) -> it + 1
+      }
+    }.renderDocument(new Dynamic { a = 1; map = new Mapping { ["a"] = 1 } }) == new lua.Renderer {}.renderDocument(new Dynamic { a = 1; map { ["a"] = 2 } })
+    // check that path like "[1]" matches string key "1" and not list idx or int key or funky property
+    let (source = new Dynamic { 1; 1; new Dynamic { 1; 1 }; new Listing { 1; 1 }; new Mapping { [1] = 1; ["1"] = 1 }; new Dynamic { `[1]` = 1; `["1"]` = 1 } })
+    let (expected = new Dynamic { 1; 1; new Dynamic { 1; 1 }; new Listing { 1; 1 }; new Mapping { [1] = 1; ["1"] = 2 }; new Dynamic { `[1]` = 1; `["1"]` = 1 } })
+    new lua.Renderer {
+      converters {
+        ["[1]"] = (it) -> it + 1
+      }
+    }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+    // check for string vs int key on Dynamic too; note that Dynamic treats all string keys as properties, so the converter shouldn't run
+    let (source = new Dynamic { [1] = 1; ["1"] = 1; nest { [1] = 1; ["1"] = 1 } })
+    let (expected = new Dynamic { [1] = 1; ["1"] = 1; nest { [1] = 1; ["1"] = 1 } })
+    new lua.Renderer {
+      converters {
+        ["[1]"] = (it) -> it + 1
+      }
+    }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+  }
+  ["class converters"] {
+    let (source = new Dynamic { a = 1; b = "two"; c = true; nest { 1; "one"; a = 1; b = "two"; c = true }; map = new Mapping { ["a"] = 1; ["b"] = "two"; ["c"] = true }; list = new Listing { 1; "two"; true } })
+    let (expected = new Dynamic { a = 2; b = "two!"; c = true; nest { 2; "one!"; a = 2; b = "two!"; c = true }; map { a = 2; b = "two!"; c = true }; list { 2; "two!"; true } })
+    new lua.Renderer {
+      converters {
+        [Int] = (it) -> it + 1
+        [String] = (it) -> "\(it)!"
+      }
+    }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+    // class converters prefer the most specific class
+    new lua.Renderer {
+      converters {
+        [Base] = (it) -> "base"
+        [Child] = (it) -> "child"
+      }
+    }.renderDocument(new Dynamic { base = new Base {}; child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { base = "base"; child = "child" })
+    // class converters match subclasses
+    new lua.Renderer {
+      converters {
+        [Base] = (it) -> "base"
+      }
+    }.renderDocument(new Dynamic { child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { child = "base" })
+  }
+}
+
+// Helper class for tests
+local class Foo {
+  fixed type = "class Foo"
+  a: Int?
+  b: String?
+}
+
+// Helper class for tests
+local class WithDefault {
+  default: Any
+  a: Any?
+}
+
+local open class Base {}
+local class Child extends Base {}
+
+examples {
+  ["default render document"] {
+    new lua.Renderer {}.renderDocument(new Dynamic {
+      int = 1
+      float = 1.0
+      string = "two"
+      bool = true
+      `null` = null
+      list = List(1, 2, 3)
+      listing = new Listing {
+        "one"
+        "two"
+        "three"
+      }
+      map = Map("a", 1, "b", 2)
+      mapping = new Mapping {
+        ["a"] = 1
+        ["b"] = 2
+      }
+      dynamic {
+        a = 1
+        b = 2
+        nested {
+          c = 3
+          d = 4
+        }
+      }
+      foo = new Foo {
+        a = 1
+      }
+    })
+    new lua.Renderer {}.renderDocument(new Dynamic {
+      a = 1
+      ["b"] = 2
+      "three"
+      `weird-key` = "hello"
+      fáncy = true
+      `if` = "keyword"
+      [""] = null
+    })
+    new lua.Renderer {}.renderDocument(new Mapping {
+      ["a"] = 1
+      ["b"] = 2
+      ["weird key"] = 3
+      [""] = null
+    })
+    new lua.Renderer {}.renderDocument(new Foo { a = 1 })
+  }
+  ["default render value"] {
+    new lua.Renderer {}.renderValue(123)
+    new lua.Renderer {}.renderValue(123.5)
+    new lua.Renderer {}.renderValue("hello")
+    new lua.Renderer {}.renderValue(new Listing { 1; 2; 3 })
+    new lua.Renderer {}.renderValue(List(1, 2, 3))
+    new lua.Renderer {}.renderValue(new Mapping { ["a"] = 1; ["b"] = 2 })
+    new lua.Renderer {}.renderValue(Map("a", 1, "b", 2))
+    new lua.Renderer {}.renderValue(null)
+    new lua.Renderer {}.renderValue(true)
+    new lua.Renderer {}.renderValue(new Dynamic { a = 1; b = 2 })
+    new lua.Renderer {}.renderValue(new Dynamic { "one"; "two" })
+    new lua.Renderer {}.renderValue(new Foo { a = 1 })
+  }
+  ["empty documents"] {
+    new lua.Renderer {}.renderDocument(new Dynamic {})
+    new lua.Renderer {}.renderDocument(new Mapping {})
+    new lua.Renderer {}.renderDocument(Map())
+  }
+  ["empty values"] {
+    new lua.Renderer {}.renderValue(new Dynamic {})
+    new lua.Renderer {}.renderValue(new Mapping {})
+    new lua.Renderer {}.renderValue(new Listing {})
+    new lua.Renderer {}.renderValue(Map())
+    new lua.Renderer {}.renderValue(List())
+  }
+  ["multiline threshold"] {
+    new lua.Renderer {}.renderValue(new Dynamic { threshold = 2 })
+    new lua.Renderer {}.renderValue(new Dynamic { threshold = 2; a = 1 })
+    new lua.Renderer { multilineThreshold = 1 }.renderValue(new Dynamic { threshold = 1 })
+    new lua.Renderer { multilineThreshold = 3 }.renderValue(new Dynamic { threshold = 3 })
+    new lua.Renderer { multilineThreshold = 3 }.renderValue(new Dynamic { threshold = 3; a = 1 })
+    new lua.Renderer { multilineThreshold = 3 }.renderValue(new Dynamic { threshold = 3; a = 1; b = 2 })
+  }
+  ["funky table keys"] {
+    new lua.Renderer {}.renderValue(new Mapping {
+      ["a b"] = "space"
+      ["if"] = "keyword"
+      [List(1,2)] = "list"
+      [12] = "int"
+      [12.1] = "float"
+      [true] = "boolean"
+      [new Dynamic { a = 1; b = 2 }] = "dynamic"
+    })
+  }
+}
