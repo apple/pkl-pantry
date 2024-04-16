@@ -57,11 +57,20 @@ typealias LuaKeyword = "and"|"break"|"do"|"else"|"elseif"|"end"|"false"|"for"|"f
 typealias LuaIdentifier = String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_]*")) && !(this is LuaKeyword))
 
 /// Directs [Renderer] to output additional text [before] and/or [after] rendering a [value].
-typealias LuaRenderDirective = PcfRenderDirective
+class LuaRenderDirective {
+  /// The text to output before rendering [value].
+  before: String?
+
+  /// The value to render.
+  value: Any
+
+  /// The text to output after rendering [value].
+  after: String?
+}
 
 /// Renders values as Lua.
 class Renderer extends ValueRenderer {
-  /// The characters to use for indenting output.
+  /// The characters to use for indenting output. Defaults to two spaces.
   indent: String = "  "
 
   /// Whether to skip rendering properties whose value is [null].
@@ -72,8 +81,8 @@ class Renderer extends ValueRenderer {
 
   /// The number of elements in a [Mapping] or [Listing] to render them multiline.
   ///
-  /// The default value of `2` means a collection with a single element will be rendered in inline
-  /// style, although any nested collections may be rendered in a multiline style.
+  /// The default value of `2` means a collection with a single element will be rendered in the
+  /// inline style, although any nested collections may be rendered in the multiline style.
   ///
   /// Note that [Map] and [List] are always rendered in the inline style.
   multilineThreshold: Int = 2
