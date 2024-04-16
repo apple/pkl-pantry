@@ -233,6 +233,26 @@ facts {
       }
     }.renderDocument(new Dynamic { child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { child = "base" })
   }
+  ["NaN and Infinity"] {
+    new lua.Renderer {}.renderValue(Infinity) == "(1/0)"
+    new lua.Renderer {}.renderValue(-Infinity) == "(-1/0)"
+    new lua.Renderer {}.renderValue(NaN) == "(0/0)"
+  }
+  ["table keys can be anything but nil or NaN"] {
+    // check all other types first
+    module.catchOrNull(() -> new lua.Renderer {}.renderDocument(new Dynamic { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+    module.catchOrNull(() -> new lua.Renderer {}.renderDocument(new Mapping { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+    module.catchOrNull(() -> new lua.Renderer {}.renderValue(new Dynamic { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+    module.catchOrNull(() -> new lua.Renderer {}.renderValue(new Mapping { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+    module.catch(() -> new lua.Renderer {}.renderDocument(new Dynamic { [null] = 1 })) == "Lua table keys cannot be null"
+    module.catch(() -> new lua.Renderer {}.renderDocument(new Dynamic { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+    module.catch(() -> new lua.Renderer {}.renderDocument(new Mapping { [null] = 1 })) == "Lua table keys cannot be null"
+    module.catch(() -> new lua.Renderer {}.renderDocument(new Mapping { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+    module.catch(() -> new lua.Renderer {}.renderValue(new Dynamic { [null] = 1 })) == "Lua table keys cannot be null"
+    module.catch(() -> new lua.Renderer {}.renderValue(new Dynamic { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+    module.catch(() -> new lua.Renderer {}.renderValue(new Mapping { [null] = 1 })) == "Lua table keys cannot be null"
+    module.catch(() -> new lua.Renderer {}.renderValue(new Mapping { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+  }
 }
 
 // Helper class for tests

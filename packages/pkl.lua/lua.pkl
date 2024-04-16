@@ -176,7 +176,8 @@ class Renderer extends ValueRenderer {
 
   local function render(value: Any, path: List<PathEntry>?, level: UInt?): String =
     if (value is String) renderString(value, level != null)
-    else if (value is Number|Boolean) value.toString()
+    else if (value is Boolean) value.toString()
+    else if (value is Number) renderNumber(value)
     else if (value is Null) "nil"
     else if (value is Mapping|Map) renderMap(value, path, level)
     else if (value is Listing|List) renderList(value, path, level)
@@ -188,6 +189,7 @@ class Renderer extends ValueRenderer {
 
   local function renderKey(key: Any, prefix: String): String =
     if (key is Null) throw("Lua table keys cannot be null")
+    else if (key is Number && key.isNaN) throw("Lua table keys cannot be NaN")
     else if (key is LuaIdentifier) key
     else if (key is RenderDirective) key.text
     else "\(prefix)[\(render(key, null, null))]"
@@ -219,6 +221,11 @@ class Renderer extends ValueRenderer {
       else if (match.value == "\u{11}") "\\v"
       else if (match.value == delim) "\\\(delim)"
       else "\\u{\(match.value.codepoints.first.toRadixString(16))}")
+
+  local function renderNumber(value: Number): String =
+    if (value.isNaN) "(0/0)"
+    else if (value.isInfinite) "(\(value.sign.toInt())/0)"
+    else value.toString()
 
   local function renderMap(value: Mapping|Map, path: List<PathEntry>?, level: UInt?): String =
     if (value.isEmpty) "{}" else
