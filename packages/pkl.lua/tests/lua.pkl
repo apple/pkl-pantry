@@ -364,4 +364,19 @@ examples {
       [new Dynamic { a = 1; b = 2 }] = "dynamic"
     })
   }
+  ["string escapes"] {
+    new lua.Renderer {}.renderValue(new Listing {
+      "'"
+      "\""
+      "'\""
+      "\nfoo\n"
+      "foo\nbar"
+      "\nfoo\nbar\n"
+      "[[foo\nbar]]"
+      "[[=[foo\nbar]=]]"
+      "foo\n\tbar"
+      "\u{7}\u{8}\u{c}\n\r\t\u{b}"
+      "\u{1}\u{7f}"
+    })
+  }
 }

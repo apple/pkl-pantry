@@ -225,13 +225,13 @@ class Renderer extends ValueRenderer {
     value.replaceAllMapped(Regex(#"[\p{Cntrl}\\\#(delim)&&[^ ]]"#), (match) ->
       if (match.value == "\u{7}") "\\a"
       else if (match.value == "\u{8}") "\\b"
-      else if (match.value == "\u{12}") "\\f"
+      else if (match.value == "\u{c}") "\\f"
       else if (match.value == "\n") if (multiline) "\\\n" else "\\n"
       else if (match.value == "\r") "\\r"
       else if (match.value == "\t") "\\t"
-      else if (match.value == "\u{11}") "\\v"
+      else if (match.value == "\u{b}") "\\v"
       else if (match.value == delim) "\\\(delim)"
-      else "\\u{\(match.value.codepoints.first.toRadixString(16))}")
+      else "\\u{\(match.value.codePoints.first.toRadixString(16))}")
 
   local function renderNumber(value: Number): String =
     if (value.isNaN) "(0/0)"
