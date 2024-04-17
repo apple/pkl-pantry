@@ -35,7 +35,7 @@ local const pathSpecRegex: Regex = let (prop = #"(?:[^\[\]^*.]+)"#) Regex(#"""
     )*
   )?
   """#)
-local const pathSpecSplitRegex: Regex = Regex(#"\.|(?=\[)|(?<=\^|\])"#)
+local const pathSpecSplitRegex: Regex = Regex(#"\.|(?=\[)|(?<=[\^\]])"#)
 
 // Returns a [Prop] for string keys, otherwise [splatKey].
 local const function Prop(k: Any): Prop|Key =
@@ -136,7 +136,6 @@ class Renderer extends ValueRenderer {
   local converterMap = converters.toMap()
 
   // path specs are already in reversed order
-  // noinspection TypeMismatch
   local pathConverters: List<Pair<List<PathEntry>,(unknown) -> Any>> =
     converterMap
       .filter((key, _) -> key is String)
@@ -146,7 +145,7 @@ class Renderer extends ValueRenderer {
             key
               .split(pathSpecSplitRegex)
               .map((it) ->
-                if (it == "^") it
+                if (it == "^") "^"
                 else if (it.startsWith("[")) new Key { key = it.drop(1).dropLast(1) }
                 else new Prop { name = it })
               .reverse()
