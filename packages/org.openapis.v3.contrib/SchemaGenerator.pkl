@@ -232,10 +232,12 @@ local function convertDeclaredType(typ: reflect.DeclaredType, seenClasses: Set<C
                   }
                 }
                 additionalProperties = false
-                required {
-                  for (_, property in _properties) {
-                    when (property.type.nullable != property.type) {
-                      property.name
+                when (_properties.any((_, property) -> property.type.nullable != property.type)) {
+                  required {
+                    for (_, property in _properties) {
+                      when (property.type.nullable != property.type) {
+                        property.name
+                      }
                     }
                   }
                 }
