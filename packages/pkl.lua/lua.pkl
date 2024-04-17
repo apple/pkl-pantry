@@ -37,9 +37,18 @@ local const pathSpecRegex: Regex = let (prop = #"(?:[^\[\]^*.]+)"#) Regex(#"""
   """#)
 local const pathSpecSplitRegex: Regex = Regex(#"\.|(?=\[)|(?<=\^|\])"#)
 
+// Returns a [Prop] for string keys, otherwise [splatKey].
+local const function Prop(k: Any): Prop|Key =
+  if (k is String) new Prop { name = k } else splatKey
+
 local class Prop {
   name: String
 }
+
+// Returns a [Key] for string keys, otherwise [splatKey]
+local const function Key(k: Any): Key =
+  if (k is String) new Key { key = k } else splatKey
+
 local class Key {
   key: String
 }
@@ -97,59 +106,52 @@ class Renderer extends ValueRenderer {
 
   function renderValue(value: Any): String =
     let (path = List("^"))
-    render(convert(value, path), path, 0)
+      render(convert(value, path), path, 0)
 
   function renderDocument(value: Any): String =
     let (path = List("^"))
     let (value = convert(value, path))
-    if (value is RenderDirective) "\(value.text)\n"
-    else if (value is LuaRenderDirective) "\(value.before ?? "")\(render(value.value, path, 0))\(value.after ?? "")\n"
-    else if (value is Dynamic|Typed)
-      value.toMap().fold("", (acc, k, v) ->
-        let (path = path.add(Prop(k)))
-        let (v = convert(v, path))
-        if (omitNullProperties && v == null && k is String) acc else
-        acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
-      + (if (value is Dynamic) value.toList() else List()).foldIndexed("", (idx, acc, v) ->
-        let (path = path.add(splatKey))
-        let (v = convert(v, path))
-        // remember, Lua indexes are 1-based
-        acc + "_ENV[\(idx+1)] = \(render(v, path, 0))\n")
-    else if (value is Mapping|Map)
-      value.fold("", (acc, k, v) ->
-        let (path = path.add(Key(k)))
-        let (v = convert(v, path))
-        acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
-    else throw("The top-level value of a Lua document must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `\(value.getClass())`")
+      if (value is RenderDirective) "\(value.text)\n"
+      else if (value is LuaRenderDirective) "\(value.before ?? "")\(render(value.value, path, 0))\(value.after ?? "")\n"
+      else if (value is Dynamic|Typed)
+        value.toMap().fold("", (acc, k, v) ->
+          let (path = path.add(Prop(k)))
+          let (v = convert(v, path))
+            if (omitNullProperties && v == null && k is String) acc
+            else acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
+        + (if (value is Dynamic) value.toList() else List()).foldIndexed("", (idx, acc, v) ->
+          let (path = path.add(splatKey))
+          let (v = convert(v, path))
+            // remember, Lua indexes are 1-based
+            acc + "_ENV[\(idx+1)] = \(render(v, path, 0))\n")
+      else if (value is Mapping|Map)
+        value.fold("", (acc, k, v) ->
+          let (path = path.add(Key(k)))
+          let (v = convert(v, path))
+            acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
+      else throw("The top-level value of a Lua document must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `\(value.getClass())`")
 
-  // ## Misc helpers ##
-
-  // Returns a [Prop] for string keys, otherwise [splatKey].
-  local function Prop(k: Any): Prop|Key =
-    if (k is String) new Prop { name = k } else splatKey
-
-  // Returns a [Key] for string keys, otherwise [splatKey]
-  local function Key(k: Any): Key =
-    if (k is String) new Key { key = k } else splatKey
-
-  // ## Converters ##
+  // region Converters
 
   local converterMap = converters.toMap()
 
   // path specs are already in reversed order
-  local pathConverters: List<Pair<List<PathEntry>,(unknown) -> Any>> = converterMap
-  .filter((key, _) -> key is String)
-  .mapKeys((key, _) ->
-    if (key.matches(pathSpecRegex))
-      if (key == "") List("^") else // PcfRenderer treats empty path as "^"
-      key.split(pathSpecSplitRegex)
-      .map((it) ->
-        if (it == "^") it
-        else if (it.startsWith("[")) new Key { key = it.drop(1).dropLast(1) }
-        else new Prop { name = it })
-      .reverse()
-    else throw("Converter path `\(key)` has invalid syntax."))
-  .entries
+  // noinspection TypeMismatch
+  local pathConverters: List<Pair<List<PathEntry>,(unknown) -> Any>> =
+    converterMap
+      .filter((key, _) -> key is String)
+      .mapKeys((key, _) ->
+        if (key.matches(pathSpecRegex))
+          if (key == "") List("^") else // PcfRenderer treats empty path as "^"
+            key
+              .split(pathSpecSplitRegex)
+              .map((it) ->
+                if (it == "^") it
+                else if (it.startsWith("[")) new Key { key = it.drop(1).dropLast(1) }
+                else new Prop { name = it })
+              .reverse()
+        else throw("Converter path `\(key)` has invalid syntax."))
+      .entries
 
   // [true] if the converters define any class converters.
   // For the time being this is limited to any subclasses of [Typed], as this matches current
@@ -157,16 +159,16 @@ class Renderer extends ValueRenderer {
   // but we'll match the bug for now for performance reasons.
   local hasTypedConverters: Boolean =
     let (typedClass = reflect.Class(Typed))
-    converterMap.any((k,_) -> k is Class && reflect.Class(k).isSubclassOf(typedClass))
+      converterMap.any((k,_) -> k is Class && reflect.Class(k).isSubclassOf(typedClass))
 
   local function convert(value: Any, path: List<PathEntry>?): Any =
     if (path == null) value else
-    let (path = path.reverse())
-    let (f = pathConverters.findOrNull((p) -> comparePaths(path, p.key))?.value)
-    let (klass = value.getClass())
-    let (f = f ?? converterMap.getOrNull(klass))
-    let (f = f ?? if (hasTypedConverters && value is Typed) findTypedConverter(reflect.Class(klass).superclass) else null) // find superclass converters
-    if (f != null) f.apply(value) else value
+      let (path = path.reverse())
+      let (f = pathConverters.findOrNull((p) -> comparePaths(path, p.key))?.value)
+      let (klass = value.getClass())
+      let (f = f ?? converterMap.getOrNull(klass))
+      let (f = f ?? if (hasTypedConverters && value is Typed) findTypedConverter(reflect.Class(klass).superclass) else null) // find superclass converters
+        if (f != null) f.apply(value) else value
 
   // the path and spec must already be reversed
   local function comparePaths(path: List<PathEntry>, pathSpec: List<PathEntry>): Boolean =
@@ -177,11 +179,11 @@ class Renderer extends ValueRenderer {
     )
 
   local function findTypedConverter(klass: reflect.Class?): ((unknown) -> Any)? =
-    if (klass == null) null else
-    converters.getOrNull(klass.reflectee) ??
-    findTypedConverter(klass.superclass)
+    if (klass == null) null
+    else converters.getOrNull(klass.reflectee) ?? findTypedConverter(klass.superclass)
 
-  // ## Rendering functions ##
+  // endregion
+  // region Rendering functions
 
   local function render(value: Any, path: List<PathEntry>?, level: UInt?): String =
     if (value is String) renderString(value, level != null)
@@ -212,9 +214,9 @@ class Renderer extends ValueRenderer {
         "\(delim)\(escapeString(value, delim, true))\(delim)"
       else
         IntSeq(0, 10)
-        .map((n) -> "=".repeat(n))
-        .findOrNull((eq) -> !value.contains("]\(eq)]"))
-        .ifNonNull((eq) -> "[\(eq)[\n\(value)]\(eq)]")
+          .map((n) -> "=".repeat(n))
+          .findOrNull((eq) -> !value.contains("]\(eq)]"))
+          .ifNonNull((eq) -> "[\(eq)[\n\(value)]\(eq)]")
         // if we can't find a good ]==] ending, use the other style
         ?? "\(delim)\(escapeString(value, delim, true))\(delim)"
     else "\(delim)\(escapeString(value, delim, false))\(delim)"
@@ -238,28 +240,28 @@ class Renderer extends ValueRenderer {
 
   local function renderMap(value: Mapping|Map, path: List<PathEntry>?, level: UInt?): String =
     if (value.isEmpty) "{}" else
-    let (map = value.toMap())
-    let (multiline = map.length >= multilineThreshold && level != null && value is Mapping)
-    let (level_ = if (multiline) level + 1 else level)
-    (if (multiline) "{\n\(indent.repeat(level_))" else "{ ")
-    + new Listing {
-      for (k,v in map) {
-        let (path = path?.add(Key(k)))
-        "\(renderKey(k, "")) = \(render(convert(v, path), path, level_));"
-      }
-    }.join(if (multiline) "\n\(indent.repeat(level_))" else " ")
-    + if (multiline) "\n\(indent.repeat(level))}" else " }"
+      let (map = value.toMap())
+      let (multiline = map.length >= multilineThreshold && level != null && value is Mapping)
+      let (level_ = if (multiline) level!! + 1 else level)
+        (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
+        + new Listing {
+          for (k,v in map) {
+            let (path = path?.add(Key(k)))
+            "\(renderKey(k, "")) = \(render(convert(v, path), path, level_));"
+          }
+        }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
+        + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
 
   local function renderList(value: Listing|List, path: List<PathEntry>?, level: UInt?): String =
     if (value.isEmpty) "{}" else
-    let (path = path?.add(splatKey))
-    let (multiline = value.length >= multilineThreshold && level != null && !(value is List))
-    let (level_ = if (multiline) level + 1 else level)
-    (if (multiline) "{\n\(indent.repeat(level_))" else "{ ")
-    + value.toList()
-        .map((it) -> render(convert(it, path), path, level_))
-        .join(if (multiline) ",\n\(indent.repeat(level_))" else ", ")
-    + if (multiline) "\n\(indent.repeat(level))}" else " }"
+      let (path = path?.add(splatKey))
+      let (multiline = value.length >= multilineThreshold && level != null && !(value is List))
+      let (level_ = if (multiline) level!! + 1 else level)
+        (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
+        + value.toList()
+          .map((it) -> render(convert(it, path), path, level_))
+          .join(if (multiline) ",\n\(indent.repeat(level_!!))" else ", ")
+        + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
 
   local function renderDynamic(value: Dynamic|Typed, path: List<PathEntry>?, level: UInt?): String =
     let (list = if (value is Dynamic) value.toList() else List())
@@ -268,25 +270,27 @@ class Renderer extends ValueRenderer {
     let (entries = map.keys.toList().mapNonNull((k) ->
       let (path = path?.add(Prop(k)))
       let (v = convert(map[k], path))
-      if (omitNullProperties && v == null && k is String) null
-      else Pair(k, Pair(path, v))
+        if (omitNullProperties && v == null && k is String) null
+        else Pair(k, Pair(path, v))
     ))
-    if (entries.isEmpty && list.isEmpty) "{}" else
-    let (multiline = entries.length + list.length >= multilineThreshold && level != null)
-    let (level_ = if (multiline) level + 1 else level)
-    let (listPath = if (list.isEmpty) null else path?.add(splatKey))
-    (if (multiline) "{\n\(indent.repeat(level_))" else "{ ")
-    + new Listing {
-      for (kpv in entries) { // kpv = Pair(key, Pair(path, value))
-        "\(renderKey(kpv.key, "")) = \(render(kpv.value.value, kpv.value.key, level_));"
-      }
-      for (i,elt in list) {
-        when (i < list.lastIndex) {
-          "\(render(convert(elt, listPath), listPath, level_)),"
-        } else {
-          render(convert(list.last, listPath), listPath, level_)
-        }
-      }
-    }.join(if (multiline) "\n\(indent.repeat(level_))" else " ")
-    + if (multiline) "\n\(indent.repeat(level))}" else " }"
+      if (entries.isEmpty && list.isEmpty) "{}" else
+        let (multiline = entries.length + list.length >= multilineThreshold && level != null)
+        let (level_ = if (multiline) level!! + 1 else level)
+        let (listPath = if (list.isEmpty) null else path?.add(splatKey))
+          (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
+          + new Listing {
+            for (kpv in entries) { // kpv = Pair(key, Pair(path, value))
+              "\(renderKey(kpv.key, "")) = \(render(kpv.value.value, kpv.value.key, level_));"
+            }
+            for (i,elt in list) {
+              when (i < list.lastIndex) {
+                "\(render(convert(elt, listPath), listPath, level_)),"
+              } else {
+                render(convert(list.last, listPath), listPath, level_)
+              }
+            }
+          }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
+          + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
+
+  // endregion
 }
