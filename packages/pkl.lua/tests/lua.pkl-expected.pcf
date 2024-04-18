@@ -1,0 +1,177 @@
+examples {
+  ["default render document"] {
+    """
+    int = 1
+    float = 1.0
+    string = "two"
+    bool = true
+    null = nil
+    list = { 1, 2, 3 }
+    listing = {
+      "one",
+      "two",
+      "three"
+    }
+    map = { a = 1; b = 2; }
+    mapping = {
+      a = 1;
+      b = 2;
+    }
+    dynamic = {
+      a = 1;
+      b = 2;
+      nested = {
+        c = 3;
+        d = 4;
+      };
+    }
+    foo = {
+      type = "class Foo";
+      a = 1;
+      b = nil;
+    }
+    
+    """
+    """
+    a = 1
+    _ENV["weird-key"] = "hello"
+    _ENV["fáncy"] = true
+    _ENV["if"] = "keyword"
+    b = 2
+    _ENV[""] = nil
+    _ENV[1] = "three"
+    
+    """
+    """
+    a = 1
+    b = 2
+    _ENV["weird key"] = 3
+    _ENV[""] = nil
+    
+    """
+    """
+    type = "class Foo"
+    a = 1
+    b = nil
+    
+    """
+  }
+  ["default render value"] {
+    "123"
+    "123.5"
+    "\"hello\""
+    """
+    {
+      1,
+      2,
+      3
+    }
+    """
+    "{ 1, 2, 3 }"
+    """
+    {
+      a = 1;
+      b = 2;
+    }
+    """
+    "{ a = 1; b = 2; }"
+    "nil"
+    "true"
+    """
+    {
+      a = 1;
+      b = 2;
+    }
+    """
+    """
+    {
+      "one",
+      "two"
+    }
+    """
+    """
+    {
+      type = "class Foo";
+      a = 1;
+      b = nil;
+    }
+    """
+  }
+  ["empty documents"] {
+    ""
+    ""
+    ""
+  }
+  ["empty values"] {
+    "{}"
+    "{}"
+    "{}"
+    "{}"
+    "{}"
+  }
+  ["multiline threshold"] {
+    "{ threshold = 2; }"
+    """
+    {
+      threshold = 2;
+      a = 1;
+    }
+    """
+    """
+    {
+      threshold = 1;
+    }
+    """
+    "{ threshold = 3; }"
+    "{ threshold = 3; a = 1; }"
+    """
+    {
+      threshold = 3;
+      a = 1;
+      b = 2;
+    }
+    """
+  }
+  ["funky table keys"] {
+    """
+    {
+      ["a b"] = "space";
+      ["if"] = "keyword";
+      [{ 1, 2 }] = "list";
+      [12] = "int";
+      [12.1] = "float";
+      [true] = "boolean";
+      [{ a = 1; b = 2; }] = "dynamic";
+    }
+    """
+  }
+  ["string escapes"] {
+    """
+    {
+      "'",
+      '"',
+      "'\\"",
+      "\\nfoo\\n",
+      [[
+    foo
+    bar]],
+      [[
+    
+    foo
+    bar
+    ]],
+      [=[
+    [[foo
+    bar]]]=],
+      [==[
+    [[=[foo
+    bar]=]]]==],
+      "foo\\
+    \\tbar",
+      "\\a\\b\\f\\
+    \\r\\t\\v",
+      "\\u{1}\\u{7f}"
+    }
+    """
+  }
+}
