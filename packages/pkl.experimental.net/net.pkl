@@ -339,7 +339,7 @@ const function expandIPv6AddressString(_ip: IPv6AddressString): IPv6AddressStrin
 /// Given input "0123:0045:0006:0000:0000:0000:0000:7890", the output is "123:45:6::7890"
 /// Note that this may not produce optimally compressed addresses if there are multiple spans of repeated zero components
 const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressString =
-  let (trimmed = ip.split(":").map((octet) ->
+  let (trimmed = expandIPv6AddressString(ip).split(":").map((octet) ->
     if (octet == "0000") "0"
     else octet.dropWhile((c) -> c == "0")
   ).join(":"))
