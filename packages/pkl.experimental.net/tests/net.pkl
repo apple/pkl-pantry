@@ -143,6 +143,38 @@ facts {
     !("64:ff9b::0.0.0.0." is net.IPv6AddressString)
     !("64:ff9b::0.0.0.0.0" is net.IPv6AddressString)
   }
+  ["IPv6AddressString (miscellaneous IPv4)"] {
+    "0:0:0:0:0:0:0.0.0.0" is net.IPv6AddressString
+    "1:2:3:4:5:6:1.2.3.4" is net.IPv6AddressString
+    "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:255.255.255.255" is net.IPv6AddressString
+    "::1:1.2.3.4" is net.IPv6AddressString
+    "::1:2:3:4:5:1.2.3.4" is net.IPv6AddressString
+    "1::1.2.3.4" is net.IPv6AddressString
+    "1:2:3:4:5::1.2.3.4" is net.IPv6AddressString
+    "1:2:3:4::5:1.2.3.4" is net.IPv6AddressString
+    "1:2:3::4:5:1.2.3.4" is net.IPv6AddressString
+    "1:2::3:4:5:1.2.3.4" is net.IPv6AddressString
+    "1::2:3:4:5:1.2.3.4" is net.IPv6AddressString
+    "1:2:3::4:1.2.3.4" is net.IPv6AddressString
+    "1:2::3:1.2.3.4" is net.IPv6AddressString
+    "1::2:1.2.3.4" is net.IPv6AddressString
+    "::1.2.3.4" is net.IPv6AddressString
+    "::0.0.0.0" is net.IPv6AddressString
+    !("1:2:3:4:5:6:7:1.2.3.4" is net.IPv6AddressString)
+    !("1:2:3:4:5:6:1.2.3" is net.IPv6AddressString)
+    !("1:2:3:4:5:6:1.2.3.4.5" is net.IPv6AddressString)
+    !("1:2:3:4:5:6::1.2.3.4" is net.IPv6AddressString)
+    !(":1:2:3:4:5:1.2.3.4" is net.IPv6AddressString)
+    !(":1:2:3:4:5:6:1.2.3.4" is net.IPv6AddressString)
+    !("::1:2:3:4:5:6:1.2.3.4" is net.IPv6AddressString)
+    !("1::2::1.2.3.4" is net.IPv6AddressString)
+    !("1::2::3:1.2.3.4" is net.IPv6AddressString)
+    !("::1::2:1.2.3.4" is net.IPv6AddressString)
+    !("::1::1.2.3.4" is net.IPv6AddressString)
+    !("1:::2:1.2.3.4" is net.IPv6AddressString)
+    !("FFFFF::1.2.3.4" is net.IPv6AddressString)
+    !("1.2.3.4::" is net.IPv6AddressString)
+  }
   ["IPv4CIDRString"] {
     "0.0.0.0/1" is net.IPv4CIDRString
     "255.255.255.255/32" is net.IPv4CIDRString
