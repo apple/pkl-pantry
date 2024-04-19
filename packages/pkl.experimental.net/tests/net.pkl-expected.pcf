@@ -14,4 +14,12 @@ examples {
     "::"
     "::"
   }
+  ["compressIPv6AddressString with scoped addresses"] {
+    "fe80::5:6:7:8%0"
+    "fe80::1:0%0"
+    "fe80::%0"
+    "fe80::%1"
+    "fe80::%0"
+    "fe80::%1"
+  }
 }

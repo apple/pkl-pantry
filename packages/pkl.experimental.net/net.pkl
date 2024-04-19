@@ -335,15 +335,20 @@ const function expandIPv6AddressString(_ip: IPv6AddressString): IPv6AddressStrin
         else throw("unintelligible IPv6 address: " + ip))
         + (scope ?? "")
 
+// noinspection TypeMismatch
 /// Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to ::
 /// Given input "0123:0045:0006:0000:0000:0000:0000:7890", the output is "123:45:6::7890"
 /// Note that this may not produce optimally compressed addresses if there are multiple spans of repeated zero components
 const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressString =
-  let (trimmed = expandIPv6AddressString(ip).split(":").map((octet) ->
+  let (ip = expandIPv6AddressString(ip))
+  let (idx = ip.lastIndexOfOrNull("%"))
+  let (scope = idx.ifNonNull((it) -> ip.drop(it).replaceFirst(Regex("^%0+(?=[0-9])"), "%")))
+  let (ip = idx.ifNonNull((it) -> ip.take(it)) ?? ip)
+  let (trimmed = ip.split(":").map((octet) ->
     if (octet == "0000") "0"
     else octet.dropWhile((c) -> c == "0")
   ).join(":"))
-    trimmed.replaceFirst(Regex("(:|^)(0:)+0(:|$)"), "::")
+    trimmed.replaceFirst(Regex("(:|^)(0:)+0(:|$)"), "::") + (scope ?? "")
 
 function MACAddress(mac: MACAddressString): MACAddress = new {
   repr = mac.split(Regex("[.:-]")).map((octet) -> parseHexOctet(octet))

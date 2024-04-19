@@ -340,8 +340,8 @@ examples {
     net.expandIPv6AddressString("fe80:0000:0000:0000:0000:0000:0000:00%1")
     net.expandIPv6AddressString("fe80::%0")
     net.expandIPv6AddressString("fe80:0:0:0:5:6:7:8%1")
-    net.expandIPv6AddressString("fe80::%000") // we don't canonicalize scope ids
-    net.expandIPv6AddressString("fe80::%001")
+    net.expandIPv6AddressString("fe80::%000") // we don't canonicalize scope ids here
+    net.expandIPv6AddressString("fe80::%001") // that happens in compressIPv6AddressString
   }
   ["compressIPv6AddressString"] {
     net.compressIPv6AddressString("0001:0002:0003:0004:0005:0006:0007:0008")
@@ -350,5 +350,13 @@ examples {
     net.compressIPv6AddressString("1:2:3:4:0:6:7:8") // :: shouldn't compress a single field
     net.compressIPv6AddressString("::")
     net.compressIPv6AddressString("::0:0")
+  }
+  ["compressIPv6AddressString with scoped addresses"] {
+    net.compressIPv6AddressString("fe80:0000:0000:0000:0005:0006:0007:0008%0")
+    net.compressIPv6AddressString("fe80::1:0%0")
+    net.compressIPv6AddressString("fe80::%0")
+    net.compressIPv6AddressString("fe80::%1")
+    net.compressIPv6AddressString("fe80::%000") // we canonicalize scope ids here
+    net.compressIPv6AddressString("fe80::%001")
   }
 }
