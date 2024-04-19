@@ -318,16 +318,22 @@ function IPv6Range(start: IPv6Address, end: IPv6Address): Listing<IPv6Address> =
   }
 }
 
-/// Canonicalizes IPv6 addresses by expanding each component to be 4 digits (zero-padded) and expanding ::
-/// Given input "123:45:6::7890", the output is "0123:0045:0006:0000:0000:0000:0000:7890"
+// noinspection TypeMismatch
+/// Canonicalizes IPv6 addresses by expanding each component to be 4 digits (zero-padded) and expanding `::`
+///
+/// Given input `"123:45:6::7890"`, the output is `"0123:0045:0006:0000:0000:0000:0000:7890"`.
 const function expandIPv6AddressString(_ip: IPv6AddressString): IPv6AddressString =
-  if (_ip.length == 39) _ip // assume it's already canonicalized
-  else
-    let (ip = if (_ip.endsWith("::")) _ip + "0" else _ip)
+  let (idx = _ip.lastIndexOfOrNull("%"))
+    if ((idx ?? _ip.length) == 39) _ip // assume it's already canonicalized
+    else
+      let (scope = idx.ifNonNull((it) -> _ip.drop(it)))
+      let (ip = idx.ifNonNull((it) -> _ip.take(it)) ?? _ip)
+      let (ip = if (ip.endsWith("::")) ip + "0" else ip)
       let (stuff = ip.split("::").map((half) -> half.split(":").map((octet) -> octet.padStart(4, "0"))))
-        if (stuff.length == 1) stuff.first.join(":")
+        (if (stuff.length == 1) stuff.first.join(":")
         else if (stuff.length == 2) (stuff.first + List("0000").repeat(8 - stuff.first.length - stuff.last.length) + stuff.last).join(":")
-        else throw("unintelligible IPv6 address: " + ip)
+        else throw("unintelligible IPv6 address: " + ip))
+        + (scope ?? "")
 
 /// Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to ::
 /// Given input "0123:0045:0006:0000:0000:0000:0000:7890", the output is "123:45:6::7890"
