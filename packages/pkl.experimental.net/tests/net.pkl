@@ -348,8 +348,12 @@ examples {
     net.compressIPv6AddressString("fe80:000:000:000:1:000:000:1")
     net.compressIPv6AddressString("fe80::0001:0000:0000:0001")
     net.compressIPv6AddressString("1:2:3:4:0:6:7:8") // :: shouldn't compress a single field
+    net.compressIPv6AddressString("1:2:3:4::6:7:8")
     net.compressIPv6AddressString("::")
     net.compressIPv6AddressString("::0:0")
+    net.compressIPv6AddressString("FE80::A:B:C:D:E:F")
+    net.compressIPv6AddressString("2001:0:0:1:0:0:0:1")
+    net.compressIPv6AddressString("2001:db8:0:0:1:0:0:1")
   }
   ["compressIPv6AddressString with scoped addresses"] {
     net.compressIPv6AddressString("fe80:0000:0000:0000:0005:0006:0007:0008%0")
