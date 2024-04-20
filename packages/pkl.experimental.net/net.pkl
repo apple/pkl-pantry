@@ -357,6 +357,7 @@ const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressStri
   let (ip = idx.ifNonNull((it) -> ip.take(it)) ?? ip)
   let (trimmed = ip.split(":").map((octet) ->
     if (octet == "0000") "0"
+    else if (octet.contains(".")) octet // must be a trailing IPv4 address
     else octet.dropWhile((c) -> c == "0")
   ).join(":"))
   let (match = Regex(#"(?<=:|^)(?:0:)+0(?=:|$)"#).findMatchesIn(trimmed).maxByOrNull((it) -> it.value.length))

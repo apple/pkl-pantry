@@ -374,4 +374,11 @@ examples {
     net.compressIPv6AddressString("fe80::%000") // we canonicalize scope ids here
     net.compressIPv6AddressString("fe80::%001")
   }
+  ["compressIPv6AddressString with IPv4 suffix"] {
+    net.compressIPv6AddressString("::ffff:1.2.3.4")
+    net.compressIPv6AddressString("0000:0000:0000:0000:0000:ffff:001.020.000.004")
+    net.compressIPv6AddressString("fe80:0:0:0::1.2.3.4")
+    net.compressIPv6AddressString("fe80:0:0:0:0:0:0.0.0.0")
+    net.compressIPv6AddressString("::0.0.0.0")
+  }
 }
