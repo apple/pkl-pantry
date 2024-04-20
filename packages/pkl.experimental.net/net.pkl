@@ -322,18 +322,25 @@ function IPv6Range(start: IPv6Address, end: IPv6Address): Listing<IPv6Address> =
 /// Canonicalizes IPv6 addresses by expanding each component to be 4 digits (zero-padded) and expanding `::`
 ///
 /// Given input `"123:45:6::7890"`, the output is `"0123:0045:0006:0000:0000:0000:0000:7890"`.
+///
+/// If the input is in the alternate form with a trailing IPv4 address, the trailing IPv4 address will be kept intact,
+/// although any leading zeroes on the IPv4 components will be dropped.
 const function expandIPv6AddressString(_ip: IPv6AddressString): IPv6AddressString =
   let (idx = _ip.lastIndexOfOrNull("%"))
-    if ((idx ?? _ip.length) == 39) _ip // assume it's already canonicalized
+    if ((idx ?? _ip.length) == 39 && !_ip.contains(".")) _ip // assume it's already canonicalized
     else
       let (scope = idx.ifNonNull((it) -> _ip.drop(it)))
       let (ip = idx.ifNonNull((it) -> _ip.take(it)) ?? _ip)
+      let (ipIdx = ip.indexOfOrNull(Regex(":\(ipv4String)$")))
+      let (ipv4 = ipIdx.ifNonNull((it) -> ip.drop(it).replaceAll(Regex("0+(?=[0-9])"), "")))
+      let (ip = ipIdx.ifNonNull((it) -> if (ip[it-1] == ":") ip.take(it+1) else ip.take(it)) ?? ip)
       let (ip = if (ip.endsWith("::")) ip + "0" else ip)
+      let (groupCount = if (ipv4 == null) 8 else 6)
       let (stuff = ip.split("::").map((half) -> half.split(":").map((octet) -> octet.padStart(4, "0"))))
         (if (stuff.length == 1) stuff.first.join(":")
-        else if (stuff.length == 2) (stuff.first + List("0000").repeat(8 - stuff.first.length - stuff.last.length) + stuff.last).join(":")
-        else throw("unintelligible IPv6 address: " + ip))
-        + (scope ?? "")
+        else if (stuff.length == 2) (stuff.first + List("0000").repeat(groupCount - stuff.first.length - stuff.last.length) + stuff.last).join(":")
+        else throw("unintelligible IPv6 address: " + _ip))
+        + (ipv4 ?? "") + (scope ?? "")
 
 // noinspection TypeMismatch
 /// Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to `::`.
