@@ -336,12 +336,23 @@ facts {
 }
 
 examples {
+  ["expandIPv6AddressString"] {
+    net.expandIPv6AddressString("fe80::")
+    net.expandIPv6AddressString("fe80::1")
+    net.expandIPv6AddressString("::aa")
+  }
   ["expandIPv6AddressString with scoped addresses"] {
-    net.expandIPv6AddressString("fe80:0000:0000:0000:0000:0000:0000:00%1")
+    net.expandIPv6AddressString("fe80:0000:0000:0000:0000:0000:0000:00%1") // 39 bytes long
     net.expandIPv6AddressString("fe80::%0")
     net.expandIPv6AddressString("fe80:0:0:0:5:6:7:8%1")
     net.expandIPv6AddressString("fe80::%000") // we don't canonicalize scope ids here
     net.expandIPv6AddressString("fe80::%001") // that happens in compressIPv6AddressString
+  }
+  ["expandIPv6AddressString with IPv4 suffix"] {
+    net.expandIPv6AddressString("ffff:ffff:ffff:ffff:0:0:255.255.255.255") // 39 bytes long
+    net.expandIPv6AddressString("::1.2.3.4")
+    net.expandIPv6AddressString("2001:db8::1.2.3.4")
+    net.expandIPv6AddressString("a:b:c:d:e:f:001.000.030.000")
   }
   ["compressIPv6AddressString"] {
     net.compressIPv6AddressString("0001:0002:0003:0004:0005:0006:0007:0008")
