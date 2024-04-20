@@ -336,11 +336,15 @@ const function expandIPv6AddressString(_ip: IPv6AddressString): IPv6AddressStrin
         + (scope ?? "")
 
 // noinspection TypeMismatch
-/// Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to ::
-/// Given input "0123:0045:0006:0000:0000:0000:0000:7890", the output is "123:45:6::7890"
-/// Note that this may not produce optimally compressed addresses if there are multiple spans of repeated zero components
+/// Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to `::`.
+///
+/// Given input `"0123:0045:0006:0000:0000:0000:0000:7890"`, the output is `"123:45:6::7890"`.
+///
+/// If there are multiple possible spans of zeroes to collapse, the longest span is chosen. If there are multiple
+/// candidates for longest span, the first such span is chosen. The output is consistent with
+/// [RFC5952 §4.2.3](https://datatracker.ietf.org/doc/html/rfc5952#section-4.2.3).
 const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressString =
-  let (ip = expandIPv6AddressString(ip))
+  let (ip = expandIPv6AddressString(ip).toLowerCase())
   let (idx = ip.lastIndexOfOrNull("%"))
   let (scope = idx.ifNonNull((it) -> ip.drop(it).replaceFirst(Regex("^%0+(?=[0-9])"), "%")))
   let (ip = idx.ifNonNull((it) -> ip.take(it)) ?? ip)
@@ -348,7 +352,12 @@ const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressStri
     if (octet == "0000") "0"
     else octet.dropWhile((c) -> c == "0")
   ).join(":"))
-    trimmed.replaceFirst(Regex("(:|^)(0:)+0(:|$)"), "::") + (scope ?? "")
+  let (match = Regex(#"(?<=:|^)(?:0:)+0(?=:|$)"#).findMatchesIn(trimmed).maxByOrNull((it) -> it.value.length))
+    (if (match == null) trimmed // no groups to replace with ::
+    else if (match.start == 0 && match.end == trimmed.length) "::"
+    else if (match.start == 0 || match.end == trimmed.length) trimmed.replaceRange(match.start, match.end, ":")
+    else trimmed.replaceRange(match.start, match.end, ""))
+    + (scope ?? "")
 
 function MACAddress(mac: MACAddressString): MACAddress = new {
   repr = mac.split(Regex("[.:-]")).map((octet) -> parseHexOctet(octet))
