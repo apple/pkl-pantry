@@ -37,4 +37,11 @@ examples {
     "fe80::%0"
     "fe80::%1"
   }
+  ["compressIPv6AddressString with IPv4 suffix"] {
+    "::ffff:1.2.3.4"
+    "::ffff:1.20.0.4"
+    "fe80::1.2.3.4"
+    "fe80::0.0.0.0"
+    "::0.0.0.0"
+  }
 }
