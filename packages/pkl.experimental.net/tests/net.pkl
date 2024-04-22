@@ -423,6 +423,9 @@ examples {
     net.IPv6Address("::0:1").toString()
     net.IPv6Address("fe80::0").toString()
     net.IPv6Address("fe80:0000:0000:0000:0000:0000:0001:0000").toString()
+    net.IPv6Address("::ffff:7f00:1").toString()
+    net.IPv6Address("64:ff9b::c000:0221").toString()
+    net.IPv6Address("2001:db8:122:344::192.0.2.33").toString()
   }
   ["IPv6Address.toExpandedString()"] {
     net.IPv6Address("fe80::1").toExpandedString()
