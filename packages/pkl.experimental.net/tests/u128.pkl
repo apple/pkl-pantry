@@ -42,6 +42,16 @@ facts {
     u128.zero.lt(someValue)
     !someValue.lt(someValue)
   }
+  ["=="] {
+    u128.zero == u128.zero
+    u128.zero != u128.one
+    u128.one == u128.one
+    u128.one != u128.maxUInt128
+    u128.maxUInt128 == u128.maxUInt128
+    u128.zero != u128.UInt128(0, 0, 1, 0)
+    u128.zero != u128.UInt128(0, 1, 0, 0)
+    u128.zero != u128.UInt128(1, 0, 0, 0)
+  }
 }
 
 examples {

@@ -35,7 +35,7 @@ const function UInt128(high: UInt32, midHigh: UInt32, midLow: UInt32, low: UInt3
 
 /// An unsigned 128-bit integer.
 class UInt128 {
-  hidden words: List<UInt>(length == 4)
+  words: List<UInt>(length == 4)
   hidden hihi: UInt = words[3]
   hidden hilo: UInt = words[2]
   hidden lohi: UInt = words[1]
