@@ -181,6 +181,13 @@ function IPv6Address(ip: IPv6AddressString): IPv6Address =
 class IPv6Address {
   repr: u128.UInt128
   const hidden bitWidth: UInt = 128
+  /// Tells if this address is an IPv4-mapped address (`::ffff:0:0/96`).
+  fixed hidden isIPv4Mapped: Boolean =
+    repr.hihi == 0 && repr.hilo == 0 && repr.lohi == 0xffff
+  /// Tells if this address is an IPv4-embedded address using the Well-Known Prefix (`64:ff9b::/96`) described by
+  /// [RFC 6052 §2.1](https://tools.ietf.org/html/rfc6052#section-2.1).
+  fixed hidden isIPv4Embedded: Boolean =
+    repr.hihi == 0x64ff9b && repr.hilo == 0 && repr.lohi == 0
 
   local self = this
 
@@ -207,6 +214,9 @@ class IPv6Address {
   function add(n: UInt32): IPv6Address = new { repr = self.repr.add(u128.UInt128(0, 0, 0, n)) }
 
   /// Returns the [IPv6Address] in the canonical style described by [RFC 5952](https://tools.ietf.org/html/rfc5952).
+  ///
+  /// This includes returning the address in the alternative IPv4-suffixed format if it is [IPv4-mapped][isIPv4Mapped]
+  /// or [IPv4-embedded][isIPv4Embedded].
   function toString(): IPv6AddressString = compressIPv6AddressString(new Listing {
     repr.hihi.ushr(16).toRadixString(16)
     repr.hihi.and(math.maxUInt16).toRadixString(16)
@@ -214,8 +224,17 @@ class IPv6Address {
     repr.hilo.and(math.maxUInt16).toRadixString(16)
     repr.lohi.ushr(16).toRadixString(16)
     repr.lohi.and(math.maxUInt16).toRadixString(16)
-    repr.lolo.ushr(16).toRadixString(16)
-    repr.lolo.and(math.maxUInt16).toRadixString(16)
+    when (isIPv4Mapped || isIPv4Embedded) {
+      new Listing {
+        repr.lolo.ushr(24).toString()
+        repr.lolo.ushr(16).and(0xFF).toString()
+        repr.lolo.ushr(8).and(0xFF).toString()
+        repr.lolo.and(0xFF).toString()
+      }.join(".")
+    } else {
+      repr.lolo.ushr(16).toRadixString(16)
+      repr.lolo.and(math.maxUInt16).toRadixString(16)
+    }
   }.join(":"))
 
   /// Returns the [IPv6Address] as a string in expanded form.
