@@ -201,7 +201,25 @@ class IPv6Address {
   /// return the ip address [n] after this one
   function add(n: UInt32): IPv6Address = new { repr = self.repr.add(u128.UInt128(0, 0, 0, n)) }
 
-  function toString(): IPv6AddressString = expandIPv6AddressString(new Listing {
+  /// Returns the [IPv6Address] in the canonical style described by [RFC 5952](https://tools.ietf.org/html/rfc5952).
+  function toString(): IPv6AddressString = compressIPv6AddressString(new Listing {
+    repr.hihi.ushr(16).toRadixString(16)
+    repr.hihi.and(math.maxUInt16).toRadixString(16)
+    repr.hilo.ushr(16).toRadixString(16)
+    repr.hilo.and(math.maxUInt16).toRadixString(16)
+    repr.lohi.ushr(16).toRadixString(16)
+    repr.lohi.and(math.maxUInt16).toRadixString(16)
+    repr.lolo.ushr(16).toRadixString(16)
+    repr.lolo.and(math.maxUInt16).toRadixString(16)
+  }.join(":"))
+
+  /// Returns the [IPv6Address] as a string in expanded form.
+  ///
+  /// Example:
+  /// ```
+  /// IPv6Address("fe80::1").toExpandedString() == "fe80:0000:0000:0000:0000:0000:0000:0001"
+  /// ```
+  function toExpandedString(): IPv6AddressString = expandIPv6AddressString(new Listing {
     repr.hihi.ushr(16).toRadixString(16)
     repr.hihi.and(math.maxUInt16).toRadixString(16)
     repr.hilo.ushr(16).toRadixString(16)
@@ -297,7 +315,7 @@ class IPv6Network {
   /// Return true if this network contains [ip].
   function contains(ip: IPv6Address): Boolean = firstAddress.repr.le(ip.repr) && ip.repr.le(lastAddress.repr)
   /// Generate the name of the reverse DNS zone for this network.
-  function reverse(): String = expandIPv6AddressString(base.toString()).replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
+  function reverse(): String = base.toExpandedString().replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
 
   /// Calculate all subnets of this network with prefix [target].
   /// For example, given IPv6Network("2620:149:a:960::/61").subdivideTo(64), it outputs 8 /64 networks
@@ -308,7 +326,7 @@ class IPv6Network {
       ...new IPv6Network { base = new { repr = self.base.repr.add(u128.one.shl(bitWidth - self.prefix - 1)) }; prefix = self.prefix + 1 }.subdivideTo(target)
     }
 
-  function toString(): String = "\(compressIPv6AddressString(base.toString()))/\(prefix)"
+  function toString(): String = "\(base)/\(prefix)"
 }
 
 /// Produces a listing of IPv6 addresses between [start] and [end], inclusive.

@@ -24,7 +24,7 @@ local baseIP = net.IPv6Address("::")
 
 facts {
   ["MACAddress"] {
-    net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toString() == "0000:0000:0000:0000:3673:5aff:fefa:af22"
+    net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toExpandedString() == "0000:0000:0000:0000:3673:5aff:fefa:af22"
   }
   // note: IPv4Address() and IPv6Address() must be invoked prior to any tests that reference the IPv[46]AddressString
   // typealiases. This works around a pkl 0.25 bug that otherwise causes java exceptions.
@@ -413,5 +413,19 @@ examples {
     net.compressIPv6AddressString("fe80:0:0:0::1.2.3.4")
     net.compressIPv6AddressString("fe80:0:0:0:0:0:0.0.0.0")
     net.compressIPv6AddressString("::0.0.0.0")
+  }
+  ["IPv6Address.toString()"] {
+    net.IPv6Address("fe80::1").toString()
+    net.IPv6Address("101:1001:1010:110:100:1000:1100:1110").toString()
+    net.IPv6Address("::").toString()
+    net.IPv6Address("::0:1").toString()
+    net.IPv6Address("fe80::0").toString()
+    net.IPv6Address("fe80:0000:0000:0000:0000:0000:0001:0000").toString()
+  }
+  ["IPv6Address.toExpandedString()"] {
+    net.IPv6Address("fe80::1").toExpandedString()
+    net.IPv6Address("::").toExpandedString()
+    net.IPv6Address("::1").toExpandedString()
+    net.IPv6Address("2001:db8::").toExpandedString()
   }
 }
