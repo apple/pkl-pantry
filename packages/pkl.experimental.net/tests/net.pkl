@@ -324,6 +324,8 @@ facts {
     net.IPv6Address("1:10:100:1000:ff00:0ff0:00ff:f00f").repr == u128.UInt128(0x10010, 0x1001000, 0xff000ff0, 0xfff00f)
     net.IPv6Address("::a:b").repr == u128.UInt128(0, 0, 0, 0xa000b)
     net.IPv6Address("2001::").repr == u128.UInt128(0x20010000, 0, 0, 0)
+    net.IPv6Address("::ffff:129.144.52.38").repr == u128.UInt128(0, 0, 0xffff, 0x81903426)
+    net.IPv6Address("fe80::127.0.0.1").repr == u128.UInt128(0xfe800000, 0, 0, 0x7f000001)
   }
   ["IPv4AddressString can't contain unicode digits"] {
     // U+FF11 is FULLWIDTH DIGIT ONE

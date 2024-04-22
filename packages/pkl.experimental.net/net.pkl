@@ -160,15 +160,20 @@ class IPv4Address {
   }.join(".")
 }
 
+// noinspection TypeMismatch
 /// Creates an [IPv6Address] from an [IPv6AddressString].
 function IPv6Address(ip: IPv6AddressString): IPv6Address =
+  let (ipIdx = ip.indexOfOrNull(Regex(":\(ipv4String)$")))
+  let (ipv4 = ipIdx.ifNonNull((it) -> ip.drop(ipIdx+1).split(".").map((s) -> s.toInt())))
+  let (ip = ipIdx.ifNonNull((it) -> ip.replaceRange(it, ip.length, ":0:0")) ?? ip)
   let (_ip = expandIPv6AddressString(ip).toLowerCase().split(":"))
     new {
       repr = u128.UInt128(
         parseHex32(_ip[0] + _ip[1]),
         parseHex32(_ip[2] + _ip[3]),
         parseHex32(_ip[4] + _ip[5]),
-        parseHex32(_ip[6] + _ip[7])
+        if (ipv4 != null) ipv4[0].shl(24) + ipv4[1].shl(16) + ipv4[2].shl(8) + ipv4[3]
+        else parseHex32(_ip[6] + _ip[7])
       )
     }
 
