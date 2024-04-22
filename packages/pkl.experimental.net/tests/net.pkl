@@ -25,6 +25,25 @@ facts {
   ["MACAddress"] {
     net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toString() == "0000:0000:0000:0000:3673:5aff:fefa:af22"
   }
+  // note: IPv4Address() and IPv6Address() must be invoked prior to any tests that reference the IPv[46]AddressString
+  // typealiases. This works around a pkl 0.25 bug that otherwise causes java exceptions.
+  ["IPv4Address =="] {
+    net.IPv4Address("127.0.0.1") != net.IPv4Address("127.0.0.2")
+    net.IPv4Address("127.0.0.1") != net.IPv4Address("127.0.1.1")
+    net.IPv4Address("127.0.0.1") != net.IPv4Address("127.1.0.1")
+    net.IPv4Address("127.0.0.1") != net.IPv4Address("128.0.0.1")
+  }
+  ["IPv6Address =="] {
+    net.IPv6Address("fe80::1") == net.IPv6Address("fe80::1")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe80::2")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe80::1:1")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe80::1:0:1")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe80::1:0:0:1")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe80:0:0:1::1")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe80:0:1::1")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe80:1::1")
+    net.IPv6Address("fe80::1") != net.IPv6Address("fe81::1")
+  }
   ["IPv4AddressString"] {
     "0.0.0.0" is net.IPv4AddressString
     "127.0.0.1" is net.IPv4AddressString

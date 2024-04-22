@@ -133,7 +133,7 @@ function IPv4Address(ip: IPv4AddressString): IPv4Address = new {
 
 /// An IPv4 address.
 class IPv4Address {
-  hidden repr: UInt32
+  repr: UInt32
   const hidden bitWidth: UInt = 32
 
   local self = this
@@ -174,7 +174,7 @@ function IPv6Address(ip: IPv6AddressString): IPv6Address =
 
 /// An IPv6 address.
 class IPv6Address {
-  hidden repr: u128.UInt128
+  repr: u128.UInt128
   const hidden bitWidth: UInt = 128
 
   local self = this
