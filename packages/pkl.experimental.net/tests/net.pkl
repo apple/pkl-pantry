@@ -18,6 +18,7 @@ module pkl.experimental.net.tests.net
 amends "pkl:test"
 
 import "../net.pkl"
+import "../u128.pkl"
 
 local baseIP = net.IPv6Address("::")
 
@@ -310,6 +311,19 @@ facts {
     !("0.0.0.0:1" is net.IPv6AddressPortString)
     !("[0.0.0.0]:1" is net.IPv6AddressPortString)
     !("::1:10" is net.IPv6AddressPortString)
+  }
+  ["IPv4Address()"] {
+    net.IPv4Address("127.0.0.1").repr == 0x7F000001
+    net.IPv4Address("0.0.0.0").repr == 0
+    net.IPv4Address("255.255.255.255").repr == 0xFFFFFFFF
+    net.IPv4Address("126.127.128.129").repr == 0x7E7F8081
+    net.IPv4Address("172.16.254.1").repr == 0xAC10FE01
+  }
+  ["IPv6Address()"] {
+    net.IPv6Address("fe80::1").repr == u128.UInt128(0xFE800000, 0, 0, 1)
+    net.IPv6Address("1:10:100:1000:ff00:0ff0:00ff:f00f").repr == u128.UInt128(0x10010, 0x1001000, 0xff000ff0, 0xfff00f)
+    net.IPv6Address("::a:b").repr == u128.UInt128(0, 0, 0, 0xa000b)
+    net.IPv6Address("2001::").repr == u128.UInt128(0x20010000, 0, 0, 0)
   }
   ["IPv4AddressString can't contain unicode digits"] {
     // U+FF11 is FULLWIDTH DIGIT ONE
