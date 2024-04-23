@@ -322,10 +322,71 @@ facts {
     net.IPv6Address("ff00::%2").scopeId == 2
     net.IPv6Address("fe80::%123").scopeId == 123
     net.IPv6Address("fe80::%0").scopeId == 0
+    // check that manually-constructed addresses respect restrictions on scopeId
+    let (ip = net.IPv6Address("::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("::1")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("fec0::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("2001:db8::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("ff0e::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("ff0f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("fe7f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("fe80:0:0:1::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
   }
   ["IPv6Address methods work with scopeId"] {
     net.IPv6Address("fe80::%1").next() == net.IPv6Address("fe80::1%1")
     net.IPv6Address("fe80::1:2%1").reverse() == net.IPv6Address("fe80::1:2").reverse() // scopeId gets ignored here
+  }
+  ["IPv6Address.isUnspecified"] {
+    net.IPv6Address("::").isUnspecified
+    !net.IPv6Address("::1").isUnspecified
+    !net.IPv6Address("1::").isUnspecified
+  }
+  ["IPv6Address.isLoopback"] {
+    net.IPv6Address("::1").isLoopback
+    !net.IPv6Address("::").isLoopback
+    !net.IPv6Address("1::").isLoopback
+    !net.IPv6Address("::127.0.0.1").isLoopback
+    !net.IPv6Address("::ffff:127.0.0.1").isLoopback
+    !net.IPv6Address("::ffff:0:127.0.0.1").isLoopback
+    !net.IPv6Address("64:ff9b::127.0.0.1").isLoopback
+  }
+  ["IPv6Address.isIPv4Mapped"] {
+    net.IPv6Address("::ffff:192.168.1.1").isIPv4Mapped
+    net.IPv6Address("::ffff:0.0.0.0").isIPv4Mapped
+    net.IPv6Address("::ffff:255.255.255.255").isIPv4Mapped
+    !net.IPv6Address("::192.168.1.1").isIPv4Mapped
+    !net.IPv6Address("::ffff:0:192.168.1.1").isIPv4Mapped
+    !net.IPv6Address("::ffff:255.255.255.255").next().isIPv4Mapped
+    !net.IPv6Address("::fffe:255.255.255.255").isIPv4Mapped
+    !net.IPv6Address("64:ff9b::192.168.1.1").isIPv4Mapped
+  }
+  ["IPv6Address.isIPv4Embedded"] {
+    net.IPv6Address("64:ff9b::192.168.1.1").isIPv4Embedded
+    net.IPv6Address("64:ff9b::0.0.0.0").isIPv4Embedded
+    net.IPv6Address("64:ff9b::255.255.255.255").isIPv4Embedded
+    !net.IPv6Address("64:ff9b::255.255.255.255").next().isIPv4Embedded
+    !net.IPv6Address("64:ff9a::255.255.255.255").isIPv4Embedded
+    !net.IPv6Address("::ffff:192.168.1.1").isIPv4Embedded
+    !net.IPv6Address("0:64:ff9b::192.168.1.1").isIPv4Embedded
+  }
+  ["IPv6Address.isNonGlobalScope"] {
+    // link-local unicast
+    net.IPv6Address("fe80::").isNonGlobalScope
+    net.IPv6Address("fe80::ffff:ffff:ffff:ffff").isNonGlobalScope
+    net.IPv6Address("fe80:0:0:0:1::").isNonGlobalScope
+    !net.IPv6Address("fe80:0:0:1::").isNonGlobalScope
+    !net.IPv6Address("fe81::").isNonGlobalScope
+    // multicast
+    net.IPv6Address("ff00::").isNonGlobalScope
+    net.IPv6Address("ff10::").isNonGlobalScope
+    net.IPv6Address("fffd::").isNonGlobalScope
+    !net.IPv6Address("ff0e::").isNonGlobalScope // scop=e
+    !net.IPv6Address("ff0f::").isNonGlobalScope // scop>e
+    !net.IPv6Address("fe00::").isNonGlobalScope
+    // addresses that don't count
+    !net.IPv6Address("::").isNonGlobalScope
+    !net.IPv6Address("::1").isNonGlobalScope
+    !net.IPv6Address("fec0::").isNonGlobalScope // site-local, deprecated
   }
   ["IPv4AddressString can't contain unicode digits"] {
     // U+FF11 is FULLWIDTH DIGIT ONE
