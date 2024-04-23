@@ -238,7 +238,7 @@ class IPv6Address {
   ///
   /// This includes returning the address in the alternative IPv4-suffixed format if it is [IPv4-mapped][isIPv4Mapped]
   /// or [IPv4-embedded][isIPv4Embedded].
-  function toString(): IPv6AddressString = compressIPv6AddressString(new Listing {
+  function toString(): IPv6AddressString = _compressIPv6Groups(new Listing {
     repr.hihi.ushr(16).toRadixString(16)
     repr.hihi.and(math.maxUInt16).toRadixString(16)
     repr.hilo.ushr(16).toRadixString(16)
@@ -423,12 +423,16 @@ const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressStri
     else if (octet.contains(".")) octet // must be a trailing IPv4 address
     else octet.dropWhile((c) -> c == "0")
   ).join(":"))
-  let (match = Regex(#"(?<=:|^)(?:0:)+0(?=:|$)"#).findMatchesIn(trimmed).maxByOrNull((it) -> it.value.length))
-    (if (match == null) trimmed // no groups to replace with ::
-    else if (match.start == 0 && match.end == trimmed.length) "::"
-    else if (match.start == 0 || match.end == trimmed.length) trimmed.replaceRange(match.start, match.end, ":")
-    else trimmed.replaceRange(match.start, match.end, ""))
-    + (scope ?? "")
+  _compressIPv6Groups(trimmed) + (scope ?? "")
+
+// Performs only the portion of IPv6 address canonicalization that is replacing the longest sequence of zeroes
+// with `::`.
+local const function _compressIPv6Groups(ip: String): IPv6AddressString =
+  let (match = Regex(#"(?<=:|^)(?:0:)+0(?=:|$)"#).findMatchesIn(ip).maxByOrNull((it) -> it.value.length))
+    if (match == null) ip // no groups to replace with ::
+    else if (match.start == 0 && match.end == ip.length) "::"
+    else if (match.start == 0 || match.end == ip.length) ip.replaceRange(match.start, match.end, ":")
+    else ip.replaceRange(match.start, match.end, "")
 
 function MACAddress(mac: MACAddressString): MACAddress = new {
   repr = mac.split(Regex("[.:-]")).map((octet) -> parseHexOctet(octet))
