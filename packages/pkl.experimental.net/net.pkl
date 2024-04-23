@@ -352,23 +352,28 @@ class IPv6Network {
 
   /// The first address in this network.
   /// Will be equivalent to [lastAddress] when [prefix] is equal to [bitWidth].
-  fixed firstAddress: IPv6Address = new { repr = base.repr.and(base.maskHi(prefix)) }
+  fixed firstAddress: IPv6Address = (base) { repr = base.repr.and(base.maskHi(prefix)) }
   /// The last address in this network.
   /// Will be equivalent to [firstAddress] when [prefix] is equal to [bitWidth].
-  fixed lastAddress: IPv6Address = new { repr = base.repr.or(base.maskLo(bitWidth - prefix)) }
+  fixed lastAddress: IPv6Address = (base) { repr = base.repr.or(base.maskLo(bitWidth - prefix)) }
 
   /// Return true if this network contains [ip].
-  function contains(ip: IPv6Address): Boolean = firstAddress.repr.le(ip.repr) && ip.repr.le(lastAddress.repr)
+  ///
+  /// If both [base.scopeId][IPv6Address.scopeId] and [ip.scopeId][IPv6Address.scopeId] are non-[null], they must match.
+  /// If either is [null] then scope ID is ignored.
+  function contains(ip: IPv6Address): Boolean = firstAddress.repr.le(ip.repr) && ip.repr.le(lastAddress.repr) &&
+    (base.scopeId == ip.scopeId || base.scopeId == null || ip.scopeId == null)
   /// Generate the name of the reverse DNS zone for this network.
   function reverse(): String = (base) { scopeId = null }.toExpandedString().replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
 
   /// Calculate all subnets of this network with prefix [target].
-  /// For example, given IPv6Network("2620:149:a:960::/61").subdivideTo(64), it outputs 8 /64 networks
+  ///
+  /// For example, given `IPv6Network("2620:149:a:960::/61").subdivideTo(64)`, it outputs 8 /64 networks
   function subdivideTo(target: UInt(isBetween(0, bitWidth) && this >= prefix)): Listing<IPv6Network> =
     if (prefix == target) new { self }
     else new {
-      ...new IPv6Network { base = self.base; prefix = self.prefix + 1 }.subdivideTo(target)
-      ...new IPv6Network { base = new { repr = self.base.repr.add(u128.one.shl(bitWidth - self.prefix - 1)) }; prefix = self.prefix + 1 }.subdivideTo(target)
+      ...(self) { prefix = self.prefix + 1 }.subdivideTo(target)
+      ...(self) { base { repr = self.base.repr.add(u128.one.shl(bitWidth - self.prefix - 1)) }; prefix = self.prefix + 1 }.subdivideTo(target)
     }
 
   function toString(): String = "\(base)/\(prefix)"

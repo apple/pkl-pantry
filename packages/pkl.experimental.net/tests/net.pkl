@@ -49,6 +49,12 @@ facts {
     net.IPv6Address("fe80::1%1") != net.IPv6Address("fe80::1")
     net.IPv6Address("fe80::1%0") != net.IPv6Address("fe80::1")
   }
+  // similarly IPv6Network() must be invoked prior to using IPv6CIDRString
+  ["IPv6Network =="] {
+    net.IPv6Network("2001:db8::/96") == net.IPv6Network("2001:db8::/96")
+    net.IPv6Network("2001:db8::/96") != net.IPv6Network("2001:db8::/48")
+    net.IPv6Network("2001:db8::/96") != net.IPv6Network("2001:db8::1/96")
+  }
   ["IPv4AddressString"] {
     "0.0.0.0" is net.IPv4AddressString
     "127.0.0.1" is net.IPv4AddressString
@@ -387,6 +393,22 @@ facts {
     !net.IPv6Address("::").isNonGlobalScope
     !net.IPv6Address("::1").isNonGlobalScope
     !net.IPv6Address("fec0::").isNonGlobalScope // site-local, deprecated
+  }
+  ["IPv6Network.contains() and scopeId"] {
+    net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1"))
+    net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1%1"))
+    net.IPv6Network("fe80::/96").contains(net.IPv6Address("fe80::1%1"))
+    !net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1%2"))
+  }
+  ["IPv6Network.subdivideTo() preserves scopeId"] {
+    net.IPv6Network("fe80::%1/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == 1)
+    net.IPv6Network("fe80::/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == null)
+  }
+  ["IPv6Network first/last address preserves scopeId"] {
+    net.IPv6Network("fe80::%1/64").firstAddress.scopeId == 1
+    net.IPv6Network("fe80::%1/64").lastAddress.scopeId == 1
+    net.IPv6Network("fe80::/64").firstAddress.scopeId == null
+    net.IPv6Network("fe80::/64").lastAddress.scopeId == null
   }
   ["IPv4AddressString can't contain unicode digits"] {
     // U+FF11 is FULLWIDTH DIGIT ONE
