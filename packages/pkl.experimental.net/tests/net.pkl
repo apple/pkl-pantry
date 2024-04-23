@@ -44,6 +44,10 @@ facts {
     net.IPv6Address("fe80::1") != net.IPv6Address("fe80:0:1::1")
     net.IPv6Address("fe80::1") != net.IPv6Address("fe80:1::1")
     net.IPv6Address("fe80::1") != net.IPv6Address("fe81::1")
+    net.IPv6Address("fe80::1%1") == net.IPv6Address("fe80::1%1")
+    net.IPv6Address("fe80::1%1") != net.IPv6Address("fe80::1%2")
+    net.IPv6Address("fe80::1%1") != net.IPv6Address("fe80::1")
+    net.IPv6Address("fe80::1%0") != net.IPv6Address("fe80::1")
   }
   ["IPv4AddressString"] {
     "0.0.0.0" is net.IPv4AddressString
@@ -310,6 +314,19 @@ facts {
     net.IPv6Address("::ffff:129.144.52.38").repr == u128.UInt128(0, 0, 0xffff, 0x81903426)
     net.IPv6Address("fe80::127.0.0.1").repr == u128.UInt128(0xfe800000, 0, 0, 0x7f000001)
   }
+  ["IPv6Address() scopeId"] {
+    net.IPv6Address("fe80::1").scopeId == null
+    net.IPv6Address("fe80::127.0.0.1").scopeId == null
+    net.IPv6Address("fe80:3::1ff:fe23:4567:890a").scopeId == null // non-standard alternative we don't support
+    net.IPv6Address("fe80::1%1").scopeId == 1
+    net.IPv6Address("ff00::%2").scopeId == 2
+    net.IPv6Address("fe80::%123").scopeId == 123
+    net.IPv6Address("fe80::%0").scopeId == 0
+  }
+  ["IPv6Address methods work with scopeId"] {
+    net.IPv6Address("fe80::%1").next() == net.IPv6Address("fe80::1%1")
+    net.IPv6Address("fe80::1:2%1").reverse() == net.IPv6Address("fe80::1:2").reverse() // scopeId gets ignored here
+  }
   ["IPv4AddressString can't contain unicode digits"] {
     // U+FF11 is FULLWIDTH DIGIT ONE
     !("25\u{FF11}.0.0.0" is net.IPv4AddressString)
@@ -409,11 +426,16 @@ examples {
     net.IPv6Address("::ffff:7f00:1").toString()
     net.IPv6Address("64:ff9b::c000:0221").toString()
     net.IPv6Address("2001:db8:122:344::192.0.2.33").toString()
+    net.IPv6Address("fe80::1%1").toString()
+    net.IPv6Address("ff11::1%02").toString()
+    net.IPv6Address("fe80::%0").toString()
   }
   ["IPv6Address.toExpandedString()"] {
     net.IPv6Address("fe80::1").toExpandedString()
     net.IPv6Address("::").toExpandedString()
     net.IPv6Address("::1").toExpandedString()
     net.IPv6Address("2001:db8::").toExpandedString()
+    net.IPv6Address("fe80::1%1").toExpandedString()
+    net.IPv6Address("fe80::1%0").toExpandedString()
   }
 }
