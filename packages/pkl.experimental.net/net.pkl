@@ -380,9 +380,13 @@ class IPv6Network {
 }
 
 /// Produces a listing of IPv6 addresses between [start] and [end], inclusive.
+///
+/// If both [start.scopeId][IPv6Address.scopeId] and [end.scopeId][IPv6Address.scopeId] are equal, the resulting
+/// addresses will have the same scope ID, otherwise their [scopeId][IPv6Address.scopeId] will be [null].
 function IPv6Range(start: IPv6Address, end: IPv6Address): Listing<IPv6Address> = new {
+  local _scopeId = if (start.scopeId == end.scopeId) start.scopeId else null
   for (ipu in start.repr.seq(end.repr)) {
-    new { repr = ipu }
+    new { repr = ipu; scopeId = _scopeId }
   }
 }
 

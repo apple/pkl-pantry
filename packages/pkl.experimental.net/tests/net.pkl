@@ -410,6 +410,13 @@ facts {
     net.IPv6Network("fe80::/64").firstAddress.scopeId == null
     net.IPv6Network("fe80::/64").lastAddress.scopeId == null
   }
+  ["IPv6Range() preserves scopeId as appropriate"] {
+    net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%1")).toList().every((ip) -> ip.scopeId == 1)
+    net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%2")).toList().every((ip) -> ip.scopeId == null)
+    net.IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10%1")).toList().every((ip) -> ip.scopeId == null)
+    net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10")).toList().every((ip) -> ip.scopeId == null)
+    net.IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10")).toList().every((ip) -> ip.scopeId == null)
+  }
   ["IPv4AddressString can't contain unicode digits"] {
     // U+FF11 is FULLWIDTH DIGIT ONE
     !("25\u{FF11}.0.0.0" is net.IPv4AddressString)
