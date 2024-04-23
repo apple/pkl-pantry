@@ -277,13 +277,13 @@ class IPv6Address {
 }
 
 /// Creates an [IPNetwork] from an IPv4 or IPv6 CIDR block string
-function IPNetwork(cidr: String): IPNetwork =
-  if (cidr.split("/").first is IPv4AddressString) IPv4Network(cidr)
-  else if (cidr.split("/").first is IPv6AddressString) IPv6Network(cidr)
+function IPNetwork(cidr: IPCIDRString): IPNetwork =
+  if (cidr is IPv4CIDRString) IPv4Network(cidr)
+  else if (cidr is IPv6CIDRString) IPv6Network(cidr)
   else throw("Invalid network CIDR: \(cidr)")
 
 /// Creates an [IPv4Network] from an IPv4 CIDR block string
-function IPv4Network(cidr: String): IPv4Network = new {
+function IPv4Network(cidr: IPv4CIDRString): IPv4Network = new {
   base = IPv4Address(cidr.split("/").first)
   prefix = cidr.split("/").last.toInt()
 }
@@ -334,7 +334,7 @@ function IPv4Range(start: IPv4Address, end: IPv4Address): Listing<IPv4Address> =
 }
 
 /// Creates an [IPv6Network] from an IPv6 CIDR block string
-function IPv6Network(cidr: String): IPv6Network = new {
+function IPv6Network(cidr: IPv6CIDRString): IPv6Network = new {
   base = IPv6Address(cidr.split("/").first)
   prefix = cidr.split("/").last.toInt()
 }
