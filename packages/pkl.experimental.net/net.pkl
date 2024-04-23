@@ -164,6 +164,9 @@ class IPv4Address {
 // noinspection TypeMismatch
 /// Creates an [IPv6Address] from an [IPv6AddressString].
 function IPv6Address(ip: IPv6AddressString): IPv6Address =
+  let (idx = ip.lastIndexOfOrNull("%"))
+  let (scope = idx.ifNonNull((it) -> ip.drop(it+1).toInt()))
+  let (ip = idx.ifNonNull((it) -> ip.take(it)) ?? ip)
   let (ipIdx = ip.indexOfOrNull(Regex(":\(ipv4String)$")))
   let (ipv4 = ipIdx.ifNonNull((it) -> ip.drop(ipIdx+1).split(".").map((s) -> s.toInt())))
   let (ip = ipIdx.ifNonNull((it) -> ip.replaceRange(it, ip.length, ":0:0")) ?? ip)
@@ -176,12 +179,21 @@ function IPv6Address(ip: IPv6AddressString): IPv6Address =
         if (ipv4 != null) ipv4[0].shl(24) + ipv4[1].shl(16) + ipv4[2].shl(8) + ipv4[3]
         else parseHex32(_ip[6] + _ip[7])
       )
+      scopeId = scope
     }
 
 /// An IPv6 address.
 class IPv6Address {
   repr: u128.UInt128
+  /// The scope ID associated with this address, or [null] if the scope is unknown or not applicable.
+  ///
+  /// Only addresses of [non-global scope][isNonGlobalScope] are allowed to have a scope ID.
+  scopeId: UInt(isNonGlobalScope)?
   const hidden bitWidth: UInt = 128
+  /// Tells if this address is the unspecified address (`::`).
+  fixed hidden isUnspecified: Boolean = repr == u128.zero
+  /// Tells if this address is the loopback address (`::1`).
+  fixed hidden isLoopback: Boolean = repr == u128.one
   /// Tells if this address is an IPv4-mapped address (`::ffff:0:0/96`).
   fixed hidden isIPv4Mapped: Boolean =
     repr.hihi == 0 && repr.hilo == 0 && repr.lohi == 0xffff
@@ -189,6 +201,14 @@ class IPv6Address {
   /// [RFC 6052 §2.1](https://tools.ietf.org/html/rfc6052#section-2.1).
   fixed hidden isIPv4Embedded: Boolean =
     repr.hihi == 0x64ff9b && repr.hilo == 0 && repr.lohi == 0
+  /// Tells if this address has non-global unicast or multicast scope.
+  ///
+  /// Returns [true] for link-local unicast and for multicast with "scop" field less than global. Returns [false] for
+  /// the [unspecified address][isUnspecified] and the [loopback address][isLoopback], and for site-local addresses as
+  /// per [RFC 4291 §2.5.7](https://tools.ietf.org/html/rfc4291#section-2.5.7).
+  fixed hidden isNonGlobalScope: Boolean =
+    (repr.hihi == 0xfe800000 && repr.hilo == 0) ||
+      (repr.hihi.ushr(24) == 0xff && repr.hihi.ushr(16).and(0xF) < 0xE)
 
   local self = this
 
@@ -212,7 +232,7 @@ class IPv6Address {
   function next(): IPv6Address = add(1)
 
   /// return the ip address [n] after this one
-  function add(n: UInt32): IPv6Address = new { repr = self.repr.add(u128.UInt128(0, 0, 0, n)) }
+  function add(n: UInt32): IPv6Address = (self) { repr = self.repr.add(u128.UInt128(0, 0, 0, n)) }
 
   /// Returns the [IPv6Address] in the canonical style described by [RFC 5952](https://tools.ietf.org/html/rfc5952).
   ///
@@ -236,7 +256,7 @@ class IPv6Address {
       repr.lolo.ushr(16).toRadixString(16)
       repr.lolo.and(math.maxUInt16).toRadixString(16)
     }
-  }.join(":"))
+  }.join(":")) + (scopeId.ifNonNull((id) -> "%\(id)") ?? "")
 
   /// Returns the [IPv6Address] as a string in expanded form.
   ///
@@ -253,7 +273,7 @@ class IPv6Address {
     repr.lohi.and(math.maxUInt16).toRadixString(16)
     repr.lolo.ushr(16).toRadixString(16)
     repr.lolo.and(math.maxUInt16).toRadixString(16)
-  }.join(":"))
+  }.join(":")) + (scopeId.ifNonNull((id) -> "%\(id)") ?? "")
 }
 
 /// Creates an [IPNetwork] from an IPv4 or IPv6 CIDR block string
@@ -340,7 +360,7 @@ class IPv6Network {
   /// Return true if this network contains [ip].
   function contains(ip: IPv6Address): Boolean = firstAddress.repr.le(ip.repr) && ip.repr.le(lastAddress.repr)
   /// Generate the name of the reverse DNS zone for this network.
-  function reverse(): String = base.toExpandedString().replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
+  function reverse(): String = (base) { scopeId = null }.toExpandedString().replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
 
   /// Calculate all subnets of this network with prefix [target].
   /// For example, given IPv6Network("2620:149:a:960::/61").subdivideTo(64), it outputs 8 /64 networks
