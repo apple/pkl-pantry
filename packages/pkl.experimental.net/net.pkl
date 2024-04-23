@@ -55,18 +55,15 @@ const hidden ipv6String = #"""
 // language=RegExp
 const hidden nonGlobalIPv6String = #"""
   (?xi-U:
-    (?:                                          # first 16-bit group
-      ff[0-9a-f][0-9a-df]                        # multicast (FF00::/8 excepting scope E (global scope))
-    | fe[c-f][0-9a-f]                            # site-local unicast (FEC0::/10)
-    )(?:                                         # remaining 7 16-bit groups
-      (:[0-9a-f]{1,4}){7}                        # Fxxx:x:x:x:x:x:x:x
-    | :(:|(:[0-9a-f]{1,4}){1,6})                 # Fxxx:: … Fxxx::x:x:x:x:x:x
-    | :[0-9a-f]:(:|(:[0-9a-f]{1,4}){1,5})        # Fxxx:x:: … Fxxx:x::x:x:x:x:x
-    | (:[0-9a-f]){2}:(:|(:[0-9a-f]{1,4}){1,4})   # Fxxx:x:x:: … Fxxx:x:x::x:x:x:x
-    | (:[0-9a-f]){3}:(:|(:[0-9a-f]{1,4}){1,3})   # Fxxx:x:x:x:: … Fxxx:x:x:x::x:x:x
-    | (:[0-9a-f]){4}:(:|(:[0-9a-f]{1,4}){1,2})   # Fxxx:x:x:x:x:: … Fxxx:x:x:x:x::x:x
-    | (:[0-9a-f]){5}:(:|(:[0-9a-f]{1,4}))        # Fxxx:x:x:x:x:x:: … Fxxx:x:x:x:x:x::x
-    | (:[0-9a-f]){6}::                           # Fxxx:x:x:x:x:x:x::
+    ff[0-9a-f][0-9a-d](?:                        # multicast (FF00::/8 with "scop" less than E (global scope))
+      (:[0-9a-f]{1,4}){7}                        # FFxx:x:x:x:x:x:x:x
+    | :(:|(:[0-9a-f]{1,4}){1,6})                 # FFxx:: … FFxx::x:x:x:x:x:x
+    | :[0-9a-f]:(:|(:[0-9a-f]{1,4}){1,5})        # FFxx:x:: … FFxx:x::x:x:x:x:x
+    | (:[0-9a-f]){2}:(:|(:[0-9a-f]{1,4}){1,4})   # FFxx:x:x:: … FFxx:x:x::x:x:x:x
+    | (:[0-9a-f]){3}:(:|(:[0-9a-f]{1,4}){1,3})   # FFxx:x:x:x:: … FFxx:x:x:x::x:x:x
+    | (:[0-9a-f]){4}:(:|(:[0-9a-f]{1,4}){1,2})   # FFxx:x:x:x:x:: … FFxx:x:x:x:x::x:x
+    | (:[0-9a-f]){5}:(:|(:[0-9a-f]{1,4}))        # FFxx:x:x:x:x:x:: … FFxx:x:x:x:x:x::x
+    | (:[0-9a-f]){6}::                           # FFxx:x:x:x:x:x:x::
     )
   | fe80(?:                                      # link-local unicast (FE80::/10)
       (:0{1,4}){3}(?:                            # FE80:0:0:0…
@@ -99,6 +96,10 @@ typealias IPNetwork = IPv4Network|IPv6Network
 // language=RegExp
 typealias IPv4AddressString = String(matches(Regex(net.ipv4String)))
 /// A string that contains an IPv6 address.
+///
+/// IPv6 unicast and multicast addresses of non-global scope except for the unspecified address and the loopback address
+/// may include a scope ID suffix, e.g. `"fe80::1234%1"`. Site-local unicast addresses (`fec0::/10`) are deprecated and
+/// thus are considered to be global unicast addresses.
 // language=RegExp
 typealias IPv6AddressString = String(matches(Regex(net.ipv6String)))
 

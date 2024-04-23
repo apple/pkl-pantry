@@ -217,30 +217,12 @@ facts {
     !("fe80::%%1" is net.IPv6AddressString)
     !("fe80::%1%1" is net.IPv6AddressString)
   }
-  ["Scoped IPv6AddressString (site-local unicast)"] {
-    "fec0::%1" is net.IPv6AddressString
-    "FEC0::%1" is net.IPv6AddressString
-    "fefe::%1" is net.IPv6AddressString
-    "fec0::%999" is net.IPv6AddressString
-    "fec0:0:0:0:0:0:0:0%0" is net.IPv6AddressString
-    "fefe::1%1" is net.IPv6AddressString
-    "fec1:2:3:4::8%1" is net.IPv6AddressString
-    "fec1::3:4:5:6:7:8%1" is net.IPv6AddressString
-    !("fec0::%" is net.IPv6AddressString)
-    !("fec0::%-1" is net.IPv6AddressString)
-    !("fec0::% 1" is net.IPv6AddressString)
-    !("fec0::%%1" is net.IPv6AddressString)
-    !("fec0::%1%1" is net.IPv6AddressString)
-    !("fec0::%a" is net.IPv6AddressString)
-    !("fec0::%eth0" is net.IPv6AddressString)
-    !("fec0:1:2:3:4:5:6:7:8%1" is net.IPv6AddressString)
-  }
   ["Scoped IPv6AddressString (multicast)"] {
     "ff00::%1" is net.IPv6AddressString
     "FF00::%1" is net.IPv6AddressString
-    "ff0f::%1" is net.IPv6AddressString
-    "ff1f::%1" is net.IPv6AddressString
-    "ffff::%1" is net.IPv6AddressString // we don't restrict flags, for future compatibility reasons
+    "ff0d::%1" is net.IPv6AddressString
+    "ff1d::%1" is net.IPv6AddressString
+    "fffd::%1" is net.IPv6AddressString // we don't restrict flags, for future compatibility reasons
     "ff00::%999" is net.IPv6AddressString
     "ff0d:0:0:0:0:0:0:0%0" is net.IPv6AddressString
     "ff00::7:8%0" is net.IPv6AddressString
@@ -261,6 +243,7 @@ facts {
     !("::1%0" is net.IPv6AddressString)
     !("0:0:0:0:0:0:0:0%0" is net.IPv6AddressString)
     !("a:b:c:d:1:2:3:4%0" is net.IPv6AddressString)
+    !("fec0::%1" is net.IPv6AddressString) // site-local unicast is deprecated, considered global now
     !("::1.2.3.4%0" is net.IPv6AddressString) // IPv6+IPv4 syntax implies global scope
     !("::ffff:1.2.3.4%0" is net.IPv6AddressString) // IPv4-mapped can be scoped in some implementations, but not ours
     !("0:fe80::%0" is net.IPv6AddressString)
