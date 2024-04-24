@@ -236,7 +236,7 @@ local function getUtf8Bytes(codePoint: Int): List<UInt8> =
 /// ```
 local function percentEncode(codePoint: Int) =
   getUtf8Bytes(codePoint)
-    .map((it) -> "%" + it.toRadixString(16).toUpperCase())
+    .map((it) -> "%" + it.toRadixString(16).toUpperCase().padStart(2, "0"))
     .join("")
 
 local hexDigits = "0123456789ABCDEF"
