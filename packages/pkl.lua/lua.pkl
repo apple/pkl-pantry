@@ -18,6 +18,7 @@
 module pkl.lua.lua
 
 import "pkl:reflect"
+import "lua.pkl"
 
 local const pathSpecRegex: Regex = let (prop = #"(?:[^\[\]^*.]+)"#) Regex(#"""
   (?x)
@@ -63,7 +64,7 @@ local const splatKey: Key = new Key { key = "*" }
 typealias LuaKeyword = "and"|"break"|"do"|"else"|"elseif"|"end"|"false"|"for"|"function"|"goto"|"if"|"in"|"local"|"nil"|"not"|"or"|"repeat"|"return"|"then"|"true"|"until"|"while"
 
 /// A string that is a valid Lua identifier.
-typealias LuaIdentifier = String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_]*")) && !(this is LuaKeyword))
+typealias LuaIdentifier = String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_]*")) && !(this is lua.LuaKeyword))
 
 /// Directs [Renderer] to output additional text [before] and/or [after] rendering a [value].
 class LuaRenderDirective {
