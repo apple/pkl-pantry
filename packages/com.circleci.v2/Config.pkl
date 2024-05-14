@@ -172,7 +172,7 @@ class Job {
   resource_class: ResourceClass?
 
   /// Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
-  docker: Listing<DockerImage>(!isEmpty)?(onlyOneSet(List(this, macos, machine)))
+  docker: Listing<DockerImage>(!isEmpty)?(onlyOneSet(List(this, executor, macos, machine)))
 
   /// CircleCI supports running jobs on macOS, to allow you to build, test, and deploy apps for
   /// macOS, iOS, tvOS and watchOS.
@@ -199,6 +199,18 @@ typealias ResourceClass =
   |"arm.2xlarge"
   |"macos.m1.medium.gen1"
   |"macos.m1.large.gen1"
+  |"windows.medium"
+  |"windows.large"
+  |"windows.xlarge"
+  |"windows.2xlarge"
+  |"gpu.nvidia.small"
+  |"gpu.nvidia.small.gen2"
+  |"gpu.nvidia.small.multi"
+  |"gpu.nvidia.medium.multi"
+  |"gpu.nvidia.medium"
+  |"gpu.nvidia.large"
+  |"windows.gpu.nvidia.medium"
+
 
 class MacOSExecutor {
   /// The version of Xcode that is installed on the virtual machine, see the
