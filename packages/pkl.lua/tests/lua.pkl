@@ -20,10 +20,10 @@ amends "pkl:test"
 import "../lua.pkl"
 
 local function RenderDirective(text_: String): RenderDirective = new { text = text_ }
-local function LuaRenderDirective(before_: String?, value_: Any, after_: String?): lua.LuaRenderDirective = new { before = before_; value = value_; after = after_ }
+local function LuaRenderDirective(before_: String?, value_: Any, after_: String?): lua.RenderDirective = new { before = before_; value = value_; after = after_ }
 
 facts {
-  ["RenderDirective"] {
+  ["base.RenderDirective"] {
     new lua.Renderer {}.renderDocument(RenderDirective("foo")) == "foo\n"
     new lua.Renderer {}.renderDocument(new Dynamic { [RenderDirective("foo bar")] = 1}) == "foo bar = 1\n"
     new lua.Renderer {}.renderValue(Map(RenderDirective("a.b"), 1)) == "{ a.b = 1; }"
@@ -33,7 +33,7 @@ facts {
     new lua.Renderer {}.renderValue(Map("a", RenderDirective("1 + 2"))) == "{ a = 1 + 2; }"
     new lua.Renderer { multilineThreshold = 1 }.renderValue(new Dynamic { a { [RenderDirective("a\nb")] = RenderDirective("c\nd") }}) == "{\n  a = {\n    a\nb = c\nd;\n  };\n}"
   }
-  ["LuaRenderDirective"] {
+  ["lua.RenderDirective"] {
     new lua.Renderer {}.renderDocument(LuaRenderDirective(null, 1, null)) == "1\n"
     new lua.Renderer {}.renderDocument(LuaRenderDirective(null, new Dynamic { a = 1 }, null)) == "{ a = 1; }\n"
     new lua.Renderer {}.renderDocument(LuaRenderDirective("x", new Dynamic { a = 1 }, "y")) == "x{ a = 1; }y\n"
@@ -149,12 +149,12 @@ facts {
   ["path converters"] {
     new lua.Renderer {
       converters {
-        ["^"] = (it) -> new Dynamic { a = 1 }
+        ["^"] = (_) -> new Dynamic { a = 1 }
       }
     }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
     new lua.Renderer {
       converters {
-        [""] = (it) -> new Dynamic { a = 1 }
+        [""] = (_) -> new Dynamic { a = 1 }
       }
     }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
     new lua.Renderer {
@@ -222,14 +222,14 @@ facts {
     // class converters prefer the most specific class
     new lua.Renderer {
       converters {
-        [Base] = (it) -> "base"
-        [Child] = (it) -> "child"
+        [Base] = (_) -> "base"
+        [Child] = (_) -> "child"
       }
     }.renderDocument(new Dynamic { base = new Base {}; child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { base = "base"; child = "child" })
     // class converters match subclasses
     new lua.Renderer {
       converters {
-        [Base] = (it) -> "base"
+        [Base] = (_) -> "base"
       }
     }.renderDocument(new Dynamic { child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { child = "base" })
   }
