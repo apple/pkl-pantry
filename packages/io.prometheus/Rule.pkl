@@ -41,6 +41,12 @@ class RecordingRuleGroup {
   /// How often rules in the group are evaluated.
   interval: Duration?
 
+  /// Thanos Ruler's partial response behavior
+  partial_response_strategy: String?
+
+  /// Limit the number of alerts an alerting rule and series a recording rule can produce.
+  limit: Int?
+
   rules: Listing<RecordingRule>
 }
 
@@ -50,6 +56,12 @@ class AlertingRuleGroup {
 
   /// How often rules in the group are evaluated.
   interval: Duration?
+
+  /// Thanos Ruler's partial response behavior
+  partial_response_strategy: String?
+
+  /// Limit the number of alerts an alerting rule and series a recording rule can produce.
+  limit: Int?
 
   rules: Listing<AlertingRule>
 }
