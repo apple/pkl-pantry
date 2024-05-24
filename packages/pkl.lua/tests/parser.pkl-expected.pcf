@@ -1,0 +1,215 @@
+examples {
+  ["empty"] {
+    new {}
+  }
+  ["null"] {
+    new {
+      foo = null
+    }
+  }
+  ["boolean"] {
+    new {
+      foo = true
+      bar = false
+    }
+  }
+  ["number"] {
+    new {
+      zero = 0
+      one = 1
+      negative = -1
+      maxInt32 = 2147483647
+      minInt32 = -2147483648
+      zerof = 0.0
+      float = 5.32
+      negfloat = -10.26
+      hex = 43981
+      hexf = 128.0
+      hexf2 = 128.5
+      hexf3 = 127.9375
+      hexf4 = 127.515625
+      hexf5 = 127.6708984375
+      hexp = 2.0
+      hexp2 = 4.0
+      hexp3 = 0.5
+      hexp4 = 257.0
+    }
+  }
+  ["string"] {
+    new {
+      s = "hello world"
+      single = "one'two"
+      double = "one\"two"
+      escapes = "\u{7}\u{8}\u{c}\n\r\t\u{b}"
+      hex = "\u{0}::\u{7f}"
+      dec = "\u{0}:::0\u{7f}"
+      u = "\u{0}《》\u{10FFFF}"
+      newline = "foo\n  bar"
+      z = "foobar"
+      long = "foo"
+      long2 = "foo"
+      long3 = "  foo"
+      long4 = "]]"
+      long5 = "]==]]====]"
+    }
+  }
+  ["errors"] {
+    // note: module.catch is replacing newlines with spaces for some reason
+    // so we can't quite assert the full formatting
+    """
+    expected value or {, found EOF
+
+    1 | foo=
+      |     ^
+    at <input>:1:5
+    """.replaceAll("\n", " ")
+    """
+    expected value or {, found EOF
+
+    2 | bar=
+      |     ^
+    at <input>:2:5
+    """.replaceAll("\n", " ")
+    """
+    invalid numeric literal: 1.2.3
+
+    1 | foo=1.2.3
+      |     ^^^^^
+    at uri:path/to/input.pkl:1:5
+    """.replaceAll("\n", " ")
+    """
+    table has both list elements and map entries
+
+    1 | foo={1, [true]=2}
+      |      ^ first list entry
+      |          ^^^^ first map entry
+    at <input>:1:6
+    """.replaceAll("\n", " ")
+    """
+    table has both list elements and map entries
+
+    1 | foo={[true]=1, 2}
+      |       ^^^^ first map entry
+      |                ^ first list entry
+    at <input>:1:7
+    """.replaceAll("\n", " ")
+    """
+    table has both list elements and map entries
+
+    2 |   [true]=1;
+      |    ^^^^ first map entry
+    3 |   2
+      |   ^ first list entry
+    at <input>:2:4
+    """.replaceAll("\n", " ")
+    """
+    table has both list elements and map entries
+
+    2 |   1;
+      |   ^ first list entry
+    3 |   [true]=2
+      |    ^^^^ first map entry
+    at <input>:2:3
+    """.replaceAll("\n", " ")
+    """
+    expected identifier or ;, found token `[`
+
+    1 | [1]=1
+      | ^
+    at <input>:1:1
+    """.replaceAll("\n", " ")
+    """
+    _ENV cannot be assigned to directly
+
+    1 | _ENV=1
+      |     ^
+    at <input>:1:5
+    """.replaceAll("\n", " ")
+  }
+  ["class converters"] {
+    new { foo = 2; bar = 3; baz = 1.0 }
+    new { foo { 2; 3 } }
+    new { foo { 2; 3 } }
+    new { foo { [3] = 3; [4] = 4 } }
+    new { 2; 3 }
+    new { [3] = 3; [4] = 4 }
+    new { foo = "bar!" }
+    new { foo = "bar!" }
+    fixupTableKeys(new Dynamic { table { foo = "bar!" } })
+    fixupTableKeys(new Dynamic { [new Dynamic { a = 2 }] = true })
+    new { foo = 1; done = true }
+  }
+  ["path converters"] {
+    new { foo = 1; done = true }
+    new { foo = 1; done = true }
+    new { foo = 2 }
+    new { foo = 2 }
+    new { foo = 1 }
+    new { foo { a = 2; b = 2 } }
+    new { a = 2; foo { a = 1 } }
+    new { a = 2; [true] = 1 }
+    new { a = 1; b = 1; [true] = 2 }
+    new { ["foo"] = new Mapping { ["a"] = 1; ["b"] = 1; [true] = 2 } }
+  }
+  ["path converters in tables as table keys"] {
+    // the use of amending here fixes an odd ordering issue
+    // Dynamic literals sort properties before keys, so amending preserves the expected order
+    fixupTableKeys((new Dynamic { [new Dynamic { a = 1 }] = 1 }) { done = true })
+    fixupTableKeys((new Dynamic { [new Dynamic { a = 2; b = 1 }] = 1 }) { a = 2 })
+    fixupTableKeys((new Dynamic { [new Dynamic { a = 1; b = 1 }] = 1 }) { a = 2 })
+    fixupTableKeys(new Dynamic { foo { [new Dynamic { a { b = 2 }; b = 1 }] = 1 } })
+  }
+  ["converters can return non-Lua types"] {
+    Pair("foo", 1)
+    new { foo = Pair("int", 1) }
+    new { [Pair("int", 5)] = true }
+    new { foo { [Pair("int", 5)] = true } }
+    new Mapping { [Pair("int", 5)] = true }
+    new Mapping { ["foo"] = new Mapping { [Pair("int", 5)] = true } }
+  }
+  ["fixtures"] {
+    fixupTableKeys(new Dynamic {
+      greeting = "Hello, world!"
+      snippet = """
+        Long Lua strings can be written inside brackets like this: [[
+        This is a multiline string.
+        It ends at the close double-bracket.]]
+
+        """
+      hex_floats {
+        16.0
+        0.9999990463256836
+        -400.0
+      }
+      tableKeys {
+        identifier = true
+        string = "yes"
+        [42] = "the meaning of life"
+        [3.14159] = "pi"
+        [true] = "very true"
+        [new Dynamic { 1; 2; 3 }] = "even tables can be keys"
+      }
+    })
+  }
+}
+
+// See this same function at the end of parser.pkl for an explanation.
+local function fixupTableKeys(value: Dynamic|Mapping|Listing): Dynamic|Mapping|Listing =
+  if (value is Listing)
+    value.toList().map((v) ->
+      if (v is Dynamic|Mapping|Listing) fixupTableKeys(v)
+      else v
+    ).toListing()
+  else
+    let (map = value.toMap().map((k,v) ->
+      let (key =
+        if (k is Dynamic) new PcfRenderDirective { before = "Dynamic "; value = k }
+        else if (k is Mapping) new PcfRenderDirective { before = "Mapping "; value = k }
+        else if (k is Listing) new PcfRenderDirective { before = "Listing "; value = k }
+        else k)
+        if (v is Dynamic|Mapping|Listing) Pair(key, fixupTableKeys(v))
+        else Pair(key,v)
+    ))
+      if (value is Dynamic) (map.toDynamic()) {
+        ...value.toList()
+      } else map.toMapping()
