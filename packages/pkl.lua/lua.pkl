@@ -160,7 +160,7 @@ class Renderer extends ValueRenderer {
           let (path = path.add(Prop(k)))
           let (v = convert(v, path))
             if (omitNullProperties && v == null && k is String) acc
-            else acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
+            else acc + "\(renderKey(convertDynamicKey(k), "_ENV")) = \(render(v, path, 0))\n")
         + (if (value is Dynamic) value.toList() else List()).foldIndexed("", (idx, acc, v) ->
           let (path = path.add(splatKey))
           let (v = convert(v, path))
@@ -170,7 +170,7 @@ class Renderer extends ValueRenderer {
         value.fold("", (acc, k, v) ->
           let (path = path.add(Key(k)))
           let (v = convert(v, path))
-            acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
+            acc + "\(renderKey(convert(k, null), "_ENV")) = \(render(v, path, 0))\n")
       else throw("The top-level value of a Lua document must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `\(value.getClass())`")
 
   // region Converters
@@ -190,17 +190,25 @@ class Renderer extends ValueRenderer {
       converterMap.any((k,_) -> k is Class && reflect.Class(k).isSubclassOf(typedClass))
 
   local function convert(value: Any, path: List<PathEntry>?): Any =
-    if (path == null) value else
-      let (path = path.reverse())
-      let (f = pathConverters.findOrNull((p) -> comparePaths(path, p.key))?.value)
-      let (klass = value.getClass())
-      let (f = f ?? converterMap.getOrNull(klass))
-      let (f = f ?? if (hasTypedConverters && value is Typed) findTypedConverter(reflect.Class(klass).superclass) else null) // find superclass converters
-        if (f != null) f.apply(value) else value
+    let (f =
+      if (path != null && !pathConverters.isEmpty)
+        let (path = path.reverse())
+          pathConverters.findOrNull((p) -> comparePaths(path, p.key))?.value
+      else null)
+    let (klass = value.getClass())
+    let (f = f ?? converterMap.getOrNull(klass))
+    let (f = f ?? if (hasTypedConverters && value is Typed) findTypedConverter(reflect.Class(klass).superclass) else null) // find superclass converters
+      if (f != null) f.apply(value) else value
+
+  // converts a key from a Dynamic|Typed.
+  // this skips the conversion if it's a string, as that's assumed to be a property
+  local function convertDynamicKey(key: Any): Any =
+    if (key is String) key
+    else convert(key, null)
 
   // the path and spec must already be reversed
   local function comparePaths(path: List<PathEntry>, pathSpec: List<PathEntry>): Boolean =
-    path.zip(pathSpec).every((p) ->
+    path.length >= pathSpec.length && path.zip(pathSpec).every((p) ->
       if (p.second is Prop && p.second.name == "*") p.first is Prop
       else if (p.second is Key && p.second.key == "*") p.first is Key
       else p.first == p.second
@@ -213,7 +221,7 @@ class Renderer extends ValueRenderer {
   // endregion
   // region Rendering functions
 
-  local function render(value: Any, path: List<PathEntry>?, level: UInt?): String =
+  local function render(value: Any, path: List<PathEntry>, level: UInt?): String =
     if (value is String) renderString(value, level != null)
     else if (value is Boolean) value.toString()
     else if (value is Number) renderNumber(value)
@@ -231,7 +239,7 @@ class Renderer extends ValueRenderer {
     else if (key is Number && key.isNaN) throw("Lua table keys cannot be NaN")
     else if (key is Identifier) key
     else if (key is base.RenderDirective) key.text
-    else "\(prefix)[\(render(key, null, null))]"
+    else "\(prefix)[\(render(key, List(), null))]"
 
   local function renderString(value: String, multiline: Boolean): String =
     let (delim = if (value.contains("\"") && !value.contains("'")) "'" else "\"")
@@ -266,7 +274,7 @@ class Renderer extends ValueRenderer {
     else if (value.isInfinite) "(\(value.sign.toInt())/0)"
     else value.toString()
 
-  local function renderMap(value: Mapping|Map, path: List<PathEntry>?, level: UInt?): String =
+  local function renderMap(value: Mapping|Map, path: List<PathEntry>, level: UInt?): String =
     if (value.isEmpty) "{}" else
       let (map = value.toMap())
       let (multiline = map.length >= multilineThreshold && level != null && value is Mapping)
@@ -274,15 +282,15 @@ class Renderer extends ValueRenderer {
         (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
         + new Listing {
           for (k,v in map) {
-            let (path = path?.add(Key(k)))
-            "\(renderKey(k, "")) = \(render(convert(v, path), path, level_));"
+            let (path = path.add(Key(k)))
+            "\(renderKey(convert(k, null), "")) = \(render(convert(v, path), path, level_));"
           }
         }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
         + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
 
-  local function renderList(value: Listing|List, path: List<PathEntry>?, level: UInt?): String =
+  local function renderList(value: Listing|List, path: List<PathEntry>, level: UInt?): String =
     if (value.isEmpty) "{}" else
-      let (path = path?.add(splatKey))
+      let (path = path.add(splatKey))
       let (multiline = value.length >= multilineThreshold && level != null && !(value is List))
       let (level_ = if (multiline) level!! + 1 else level)
         (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
@@ -291,12 +299,12 @@ class Renderer extends ValueRenderer {
           .join(if (multiline) ",\n\(indent.repeat(level_!!))" else ", ")
         + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
 
-  local function renderDynamic(value: Dynamic|Typed, path: List<PathEntry>?, level: UInt?): String =
+  local function renderDynamic(value: Dynamic|Typed, path: List<PathEntry>, level: UInt?): String =
     let (list = if (value is Dynamic) value.toList() else List())
     let (map = value.toMap())
     // note: Map.keys.toList() is O(1), other ways of converting are O(n) (as of Pkl 0.25.3)
     let (entries = map.keys.toList().mapNonNull((k) ->
-      let (path = path?.add(Prop(k)))
+      let (path = path.add(Prop(k)))
       let (v = convert(map[k], path))
         if (omitNullProperties && v == null && k is String) null
         else Pair(k, Pair(path, v))
@@ -304,11 +312,11 @@ class Renderer extends ValueRenderer {
       if (entries.isEmpty && list.isEmpty) "{}" else
         let (multiline = entries.length + list.length >= multilineThreshold && level != null)
         let (level_ = if (multiline) level!! + 1 else level)
-        let (listPath = if (list.isEmpty) null else path?.add(splatKey))
+        let (listPath = if (list.isEmpty) path else path.add(splatKey))
           (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
           + new Listing {
             for (kpv in entries) { // kpv = Pair(key, Pair(path, value))
-              "\(renderKey(kpv.key, "")) = \(render(kpv.value.value, kpv.value.key, level_));"
+              "\(renderKey(convertDynamicKey(kpv.key), "")) = \(render(kpv.value.value, kpv.value.key, level_));"
             }
             for (i,elt in list) {
               when (i < list.lastIndex) {
@@ -388,6 +396,8 @@ class Parser {
   ///
   /// For further information see [ValueRenderer.converters]. Table entries with string keys are treated as properties.
   converters: Mapping<(Class|String), (unknown) -> Any>
+
+  // region Parsing functions
 
   /// Parses [source] as a strict subset of Lua.
   ///
@@ -593,6 +603,9 @@ class Parser {
       if (value.startsWith("\n")) value.drop(1)
       else value
 
+  // endregion
+  // region Converters
+
   // path specs are already in reversed order
   local pathConverters: List<Pair<List<PathEntry>, (unknown) -> Any>> =
     splitPathConverters(converters.toMap())
@@ -617,7 +630,11 @@ class Parser {
       else if (p.second is Key && p.second.key == "*") p.first is Key
       else p.first == p.second
     )
+
+  // endregion
 }
+
+// region State
 
 local open class ParseState {
   map: Map // note: can't provide key/value types, converters can return non-Lua types
@@ -710,6 +727,7 @@ local class ChildParseState extends ParseState {
     }
 }
 
+// endregion
 // region Tokens
 
 // Regex that matches a single Lua token, or an invalid character.
