@@ -143,7 +143,7 @@ class Renderer extends ValueRenderer {
   /// For more information see [ValueRenderer.converters]. Note that due to language limitations,
   /// when rendering a [Dynamic], any entries with a [String] key will have converters applied as
   /// though the entry was a property. This means paths like `x[foo]` only apply when rendering
-  /// a [Mapping].
+  /// a [Mapping], or when a class converter converts an entry key into a [String].
   converters: Mapping<(Class|String), (unknown) -> Any>
 
   extension = "lua"
@@ -159,10 +159,12 @@ class Renderer extends ValueRenderer {
       else if (value is RenderDirective) "\(value.before ?? "")\(render(value.value, path, 0))\(value.after ?? "")\n"
       else if (value is Dynamic|Typed)
         value.toMap().fold("", (acc, k, v) ->
-          let (path = path.add(Prop(k)))
+          let (isProp = k is String)
+          let (k = if (isProp) k else convert(k, null))
+          let (path = path.add(if (isProp) Prop(k) else Key(k)))
           let (v = convert(v, path))
-            if (omitNullProperties && v == null && k is String) acc
-            else acc + "\(renderKey(convertDynamicKey(k), "_ENV")) = \(render(v, path, 0))\n")
+            if (omitNullProperties && v == null && isProp) acc
+            else acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
         + (if (value is Dynamic) value.toList() else List()).foldIndexed("", (idx, acc, v) ->
           let (path = path.add(splatKey))
           let (v = convert(v, path))
@@ -170,9 +172,10 @@ class Renderer extends ValueRenderer {
             acc + "_ENV[\(idx+1)] = \(render(v, path, 0))\n")
       else if (value is Mapping|Map)
         value.fold("", (acc, k, v) ->
+          let (k = convert(k, null))
           let (path = path.add(Key(k)))
           let (v = convert(v, path))
-            acc + "\(renderKey(convert(k, null), "_ENV")) = \(render(v, path, 0))\n")
+            acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
       else throw("The top-level value of a Lua document must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `\(value.getClass())`")
 
   // region Converters
@@ -201,12 +204,6 @@ class Renderer extends ValueRenderer {
     let (f = f ?? converterMap.getOrNull(klass))
     let (f = f ?? if (hasTypedConverters && value is Typed) findTypedConverter(reflect.Class(klass).superclass) else null) // find superclass converters
       if (f != null) f.apply(value) else value
-
-  // converts a key from a Dynamic|Typed.
-  // this skips the conversion if it's a string, as that's assumed to be a property
-  local function convertDynamicKey(key: Any): Any =
-    if (key is String) key
-    else convert(key, null)
 
   // the path and spec must already be reversed
   local function comparePaths(path: List<PathEntry>, pathSpec: List<PathEntry>): Boolean =
@@ -284,8 +281,9 @@ class Renderer extends ValueRenderer {
         (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
         + new Listing {
           for (k,v in map) {
+            let (k = convert(k, null))
             let (path = path.add(Key(k)))
-            "\(renderKey(convert(k, null), "")) = \(render(convert(v, path), path, level_));"
+            "\(renderKey(k, "")) = \(render(convert(v, path), path, level_));"
           }
         }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
         + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
@@ -305,10 +303,12 @@ class Renderer extends ValueRenderer {
     let (list = if (value is Dynamic) value.toList() else List())
     let (map = value.toMap())
     // note: Map.keys.toList() is O(1), other ways of converting are O(n) (as of Pkl 0.25.3)
-    let (entries = map.keys.toList().mapNonNull((k) ->
-      let (path = path.add(Prop(k)))
-      let (v = convert(map[k], path))
-        if (omitNullProperties && v == null && k is String) null
+    let (entries = map.keys.toList().mapNonNull((k_) ->
+      let (isProp = k_ is String)
+      let (k = if (isProp) k_ else convert(k_, null))
+      let (path = path.add(if (isProp) Prop(k) else Key(k)))
+      let (v = convert(map[k_], path))
+        if (omitNullProperties && v == null && isProp) null
         else Pair(k, Pair(path, v))
     ))
       if (entries.isEmpty && list.isEmpty) "{}" else
@@ -318,7 +318,7 @@ class Renderer extends ValueRenderer {
           (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
           + new Listing {
             for (kpv in entries) { // kpv = Pair(key, Pair(path, value))
-              "\(renderKey(convertDynamicKey(kpv.key), "")) = \(render(kpv.value.value, kpv.value.key, level_));"
+              "\(renderKey(kpv.key, "")) = \(render(kpv.value.value, kpv.value.key, level_));"
             }
             for (i,elt in list) {
               when (i < list.lastIndex) {

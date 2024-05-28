@@ -211,6 +211,14 @@ examples {
     (parser) { converters { ["[*]"] = (it) -> it + 1 } }.parse(#"a=1;_ENV["b"]=1;_ENV[true]=1"#)
     (parser) { useDynamic = false; converters { ["[*]"] = (it) -> it + 1 } }.parse(#"foo={a=1;["b"]=1;[true]=1}"#)
   }
+  ["path converters apply after converting keys"] {
+    // first validate that paths "x[42]" and "x.42" won't match an integral key
+    (parser) { converters { ["x[42]"] = (it) -> "matched: \(it)"; ["x.42"] = (it) -> "matched: \(it)" } }.parse("x={[42]=true}")
+    // and validate that the path "x.42" will match a string key
+    (parser) { converters { ["x.42"] = (it) -> "matched: \(it)" } }.parse(#"x={["42"]=true}"#)
+    // now if we convert the integral key to a string, it should match "x.42"
+    (parser) { converters { [Int] = (it) -> it.toString(); ["x.42"] = (it) -> "matched: \(it)" } }.parse("x={[42]=true}")
+  }
   ["path converters in tables as table keys"] {
     fixupTableKeys((parser) { converters { ["^"] = (it) -> (it) { done = true } } }.parse("_ENV[{a=1}]=1")) // ^ doesn't match the key table
     fixupTableKeys((parser) { converters { ["a"] = (it) -> it + 1 } }.parse("_ENV[{a=1;b=1}]=1;a=1"))

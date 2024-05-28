@@ -151,6 +151,11 @@ examples {
     new { a = 1; b = 1; [true] = 2 }
     new { ["foo"] = new Mapping { ["a"] = 1; ["b"] = 1; [true] = 2 } }
   }
+  ["path converters apply after converting keys"] {
+    new { x { [42] = true } }
+    new { x { `42` = "matched: true" } }
+    new { x { `42` = "matched: true" } }
+  }
   ["path converters in tables as table keys"] {
     // the use of amending here fixes an odd ordering issue
     // Dynamic literals sort properties before keys, so amending preserves the expected order
