@@ -141,7 +141,9 @@ class Renderer extends ValueRenderer {
   /// Value converters to apply before values are rendered.
   ///
   /// For more information see [ValueRenderer.converters]. Note that due to language limitations,
-  /// any entries in a [Dynamic] will have converters applied as though the entry was a property.
+  /// when rendering a [Dynamic], any entries with a [String] key will have converters applied as
+  /// though the entry was a property. This means paths like `x[foo]` only apply when rendering
+  /// a [Mapping].
   converters: Mapping<(Class|String), (unknown) -> Any>
 
   extension = "lua"
@@ -395,6 +397,7 @@ class Parser {
   /// Value converters to apply to parsed values.
   ///
   /// For further information see [ValueRenderer.converters]. Table entries with string keys are treated as properties.
+  /// This means paths like `x[foo]` will never match anything.
   converters: Mapping<(Class|String), (unknown) -> Any>
 
   // region Parsing functions
