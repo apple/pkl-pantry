@@ -235,6 +235,7 @@ examples {
   }
   ["fixtures"] {
     fixupTableKeys(parser.parse(read("fixtures/sample.lua")))
+    parser.parse(read("fixtures/comment.lua"))
   }
 }
 

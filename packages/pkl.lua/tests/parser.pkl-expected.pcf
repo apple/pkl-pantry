@@ -195,6 +195,18 @@ examples {
         [new Dynamic { 1; 2; 3 }] = "even tables can be keys"
       }
     })
+    new Dynamic {
+      foo = "bar"
+      count = 2
+      enable = true
+      frob = null
+      ports { 80; 443 }
+      ips {
+        localhost = "127.0.0.1"
+        `example.com` = "93.184.215.14"
+      }
+      ` ` = "space"
+    }
   }
 }
 
