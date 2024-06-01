@@ -87,7 +87,7 @@ facts {
     parseValue("{a=1;b=2}") == new Mapping { ["a"] = 1; ["b"] = 2 }
     parseValue(#"{["a"]=1;["b"]=2}"#) == new Mapping { ["a"] = 1; ["b"] = 2 }
     parseValue("{[1]=1;[2]=2}") == new Listing { 1; 2 }
-    module.catch(() -> parseValue("{[2]=2;[1]=1}")).startsWith("table has both list elements and map entries")
+    module.catch(() -> parseValue("{[2]=2;[1]=1}")).startsWith("Table has both list elements and map entries")
     parseValue("{[2]=1;[3]=2}") == new Mapping { [2] = 1; [3] = 2 }
     parseValue("{[0]=1;[2]=2}") == new Mapping { [0] = 1; [2] = 2 }
     parseValue("{[{}]=1}") == new Mapping { [new Listing {}] = 1 }
@@ -118,28 +118,28 @@ facts {
     // these are facts instead of examples so we can preserve formatting in the error strings, since module.catch
     // replaces newlines with spaces.
     module.catch(() -> parser.parse("foo=")) == """
-      expected value or {, found EOF
+      Expected value or {, found EOF
 
       1 | foo=
         |     ^
       at <input>:1:5
       """.replaceAll("\n", " ")
     module.catch(() -> parser.parse("foo=3\nbar=")) == """
-      expected value or {, found EOF
+      Expected value or {, found EOF
 
       2 | bar=
         |     ^
       at <input>:2:5
       """.replaceAll("\n", " ")
-    module.catch(() -> parser.parse(new Resource { text = "foo=1.2.3"; uri = "uri:path/to/input.pkl" })) == """
-      invalid numeric literal: 1.2.3
+    module.catch(() -> parser.parse(new Resource { text = "foo=1.2.3"; uri = "uri:path/to/input.lua" })) == """
+      Invalid numeric literal: 1.2.3
 
       1 | foo=1.2.3
         |     ^^^^^
-      at uri:path/to/input.pkl:1:5
+      at uri:path/to/input.lua:1:5
       """.replaceAll("\n", " ")
     module.catch(() -> (parser) { useDynamic = false }.parse("foo={1, [true]=2}")) == """
-      table has both list elements and map entries
+      Table has both list elements and map entries
 
       1 | foo={1, [true]=2}
         |      ^ first list entry
@@ -147,7 +147,7 @@ facts {
       at <input>:1:6
       """.replaceAll("\n", " ")
     module.catch(() -> (parser) { useDynamic = false }.parse("foo={[true]=1, 2}")) == """
-      table has both list elements and map entries
+      Table has both list elements and map entries
 
       1 | foo={[true]=1, 2}
         |       ^^^^ first map entry
@@ -155,7 +155,7 @@ facts {
       at <input>:1:7
       """.replaceAll("\n", " ")
     module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  [true]=1;\n  2\n}")) == """
-      table has both list elements and map entries
+      Table has both list elements and map entries
 
       2 |   [true]=1;
         |    ^^^^ first map entry
@@ -164,7 +164,7 @@ facts {
       at <input>:2:4
       """.replaceAll("\n", " ")
     module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  1;\n  [true]=2\n}")) == """
-      table has both list elements and map entries
+      Table has both list elements and map entries
 
       2 |   1;
         |   ^ first list entry
@@ -173,7 +173,7 @@ facts {
       at <input>:2:3
       """.replaceAll("\n", " ")
     module.catch(() -> parser.parse("[1]=1")) == """
-      expected identifier or ;, found token `[`
+      Expected identifier or ;, found token `[`
 
       1 | [1]=1
         | ^

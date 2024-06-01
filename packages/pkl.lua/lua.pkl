@@ -442,7 +442,7 @@ class Parser {
           if (state is ChildParseState)
             // state #1b/#2, state is ChildParseState
             if (state.negate == null && token.value.matches(identifierRegex))
-              if (token.value is Keyword) throwError("unexpected keyword `\(token.value)`", source, uri, token)
+              if (token.value is Keyword) throwError("Unexpected keyword `\(token.value)`", source, uri, token)
               else (state) { key = token.value; mapStart = super.mapStart ?? token } // -> #4
             else if (state.negate == null && token.value == "[")
               (state) { op = "[" } // -> #7
@@ -461,7 +461,7 @@ class Parser {
           else
             // state #1a, state is ParseState
             if (token.value.matches(identifierRegex))
-              if (token.value is Keyword) throwError("unexpected keyword `\(token.value)`", source, uri, token)
+              if (token.value is Keyword) throwError("Unexpected keyword `\(token.value)`", source, uri, token)
               else (state) { key = token.value } // -> #4
             else if (token.value == ";")
               state // stay in state #1a
@@ -492,8 +492,8 @@ class Parser {
           new ChildParseState { parent = state; brace = token; path = List() } // -> #1b
         else
           let (value = parseValue(source, uri, state, token, "value or {"))
-            if (value == null) throwError("table key cannot be nil", source, uri, token)
-            else if (value is Number && value.isNaN) throwError("table key cannot be NaN", source, uri, token)
+            if (value == null) throwError("Table key cannot be nil", source, uri, token)
+            else if (value is Number && value.isNaN) throwError("Table key cannot be NaN", source, uri, token)
             else state.setKey(convertKey(value, state), token) // -> #9
       else if (state.op == "key")
         // state #9
@@ -516,7 +516,7 @@ class Parser {
         else throwExpected(", or ; or }", source, uri, token)
       else
         // invalid state, we can't ever get here
-        throwError("internal error; invalid state", source, uri, token)
+        throwError("Internal error; invalid state", source, uri, token)
     ))
       // We're at EOF, check if we allow EOF here
       if (state.negate != null) throwExpected("number", source, uri, null) // state #2/#6/#8
@@ -545,11 +545,11 @@ class Parser {
       parseLongString(token)
     else throwExpected(if (state.negate == null) expected else "number", source, uri, token))
       if (state.negate != null && !(value is Number))
-        throwError("attempted to negate non-numeric value", source, uri, token)
+        throwError("Attempted to negate non-numeric value", source, uri, token)
       else value
 
   local function parseHexLiteral(token: RegexMatch, negate: Boolean, source: String, uri: Uri?): Number =
-    let (match = hexLiteralRegex.matchEntire(token.value) ?? throwError("invalid numeric literal: \(token.value)", source, uri, token))
+    let (match = hexLiteralRegex.matchEntire(token.value) ?? throwError("Invalid numeric literal: \(token.value)", source, uri, token))
     let (intPart = match.groups[1]!!.value)
     let (fracPart = match.groups[2]?.value ?? "")
     let (exp = match.groups[3]?.value?.toInt())
@@ -565,7 +565,7 @@ class Parser {
   local function parseDecLiteral(token: RegexMatch, negate: Boolean, source: String, uri: Uri?): Number =
     let (value = if (negate) "-\(token.value)" else token.value)
       (if (value.contains(Regex("[.eE]"))) value.toFloatOrNull() else value.toIntOrNull())
-      ?? throwError("invalid numeric literal: \(token.value)", source, uri, token)
+      ?? throwError("Invalid numeric literal: \(token.value)", source, uri, token)
 
   local function parseShortString(token: RegexMatch, source: String, uri: Uri?): String =
     let (value = token.value.substring(1, token.value.length-1)) // drop quotes
@@ -582,22 +582,22 @@ class Parser {
           else if (value == "v") "\u{b}"
           else if (value is "\\"|"\""|"'") value
           else if (value.startsWith("x"))
-            if (!value.matches(Regex(#"(?-U)x\p{XDigit}{2}"#))) throwError("invalid hex escape in string: \(it.value)", source, uri, it)
+            if (!value.matches(Regex(#"(?-U)x\p{XDigit}{2}"#))) throwError("Invalid hex escape in string: \(it.value)", source, uri, it)
             else
               let (c = parseHexOctet(value.drop(1)))
-                if (c > 0x7f) throwError("non-ascii hex escape in string: \(it.value)", source, uri, it)
+                if (c > 0x7f) throwError("Non-ascii hex escape in string: \(it.value)", source, uri, it)
                 else c.toChar()
           else if (value.startsWith("u"))
-            if (!value.matches(Regex(#"(?-U)u\{\p{XDigit}{1,8}}"#))) throwError("invalid unicode escape in string: \(it.value)", source, uri, it)
+            if (!value.matches(Regex(#"(?-U)u\{\p{XDigit}{1,8}}"#))) throwError("Invalid unicode escape in string: \(it.value)", source, uri, it)
             else
               let (c = parseHex32(value.substring(2, value.length-1).padStart(8, "0")))
-                if (c > 0x10FFFF) throwError("out-of-range unicode escape in string: \(it.value)", source, uri, it)
+                if (c > 0x10FFFF) throwError("Out-of-range unicode escape in string: \(it.value)", source, uri, it)
                 else c.toChar()
           else if (value.matches(Regex(#"[0-9]{1,3}"#)))
             let (c = value.toInt())
-              if (c > 0x7f) throwError("non-ascii decimal escape in string: \(it.value)", source, uri, it)
+              if (c > 0x7f) throwError("Non-ascii decimal escape in string: \(it.value)", source, uri, it)
               else c.toChar()
-          else throwError("invalid backslash in string: \(it.value)", source, uri, it))
+          else throwError("Invalid backslash in string: \(it.value)", source, uri, it))
 
   local function parseLongString(token: RegexMatch): String =
     // we know we start with [=…[ and end with ]=…] (end was validated in validateToken)
@@ -698,7 +698,7 @@ local class ChildParseState extends ParseState {
       ...list
     } else if (map.isEmpty) list.toListing()
     else if (list.isEmpty) map.toMapping()
-    else throwError2("table has both list elements and map entries", source, uri, mapStart!!, "first map entry", listStart!!, "first list entry")
+    else throwError2("Table has both list elements and map entries", source, uri, mapStart!!, "first map entry", listStart!!, "first list entry")
 
   function put(value, token: RegexMatch, _): ChildParseState =
     if (isListIndex(key)) add(value, token)
@@ -779,11 +779,11 @@ local const tokenRegex: Regex = Regex(##"""
 // checks the error states documented on tokenRegex
 // returns the same token, or throws an error
 local const function validateToken(token: RegexMatch, source: String, uri: Uri?): RegexMatch =
-  if (token.groups[2]?.value == "") throwError("expected ]\(token.groups[1]!!.value)], found EOF", source, uri, token.groups[2]!!)
+  if (token.groups[2]?.value == "") throwError("Expected ]\(token.groups[1]!!.value)], found EOF", source, uri, token.groups[2]!!)
   else let (g = token.groups[3]) if (g != null && g.value != "\"") throwExpected("\"", source, uri, g)
   else let (g = token.groups[4]) if (g != null && g.value != "'") throwExpected("'", source, uri, g)
-  else if (token.groups[6]?.value == "") throwError("expected ]\(token.groups[5]!!.value)], found EOF", source, uri, token.groups[6]!!)
-  else let (g = token.groups.last) if (g != null) throwError("illegal token \(g.value)", source, uri, g)
+  else if (token.groups[6]?.value == "") throwError("Expected ]\(token.groups[5]!!.value)], found EOF", source, uri, token.groups[6]!!)
+  else let (g = token.groups.last) if (g != null) throwError("Illegal token \(g.value)", source, uri, g)
   else token
 
 // groups:
@@ -849,7 +849,7 @@ local const function throwExpected(expected: String, source: String, uri: Uri?, 
     else if (token.value == "\n") "newline"
     else if (token.value.isEmpty) "EOF"
     else "token `\(token.value.replaceAllMapped(Regex(#"[\n\\]"#), (it) -> if (it.value == "\n") "\\n" else #"\\"#))`")
-    throwError("expected \(expected), found \(found)", source, uri, token ?? new RegexMatch { value = ""; start = source.length; end = source.length })
+    throwError("Expected \(expected), found \(found)", source, uri, token ?? new RegexMatch { value = ""; start = source.length; end = source.length })
 
 // endregion
 // endregion
