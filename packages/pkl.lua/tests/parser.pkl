@@ -114,6 +114,79 @@ facts {
     mapParser.parse("_ENV[2]=2;_ENV[1]=1") == new Mapping { [2] = 2; [1] = 1 }
     mapParser.parse("_ENV[{a=1}]=2") == new Mapping { [new Mapping { ["a"] = 1 }] = 2 }
   }
+  ["errors"] {
+    // these are facts instead of examples so we can preserve formatting in the error strings, since module.catch
+    // replaces newlines with spaces.
+    module.catch(() -> parser.parse("foo=")) == """
+      expected value or {, found EOF
+
+      1 | foo=
+        |     ^
+      at <input>:1:5
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse("foo=3\nbar=")) == """
+      expected value or {, found EOF
+
+      2 | bar=
+        |     ^
+      at <input>:2:5
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse(new Resource { text = "foo=1.2.3"; uri = "uri:path/to/input.pkl" })) == """
+      invalid numeric literal: 1.2.3
+
+      1 | foo=1.2.3
+        |     ^^^^^
+      at uri:path/to/input.pkl:1:5
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={1, [true]=2}")) == """
+      table has both list elements and map entries
+
+      1 | foo={1, [true]=2}
+        |      ^ first list entry
+        |          ^^^^ first map entry
+      at <input>:1:6
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={[true]=1, 2}")) == """
+      table has both list elements and map entries
+
+      1 | foo={[true]=1, 2}
+        |       ^^^^ first map entry
+        |                ^ first list entry
+      at <input>:1:7
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  [true]=1;\n  2\n}")) == """
+      table has both list elements and map entries
+
+      2 |   [true]=1;
+        |    ^^^^ first map entry
+      3 |   2
+        |   ^ first list entry
+      at <input>:2:4
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  1;\n  [true]=2\n}")) == """
+      table has both list elements and map entries
+
+      2 |   1;
+        |   ^ first list entry
+      3 |   [true]=2
+        |    ^^^^ first map entry
+      at <input>:2:3
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse("[1]=1")) == """
+      expected identifier or ;, found token `[`
+
+      1 | [1]=1
+        | ^
+      at <input>:1:1
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse("_ENV=1")) == """
+      _ENV cannot be assigned to directly
+
+      1 | _ENV=1
+        |     ^
+      at <input>:1:5
+      """.replaceAll("\n", " ")
+  }
 }
 
 examples {
@@ -175,17 +248,6 @@ examples {
       long5=[===[]==]]====]]===]
       """#)
   }
-  ["errors"] {
-    module.catch(() -> parser.parse("foo="))
-    module.catch(() -> parser.parse("foo=3\nbar="))
-    module.catch(() -> parser.parse(new Resource { text = "foo=1.2.3"; uri = "uri:path/to/input.pkl" }))
-    module.catch(() -> (parser) { useDynamic = false }.parse("foo={1, [true]=2}"))
-    module.catch(() -> (parser) { useDynamic = false }.parse("foo={[true]=1, 2}"))
-    module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  [true]=1;\n  2\n}"))
-    module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  1;\n  [true]=2\n}"))
-    module.catch(() -> parser.parse("[1]=1"))
-    module.catch(() -> parser.parse("_ENV=1"))
-  }
   ["class converters"] {
     (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo=1;bar=2;baz=1.0")
     (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo={1, 2}")
@@ -240,8 +302,8 @@ examples {
 }
 
 // When rendering parser.pkl-actual.pcf, any table keys that are objects just render as `new { … }`, and this produces
-// an error "Cannot tell which parent to amend". This function replaces any such keys with a PcfRenderDirective. This
-// does mean the parser.pkl-expected.pcf also needs to use PcfRenderDirective in these places.
+// an error "Cannot tell which parent to amend". This function replaces any such keys with a rendered string. This does
+// mean that parser.pkl-expected.pcf needs to use rendered strings here instead.
 local function fixupTableKeys(value: Dynamic|Mapping|Listing): Dynamic|Mapping|Listing =
   if (value is Listing)
     value.toList().map((v) ->
@@ -249,15 +311,16 @@ local function fixupTableKeys(value: Dynamic|Mapping|Listing): Dynamic|Mapping|L
       else v
     ).toListing()
   else
-    let (map = value.toMap().map((k,v) ->
-      let (key =
-        if (k is Dynamic) new PcfRenderDirective { before = "Dynamic "; value = k }
-        else if (k is Mapping) new PcfRenderDirective { before = "Mapping "; value = k }
-        else if (k is Listing) new PcfRenderDirective { before = "Listing "; value = k }
-        else k)
-        if (v is Dynamic|Mapping|Listing) Pair(key, fixupTableKeys(v))
-        else Pair(key,v)
+    let (mapf = (k, v) -> Pair(
+      if (k is Object) "new \(k.getClass().simpleName) \(new PcfRenderer { indent = "" }.renderValue(k).replaceAll("\n", " "))" else k,
+      if (v is Dynamic|Mapping|Listing) fixupTableKeys(v) else v
     ))
-      if (value is Dynamic) (map.toDynamic()) {
-        ...value.toList()
-      } else map.toMapping()
+    let (valueMap = value.toMap())
+    if (value is Dynamic)
+      let (map1 = valueMap.filter((k,_) -> !(k is Object)).map(mapf))
+      let (map2 = valueMap.filter((k,_) -> k is Object).map(mapf))
+        (map1.toDynamic()) {
+          ...map2
+          ...value.toList()
+        }
+    else valueMap.map(mapf).toMapping()
