@@ -13,17 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-module pkl.lua.tests.lua
+module pkl.lua.tests.renderer
 
 amends "pkl:test"
 
 import "../lua.pkl"
 
 local function RenderDirective(text_: String): RenderDirective = new { text = text_ }
-local function LuaRenderDirective(before_: String?, value_: Any, after_: String?): lua.LuaRenderDirective = new { before = before_; value = value_; after = after_ }
+local function LuaRenderDirective(before_: String?, value_: Any, after_: String?): lua.RenderDirective = new { before = before_; value = value_; after = after_ }
 
 facts {
-  ["RenderDirective"] {
+  ["base.RenderDirective"] {
     new lua.Renderer {}.renderDocument(RenderDirective("foo")) == "foo\n"
     new lua.Renderer {}.renderDocument(new Dynamic { [RenderDirective("foo bar")] = 1}) == "foo bar = 1\n"
     new lua.Renderer {}.renderValue(Map(RenderDirective("a.b"), 1)) == "{ a.b = 1; }"
@@ -33,7 +33,7 @@ facts {
     new lua.Renderer {}.renderValue(Map("a", RenderDirective("1 + 2"))) == "{ a = 1 + 2; }"
     new lua.Renderer { multilineThreshold = 1 }.renderValue(new Dynamic { a { [RenderDirective("a\nb")] = RenderDirective("c\nd") }}) == "{\n  a = {\n    a\nb = c\nd;\n  };\n}"
   }
-  ["LuaRenderDirective"] {
+  ["lua.RenderDirective"] {
     new lua.Renderer {}.renderDocument(LuaRenderDirective(null, 1, null)) == "1\n"
     new lua.Renderer {}.renderDocument(LuaRenderDirective(null, new Dynamic { a = 1 }, null)) == "{ a = 1; }\n"
     new lua.Renderer {}.renderDocument(LuaRenderDirective("x", new Dynamic { a = 1 }, "y")) == "x{ a = 1; }y\n"
@@ -149,12 +149,12 @@ facts {
   ["path converters"] {
     new lua.Renderer {
       converters {
-        ["^"] = (it) -> new Dynamic { a = 1 }
+        ["^"] = (_) -> new Dynamic { a = 1 }
       }
     }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
     new lua.Renderer {
       converters {
-        [""] = (it) -> new Dynamic { a = 1 }
+        [""] = (_) -> new Dynamic { a = 1 }
       }
     }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
     new lua.Renderer {
@@ -210,9 +210,61 @@ facts {
       }
     }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
   }
+  ["path converters apply after converting keys"] {
+    // first validate that "x.42" matches a string key but not an integral key, and "x[42]" doesn't match
+    new lua.Renderer {
+      converters {
+        ["x[42]"] = (it) -> "unexpected match: \(it)"
+        ["x.42"] = (it) -> "matched: \(it)"
+      }
+    }.renderDocument(new Dynamic { x { [42] = true; ["42"] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { [42] = true; ["42"] = "matched: true" } })
+    // now validate that converting the key makes it match "x[42]" instead of "x.42" (as we know it's a key, not a property)
+    new lua.Renderer {
+      converters {
+        [Int] = (it) -> it.toString()
+        ["x.42"] = (it) -> "unexpected match: \(it)"
+        ["x[42]"] = (it) -> "matched: \(it)"
+      }
+    }.renderDocument(new Dynamic { x { [42] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { ["42"] = "matched: true" } })
+    // same thing with Mapping, validate that "x[42]" matches a string key but not an integral key, and "x.42" doesn't match
+    new lua.Renderer {
+      converters {
+        ["x.42"] = (it) -> "unexpected match: \(it)"
+        ["x[42]"] = (it) -> "matched: \(it)"
+      }
+    }.renderDocument(new Dynamic { x = new Mapping { [42] = true; ["42"] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { [42] = true; ["42"] = "matched: true" } })
+    // now validate that converting the key makes it match "x[42]" (but not "x.42")
+    new lua.Renderer {
+      converters {
+        [Int] = (it) -> it.toString()
+        ["x.42"] = (it) -> "unexpected match: \(it)"
+        ["x[42]"] = (it) -> "matched: \(it)"
+      }
+    }.renderDocument(new Dynamic { x = new Mapping { [42] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { ["42"] = "matched: true" } })
+  }
+  ["path converters in objects used as mapping keys"] {
+    let (source = new Dynamic { a = 1; [new Dynamic { a = 1; b { a = 1; c = 1 }; c = 1 }] = 1 })
+    let (expected = new Dynamic { a = 11; [new Dynamic { a = 2; b { a = 2; c = 3 }; c = 1 }] = 1 })
+    new lua.Renderer {
+      converters {
+        ["^a"] = (it) -> it + 10 // ^ won't match in table key
+        ["a"] = (it) -> it + 1
+        ["b.c"] = (it) -> it + 2
+      }
+    }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+    let (source = new Dynamic { foo { a = 1; [new Dynamic { a = 1; b { a = 1; c = 1 }; c = 1 }] = 1 } })
+    let (expected = new Dynamic { foo { a = 11; [new Dynamic { a = 2; b { a = 2; c = 3 }; c = 1 }] = 1 } })
+    new lua.Renderer {
+      converters {
+        ["^*.a"] = (it) -> it + 10 // ^ won't match in table key
+        ["a"] = (it) -> it + 1
+        ["b.c"] = (it) -> it + 2
+      }
+    }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+  }
   ["class converters"] {
     let (source = new Dynamic { a = 1; b = "two"; c = true; nest { 1; "one"; a = 1; b = "two"; c = true }; map = new Mapping { ["a"] = 1; ["b"] = "two"; ["c"] = true }; list = new Listing { 1; "two"; true } })
-    let (expected = new Dynamic { a = 2; b = "two!"; c = true; nest { 2; "one!"; a = 2; b = "two!"; c = true }; map { a = 2; b = "two!"; c = true }; list { 2; "two!"; true } })
+    let (expected = new Dynamic { a = 2; b = "two!"; c = true; nest { 2; "one!"; a = 2; b = "two!"; c = true }; map { ["a!"] = 2; ["b!"] = "two!"; ["c!"] = true }; list { 2; "two!"; true } })
     new lua.Renderer {
       converters {
         [Int] = (it) -> it + 1
@@ -222,16 +274,27 @@ facts {
     // class converters prefer the most specific class
     new lua.Renderer {
       converters {
-        [Base] = (it) -> "base"
-        [Child] = (it) -> "child"
+        [Base] = (_) -> "base"
+        [Child] = (_) -> "child"
       }
     }.renderDocument(new Dynamic { base = new Base {}; child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { base = "base"; child = "child" })
     // class converters match subclasses
     new lua.Renderer {
       converters {
-        [Base] = (it) -> "base"
+        [Base] = (_) -> "base"
       }
     }.renderDocument(new Dynamic { child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { child = "base" })
+  }
+  ["class converters in mapping keys"] {
+    // remember, string mapping keys in Dynamic are treated as properties
+    let (source = new Dynamic { [5] = 1; ["a"] = true; foo { [5] = 1; ["a"] = true }; map = new Mapping { [5] = 1; ["a"] = true } })
+    let (expected = new Dynamic { [6] = 2; ["a"] = true; foo { [6] = 2; ["a"] = true }; map { [6] = 2; ["a!"] = true } })
+    new lua.Renderer {
+      converters {
+        [Int] = (it) -> it + 1
+        [String] = (it) -> "\(it)!"
+      }
+    }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
   }
   ["NaN and Infinity"] {
     new lua.Renderer {}.renderValue(Infinity) == "(1/0)"

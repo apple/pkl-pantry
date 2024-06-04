@@ -1,0 +1,326 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.lua.tests.parser
+
+amends "pkl:test"
+
+import "../lua.pkl"
+import "pkl:math"
+
+local parser: lua.Parser = new {}
+
+local function parseValue(s: String): lua.Value =
+  let (map = (parser) { useDynamic = false }.parse("value=\(s)"))
+    if (map.length == 1) map["value"]
+    else throw("source parsed as more than one value: \(s)")
+
+local function parseDynamic(s: String): lua.Value =
+  let (map = parser.parse("value=\(s)").toMap())
+    if (map.length == 1) map["value"]
+    else throw("source parsed as more than one value: \(s)")
+
+facts {
+  ["hex floats"] {
+    // with the way we parse hex floats, check for precision issues
+    parseValue("0xaBcD") is Int(this == 0xabcd)
+    parseValue("0X80.0") is Float(this == 0x80)
+    parseValue("0x80.8") is Float(this == 128.5)
+    parseValue("0x7f.f0") is Float(this == 127.9375)
+    parseValue("0x7f.84") is Float(this == 127.515625)
+    parseValue("0x7f.abc") is Float(this == 127.6708984375)
+    parseValue("-0x7f.abc") is Float(this == -127.6708984375)
+    parseValue("0x1p1") is Float(this == 2.0)
+    parseValue("0x1p+1") is Float(this == 2.0)
+    parseValue("0x1p2") is Float(this == 4.0)
+    parseValue("0x1p-1") is Float(this == 0.5)
+    parseValue("0x80.8p1") is Float(this == 257.0)
+    parseValue("0x7fffffffffffffff") is Int(this == math.maxInt)
+    parseValue("-0x8000000000000000") is Int(this == math.minInt)
+    parseValue("0x1.fffffffffffffp+1023") is Float(this == math.maxFiniteFloat)
+    parseValue("-0x1.fffffffffffffp+1023") is Float(this == math.minFiniteFloat)
+  }
+  ["negative numbers"] {
+    // negative numbers are a unary negation on a positive number
+    parseValue("-1") == -1
+    // we support double-negation because the alternative is giving the user an error like
+    //   error: expected number, found token '-'
+    // and that's just confusing.
+    parseValue("- -1") == 1
+    parseValue("- - - 1") == -1
+    parseValue("-\n1") == -1
+    parseValue("\(math.maxUInt)") == math.maxUInt
+    parseValue("\(math.maxInt)") == math.maxInt
+    parseValue("\(math.minInt)") == math.minInt
+    parseValue("-0.1") == -0.1
+    parseValue("-0xABC") == -0xABC
+    parseValue("-2e1") == -2e1
+  }
+  ["tables with useDynamic=true"] {
+    // note: new Dynamic { 1; 2 } == new Dynamic { [0] = 1; [1] = 2 }, so we have to take care with comparisons
+    parseDynamic("{}") == new Dynamic {}
+    parseDynamic("{1,2}") is Dynamic(this.toList() == List(1,2) && this.toMap().isEmpty)
+    parseDynamic("{a=1;b=2}") == new Dynamic { a = 1; b = 2 }
+    parseDynamic(#"{["a"]=1;["b"]=2}"#) == new Dynamic { a = 1; b = 2 }
+    parseDynamic("{[1]=1;[2]=2}") is Dynamic(this.toList() == List(1,2) && this.toMap().isEmpty)
+    parseDynamic("{[2]=2;[1]=1}") is Dynamic(this.toList() == List(1) && this.toMap() == Map(2,2))
+    parseDynamic("{[0]=1;[2]=2}") is Dynamic(this.toList().isEmpty && this.toMap() == Map(0,1,2,2))
+    parseDynamic("{[{}]=1}") == new Dynamic { [new Dynamic {}] = 1 }
+    parseDynamic("{[{1,2}]=1}") == new Dynamic { [new Dynamic { 1; 2 }] = 1 }
+    parseDynamic("{[{a=1}]=1}") == new Dynamic { [new Dynamic { a = 1 }] = 1 }
+  }
+  ["tables with useDynamic=false"] {
+    parseValue("{}") == new Listing {}
+    parseValue("{1,2}") == new Listing { 1; 2 }
+    parseValue("{a=1;b=2}") == new Mapping { ["a"] = 1; ["b"] = 2 }
+    parseValue(#"{["a"]=1;["b"]=2}"#) == new Mapping { ["a"] = 1; ["b"] = 2 }
+    parseValue("{[1]=1;[2]=2}") == new Listing { 1; 2 }
+    module.catch(() -> parseValue("{[2]=2;[1]=1}")).startsWith("Table has both list elements and map entries")
+    parseValue("{[2]=1;[3]=2}") == new Mapping { [2] = 1; [3] = 2 }
+    parseValue("{[0]=1;[2]=2}") == new Mapping { [0] = 1; [2] = 2 }
+    parseValue("{[{}]=1}") == new Mapping { [new Listing {}] = 1 }
+    parseValue("{[{1,2}]=1}") == new Mapping { [new Listing { 1; 2 }] = 1 }
+    parseValue("{[{a=1}]=1}") == new Mapping { [new Mapping { ["a"] = 1 }] = 1 }
+  }
+  ["_ENV[key] with useDynamic=true"] {
+    // note: new Dynamic { 1; 2 } == new Dynamic { [0] = 1; [1] = 2 }, so we have to take care with comparisons
+    parser.parse("_ENV[true]=1") == new Dynamic { [true] = 1 }
+    parser.parse(#"_ENV["foo"]=1"#) == new Dynamic { foo = 1 }
+    parser.parse("_ENV[1]=2") is Dynamic(this.toList() == List(2) && this.toMap().isEmpty)
+    parser.parse("_ENV[0]=2") is Dynamic(this.toList().isEmpty && this.toMap() == Map(0, 2))
+    parser.parse("_ENV[-1]=2") is Dynamic(this.toList().isEmpty && this.toMap() == Map(-1, 2))
+    parser.parse("_ENV[2]=2;_ENV[1]=1") is Dynamic(this.toList() == List(1) && this.toMap() == Map(2,2))
+    parser.parse("_ENV[{a=1}]=2") == new Dynamic { [new Dynamic { a = 1 }] = 2 }
+  }
+  ["_ENV[key] with useDynamic=false"] {
+    local mapParser = (parser) { useDynamic = false }
+    mapParser.parse("_ENV[true]=1") == new Mapping { [true] = 1 }
+    mapParser.parse(#"_ENV["foo"]=1"#) == new Mapping { ["foo"] = 1 }
+    mapParser.parse("_ENV[1]=2") == new Mapping { [1] = 2 }
+    mapParser.parse("_ENV[0]=2") == new Mapping { [0] = 2 }
+    mapParser.parse("_ENV[-1]=2") == new Mapping { [-1] = 2 }
+    mapParser.parse("_ENV[2]=2;_ENV[1]=1") == new Mapping { [2] = 2; [1] = 1 }
+    mapParser.parse("_ENV[{a=1}]=2") == new Mapping { [new Mapping { ["a"] = 1 }] = 2 }
+  }
+  ["errors"] {
+    // these are facts instead of examples so we can preserve formatting in the error strings, since module.catch
+    // replaces newlines with spaces.
+    module.catch(() -> parser.parse("foo=")) == """
+      Expected value or {, found EOF
+
+      1 | foo=
+        |     ^
+      at <input>:1:5
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse("foo=3\nbar=")) == """
+      Expected value or {, found EOF
+
+      2 | bar=
+        |     ^
+      at <input>:2:5
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse(new Resource { text = "foo=1.2.3"; uri = "uri:path/to/input.lua" })) == """
+      Invalid numeric literal: 1.2.3
+
+      1 | foo=1.2.3
+        |     ^^^^^
+      at uri:path/to/input.lua:1:5
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={1, [true]=2}")) == """
+      Table has both list elements and map entries
+
+      1 | foo={1, [true]=2}
+        |      ^ first list entry
+        |          ^^^^ first map entry
+      at <input>:1:6
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={[true]=1, 2}")) == """
+      Table has both list elements and map entries
+
+      1 | foo={[true]=1, 2}
+        |       ^^^^ first map entry
+        |                ^ first list entry
+      at <input>:1:7
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  [true]=1;\n  2\n}")) == """
+      Table has both list elements and map entries
+
+      2 |   [true]=1;
+        |    ^^^^ first map entry
+      3 |   2
+        |   ^ first list entry
+      at <input>:2:4
+      """.replaceAll("\n", " ")
+    module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  1;\n  [true]=2\n}")) == """
+      Table has both list elements and map entries
+
+      2 |   1;
+        |   ^ first list entry
+      3 |   [true]=2
+        |    ^^^^ first map entry
+      at <input>:2:3
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse("[1]=1")) == """
+      Expected identifier or ;, found token `[`
+
+      1 | [1]=1
+        | ^
+      at <input>:1:1
+      """.replaceAll("\n", " ")
+    module.catch(() -> parser.parse("_ENV=1")) == """
+      _ENV cannot be assigned to directly
+
+      1 | _ENV=1
+        |     ^
+      at <input>:1:5
+      """.replaceAll("\n", " ")
+  }
+}
+
+examples {
+  ["empty"] {
+    parser.parse("")
+  }
+  ["null"] {
+    parser.parse("foo=nil")
+  }
+  ["boolean"] {
+    parser.parse("foo=true\nbar=false")
+  }
+  ["number"] {
+    parser.parse("""
+      zero=0
+      one=1
+      negative=-1
+      maxInt32=2147483647
+      minInt32=-2147483648
+      zerof=0.0
+      float=5.32
+      negfloat=-10.26
+      hex=0xaBcD
+      hexf=0X80.0
+      hexf2=0x80.8 -- 128.5
+      hexf3=0x7f.f0 -- 127.9375
+      hexf4=0x7f.84 -- 127.515625
+      hexf5=0x7f.abc -- 127.6708984375
+      hexp=0x1p1 -- 2.0
+      hexp=0x1p+1 -- 2.0
+      hexp2=0x1p2 -- 4.0
+      hexp3=0x1p-1 -- 0.5
+      hexp4=0x80.8p1 -- 257.0
+      """)
+  }
+  ["string"] {
+    parser.parse(#"""
+      s="hello world"
+      single = 'one\'two'
+      -- line comment
+      double = "one\"two"
+      --[[
+        long comment
+      ]]
+      escapes = "\a\b\f\n\r\t\v"
+      hex = --[=[ comment]] ]=] "\x00\x3a\x3A\x7f"
+      dec = "\0\58\058\0580\127"
+      u = "\u{0}\u{300a}\u{300B}\u{10FFFF}"
+      newline = "foo\
+        bar"
+      z = "foo\z
+        bar"
+      long=[[foo]]
+      long2=[[
+      foo]]
+      long3=[[
+        foo]]
+      long4=[=[]]]=]
+      long5=[===[]==]]====]]===]
+      """#)
+  }
+  ["class converters"] {
+    (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo=1;bar=2;baz=1.0")
+    (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo={1, 2}")
+    (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo={[1]=1;[2]=2}")
+    (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo={[2]=2;[3]=3}") // not listing elements!
+    (parser) { converters { [Int] = (it) -> it + 1 } }.parse("_ENV[1]=1;_ENV[2]=2")
+    (parser) { converters { [Int] = (it) -> it + 1 } }.parse("_ENV[2]=2;_ENV[3]=3") // not listing elements!
+    (parser) { converters { [String] = (it) -> "\(it)!" } }.parse(#"foo="bar""#)
+    (parser) { converters { [String] = (it) -> "\(it)!" } }.parse(#"_ENV["foo"]="bar""#)
+    fixupTableKeys((parser) { converters { [String] = (it) -> "\(it)!" } }.parse(#"table={["foo"]="bar"}"#))
+    fixupTableKeys((parser) { converters { [Int] = (it) -> it + 1 } }.parse("_ENV[{a=1}]=true"))
+    (parser) { converters { [Dynamic] = (it) -> (it) { done = true } } }.parse("foo=1")
+  }
+  ["path converters"] {
+    (parser) { converters { ["^"] = (it) -> (it) { done = true } } }.parse("foo=1")
+    (parser) { converters { [""] = (it) -> (it) { done = true } } }.parse("foo=1")
+    (parser) { converters { ["foo"] = (it) -> it + 1 } }.parse("foo=1")
+    (parser) { converters { ["^foo"] = (it) -> it + 1 } }.parse("foo=1")
+    (parser) { converters { ["a.foo"] = (it) -> it + 1 } }.parse("foo=1")
+    (parser) { converters { ["foo.a"] = (it) -> it + 1 } }.parse("foo={a=1;b=2}")
+    (parser) { converters { ["^a"] = (it) -> it + 1 } }.parse("a=1;foo={a=1}")
+    (parser) { converters { ["*"] = (it) -> it + 1 } }.parse("a=1;_ENV[true]=1")
+    (parser) { converters { ["[*]"] = (it) -> it + 1 } }.parse(#"a=1;_ENV["b"]=1;_ENV[true]=1"#)
+    (parser) { useDynamic = false; converters { ["[*]"] = (it) -> it + 1 } }.parse(#"foo={a=1;["b"]=1;[true]=1}"#)
+  }
+  ["path converters apply after converting keys"] {
+    // first validate that paths "x[42]" and "x.42" won't match an integral key
+    (parser) { converters { ["x[42]"] = (it) -> "matched: \(it)"; ["x.42"] = (it) -> "matched: \(it)" } }.parse("x={[42]=true}")
+    // and validate that the path "x.42" will match a string key
+    (parser) { converters { ["x.42"] = (it) -> "matched: \(it)" } }.parse(#"x={["42"]=true}"#)
+    // now if we convert the integral key to a string, it should match "x.42"
+    (parser) { converters { [Int] = (it) -> it.toString(); ["x.42"] = (it) -> "matched: \(it)" } }.parse("x={[42]=true}")
+  }
+  ["path converters in tables as table keys"] {
+    fixupTableKeys((parser) { converters { ["^"] = (it) -> (it) { done = true } } }.parse("_ENV[{a=1}]=1")) // ^ doesn't match the key table
+    fixupTableKeys((parser) { converters { ["a"] = (it) -> it + 1 } }.parse("_ENV[{a=1;b=1}]=1;a=1"))
+    fixupTableKeys((parser) { converters { ["^a"] = (it) -> it + 1 } }.parse("_ENV[{a=1;b=1}]=1;a=1")) // ^ doesn't match the key table
+    fixupTableKeys((parser) { converters { ["a.b"] = (it) -> it + 1 } }.parse("foo={[{a={b=1};b=1}]=1}"))
+  }
+  ["converters can return non-Lua types"] {
+    (parser) { converters { ["^"] = (it) -> Pair("foo", it.foo) } }.parse("foo=1")
+    (parser) { converters { [Int] = (it) -> Pair("int", it) } }.parse("foo=1")
+    (parser) { converters { [Int] = (it) -> Pair("int", it) } }.parse("_ENV[5]=true")
+    (parser) { converters { [Int] = (it) -> Pair("int", it) } }.parse("foo={[5]=true}")
+    (parser) { converters { [Int] = (it) -> Pair("int", it) }; useDynamic = false }.parse("_ENV[5]=true")
+    (parser) { converters { [Int] = (it) -> Pair("int", it) }; useDynamic = false }.parse("foo={[5]=true}")
+  }
+  ["fixtures"] {
+    fixupTableKeys(parser.parse(read("fixtures/sample.lua")))
+    parser.parse(read("fixtures/comment.lua"))
+  }
+}
+
+// When rendering parser.pkl-actual.pcf, any table keys that are objects just render as `new { … }`, and this produces
+// an error "Cannot tell which parent to amend". This function replaces any such keys with a rendered string. This does
+// mean that parser.pkl-expected.pcf needs to use rendered strings here instead.
+local function fixupTableKeys(value: Dynamic|Mapping|Listing): Dynamic|Mapping|Listing =
+  if (value is Listing)
+    value.toList().map((v) ->
+      if (v is Dynamic|Mapping|Listing) fixupTableKeys(v)
+      else v
+    ).toListing()
+  else
+    let (mapf = (k, v) -> Pair(
+      if (k is Object) "new \(k.getClass().simpleName) \(new PcfRenderer { indent = "" }.renderValue(k).replaceAll("\n", " "))" else k,
+      if (v is Dynamic|Mapping|Listing) fixupTableKeys(v) else v
+    ))
+    let (valueMap = value.toMap())
+    if (value is Dynamic)
+      let (map1 = valueMap.filter((k,_) -> !(k is Object)).map(mapf))
+      let (map2 = valueMap.filter((k,_) -> k is Object).map(mapf))
+        (map1.toDynamic()) {
+          ...map2
+          ...value.toList()
+        }
+    else valueMap.map(mapf).toMapping()
