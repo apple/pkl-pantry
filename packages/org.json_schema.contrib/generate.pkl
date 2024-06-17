@@ -46,6 +46,8 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module org.json_schema.contrib.generate
 
+import "pkl:platform"
+
 import "@jsonschema/Parser.pkl"
 import "@jsonschema/JsonSchema.pkl"
 import "@uri/URI.pkl"
@@ -55,7 +57,13 @@ local sourceProperty = read("prop:source")
 local sourceUri =
   if (sourceProperty.startsWith(Regex(#"\w+:"#))) sourceProperty      // absolute URI
   else if (sourceProperty.startsWith("/")) "file://\(sourceProperty)" // absolute file path
-  else "file://\(read("env:PWD"))/\(sourceProperty)"                  // relative file pat
+  else                                                // relative file path
+    let (pwd = read("env:PWD"))
+      let (path =
+        if (platform.current.operatingSystem.name == "Windows") "/\(pwd)/\(sourceProperty)".replaceAll("\\", "/")
+        else "\(pwd)/\(sourceProperty)"
+      )
+        "file://\(URI.encode(path))"
 
 local schema = read(URI.encode(sourceUri))
 
