@@ -59,6 +59,7 @@ module k8s.contrib.crd.generate
 
 import "pkl:yaml"
 import "pkl:semver"
+import "pkl:platform"
 import "@deepToTyped/deepToTyped.pkl"
 import "@uri/URI.pkl"
 
@@ -87,7 +88,13 @@ source: String = read("prop:source")
 local sourceUri =
   if (source.startsWith(Regex(#"\w+:"#))) source      // absolute URI
   else if (source.startsWith("/")) "file://\(source)" // absolute file path
-  else "file://\(read("env:PWD"))/\(source)"          // relative file path
+  else                                                // relative file path
+    let (pwd = read("env:PWD"))
+    let (path =
+      if (platform.current.operatingSystem.name == "Windows") "/\(pwd)/\(source)".replaceAll("\\", "/")
+      else "\(pwd)/\(source)"
+    )
+      "file://\(URI.encode(path))"
 
 /// The CRD's source contents, as computed from [source].
 sourceContents: String|Resource = read(URI.encode(sourceUri))

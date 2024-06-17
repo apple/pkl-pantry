@@ -20,8 +20,9 @@ dependencies {
   ["k8s"] {
     uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1"
   }
+  ["uri"] = import("../pkl.experimental.uri/PklProject")
 }
 
 package {
-  version = "1.0.2"
+  version = "1.0.3"
 }

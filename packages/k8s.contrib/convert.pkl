@@ -42,10 +42,13 @@ open module k8s.contrib.convert
 
 import "pkl:reflect"
 import "pkl:yaml"
+import "pkl:platform"
+
 import "@k8s/K8sObject.pkl"
 import "@k8s/K8sResource.pkl"
 import "@k8s/api/core/v1/ResourceRequirements.pkl"
 import "@k8s/k8sSchema.pkl"
+import "@uri/URI.pkl"
 
 /// The Kubernetes resources to convert.
 ///
@@ -100,7 +103,13 @@ input = read("prop:input")
 local inputUri =
   if (input.startsWith(Regex(#"\w+:"#))) input      // absolute URI
   else if (input.startsWith("/")) "file://\(input)" // absolute file path
-  else "file://\(read("env:PWD"))/\(input)"         // relative file path
+  else                                              // relative file path
+    let (pwd = read("env:PWD"))
+      let (path =
+        if (platform.current.operatingSystem.name == "Windows") "/\(pwd)/\(input)".replaceAll("\\", "/")
+        else "\(pwd)/\(input)"
+      )
+        "file://\(URI.encode(path))"
 
 function resourceConverterFn(resource) =
   resourceConverters.fold(resource, (acc, _, f) -> f.apply(acc))
