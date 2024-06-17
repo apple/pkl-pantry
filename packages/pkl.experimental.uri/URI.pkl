@@ -162,7 +162,7 @@ function toString(): String = new Listing {
 }.join("")
 
 /// Tells if [str] is a valid URI string.
-local isUriString = (str: String) ->
+const local isUriString = (str: String) ->
   str
     .replaceAll(PERCENT_REGEX, "")
     .codePoints
@@ -172,7 +172,7 @@ local isUriString = (str: String) ->
 typealias UriString = String(isUriString)
 
 // alphanumeric or !#$&'()*+,-./:;=?@_~
-local function isUriSafe(codePoint: Int) =
+const local function isUriSafe(codePoint: Int) =
   isAlphaNumeric(codePoint)
   // !
   || codePoint == 33
@@ -257,7 +257,7 @@ local function getBytes(str: String): List<UInt8> =
         lsb + (msb * 16)
   )
 
-local function isAlphaNumeric(codePoint: Int) =
+const local function isAlphaNumeric(codePoint: Int) =
   codePoint.isBetween(48, 57)     // 0-9
   || codePoint.isBetween(65, 90)  // a-z
   || codePoint.isBetween(97, 122) // A-Z
@@ -303,7 +303,7 @@ function encodeComponent(str: String): String =
   )
     .join("")
 
-local PERCENT_REGEX = Regex(#"(?:%[\da-fA-F]{2})+"#)
+const local PERCENT_REGEX = Regex(#"(?:%[\da-fA-F]{2})+"#)
 
 /// Decodes [str] given a percent-encoded string.
 function percentDecode(str: String): String =
