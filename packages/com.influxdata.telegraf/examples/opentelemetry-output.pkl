@@ -13,14 +13,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+amends "../Telegraf.pkl"
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
-}
-
-package {
-  version = "1.2.0"
+outputs {
+  opentelemetry {
+    new {
+      service_address = "localhost:4312"
+      timeout = 10.s
+      tls_ca = "/path/to/ca/cert"
+      tls_cert = "/path/to/cert"
+      tls_key = "/path/to/key"
+      tls_server_name = "tls-server.com"
+      compression = "gzip"
+      coralogix {
+        application = "myapp"
+        private_key = "my secret value"
+        subsystem = "my subsystem"
+      }
+      attributes {
+        ["service.name"] = "foo"
+        ["service.version"] = "1.0.0"
+      }
+      headers {
+        ["x-api-key"] = "my-api-key"
+      }
+    }
+  }
 }

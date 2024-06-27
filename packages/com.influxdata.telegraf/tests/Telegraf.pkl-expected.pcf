@@ -1,4 +1,28 @@
 examples {
+  ["opentelemetry-output.toml"] {
+    """
+    [[outputs.opentelemetry]]
+    service_address = "localhost:4312"
+    timeout = "10s"
+    tls_ca = "/path/to/ca/cert"
+    tls_cert = "/path/to/cert"
+    tls_key = "/path/to/key"
+    tls_server_name = "tls-server.com"
+    compression = "gzip"
+    
+    [outputs.opentelemetry.coralogix]
+    private_key = "my secret value"
+    application = "myapp"
+    subsystem = "my subsystem"
+    
+    [outputs.opentelemetry.attributes]
+    "service.name" = "foo"
+    "service.version" = "1.0.0"
+    
+    [outputs.opentelemetry.headers]
+    x-api-key = "my-api-key"
+    """
+  }
   ["simple.toml"] {
     """
     [[outputs.file]]

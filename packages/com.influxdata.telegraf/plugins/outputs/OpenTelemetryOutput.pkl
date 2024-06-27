@@ -1,0 +1,80 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Sends metrics to [OpenTelemetry](https://opentelemetry.io) servers and agents via gRPC.
+///
+/// <https://github.com/influxdata/telegraf/tree/master/plugins/outputs/opentelemetry>
+@ModuleInfo { minPklVersion = "0.24.0" }
+open module com.influxdata.telegraf.plugins.outputs.OpenTelemetryOutput
+
+extends "Output.pkl"
+
+/// The endpoint to which the metrics will be sent.
+///
+/// Default: `"localhost:4317"`
+service_address: String?
+
+/// The timeout for the connection.
+///
+/// Default: `5.s`
+timeout: Duration?
+
+/// Optional TLS Config.
+/// All variables should specify full path to the file.
+/// Root certificates for verifying server certificates encoded in PEM format.
+tls_ca: String?
+
+/// Path to the TLS certificate for the client encoded in PEM format.
+/// May contain intermediate certificates.
+tls_cert: String?
+
+/// Path to the TLS private key for the client encoded in PEM format.
+tls_key: String?
+
+/// Send the specified TLS server name via SNI.
+tls_server_name: String?
+
+/// Insecure option to skip TLS server cert verification.
+///
+/// Warning: it is insecure to enable this option.
+/// If enabled, crypto/tls accepts any certificate presented by the server and any host name in that certificate.
+///
+/// Default: `false`
+insecure_skip_verify: Boolean?
+
+/// Send data to a [Coralogix](https://coralogix.com) server.
+coralogix: Coralogix?
+
+/// Set the compression method used to send data.
+///
+/// Default: `"none"`
+compression: ("none"|"gzip")?
+
+/// Additional OpenTelemetry resource attributes
+attributes: Mapping<String,String>?
+
+/// Additional gRPC request metadata headers
+headers: Mapping<String,String>?
+
+class Coralogix {
+  /// The private key, which can be found in Settings > Send Your Data.
+  private_key: String
+
+  /// The application name, which will be added to metric attributes.
+  application: String
+
+  /// The subsystem name, which will be added to metric attributes.
+  subsystem: String
+}
