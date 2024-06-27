@@ -92,4 +92,14 @@ examples {
       columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma") }
     }.renderDocument(data)
   }
+  ["html with custom indent and no header"] {
+    new table.TableRenderer {
+      style = (table.htmlStyle) {
+        baseIndent = "indent:"
+        indent = "\t"
+        includeHeader = false
+      }
+      columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma") }
+    }.renderDocument(data)
+  }
 }

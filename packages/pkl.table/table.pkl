@@ -81,11 +81,7 @@ open class TableStyle {
   }
 
   /// Characters to use for specific vertical rules in the header
-  headerVerticals: Mapping<HorizontalPosition, String(!fixedWidth || length == 1)?> = new {
-    ["left"] = verticals["left"]
-    ["inner"] = verticals["inner"]
-    ["right"] = verticals["right"]
-  }
+  headerVerticals: Mapping<HorizontalPosition, String(!fixedWidth || length == 1)?> = verticals
 
   /// Default character to use for corners
   defaultCorner: String(!fixedWidth || length == 1) = "+"
@@ -119,10 +115,12 @@ open class TableStyleHTML extends TableStyle {
   /// Indent controls the baseline indent level applied to every line
   baseIndent: String = ""
 
+  local _style = this
+
   fixedWidth = false
   defaultCorner = ""
   horizontals {
-    ["top"] = "\(baseIndent)<table>\n\(indent)<thead>"
+    ["top"] = "\(baseIndent)<table>\n\(baseIndent)\(indent)<\(if (_style.includeHeader) "thead" else "tbody")>"
     ["inner"] = "\(baseIndent)\(indent)</thead>\n\(baseIndent)\(indent)<tbody>"
     ["bottom"] = "\(baseIndent)\(indent)</tbody>\n\(baseIndent)</table>"
   }

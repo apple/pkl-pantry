@@ -132,4 +132,28 @@ examples {
     
     """
   }
+  ["html with custom indent and no header"] {
+    """
+    indent:<table>
+    indent:\t<tbody>
+    indent:\t\t<tr>
+    indent:\t\t\t<td>123</td>
+    indent:\t\t\t<td>123</td>
+    indent:\t\t\t<td>123.h</td>
+    indent:\t\t</tr>
+    indent:\t\t<tr>
+    indent:\t\t\t<td>456</td>
+    indent:\t\t\t<td>456</td>
+    indent:\t\t\t<td>456.h</td>
+    indent:\t\t</tr>
+    indent:\t\t<tr>
+    indent:\t\t\t<td>789loooooong</td>
+    indent:\t\t\t<td>789</td>
+    indent:\t\t\t<td>789.h</td>
+    indent:\t\t</tr>
+    indent:\t</tbody>
+    indent:</table>
+    
+    """
+  }
 }
