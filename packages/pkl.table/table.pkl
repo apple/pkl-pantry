@@ -39,9 +39,17 @@ class Column {
   align: Alignment = "left"
 }
 
+/// Used to provide fully custom content for an entire table row
+/// One possible usage is to express colspan in HTML tables
+open class RowDirective {
+  content: String
+
+  function render(style: TableStyle): String = content
+}
+
 /// Style options used to draw the table
 /// Default values produce a table consisting of simple ASCII characters
-class TableStyle {
+open class TableStyle {
   /// Placeholder to use in place of null property values
   nullPlaceholder: String = "null"
 
@@ -49,30 +57,41 @@ class TableStyle {
   includeHeader: Boolean = true
 
   /// Default character to use for horizontal rules
-  defaultHorizontal: Char = "-"
+  defaultHorizontal: String(!fixedWidth || length == 1) = "-"
+
+  /// Indicates whether or not the table is expected to produce fixed-width output
+  /// Disabling this enables styles to produce markup languages like HTML
+  fixedWidth = true
 
   /// Characters to use for specific horizontal rules
-  horizontals: Mapping<VerticalPosition, Char?> = new {
+  horizontals: Mapping<VerticalPosition, String(!fixedWidth || length == 1)?> = new {
     ["top"] = defaultHorizontal
     ["inner"] = defaultHorizontal
     ["bottom"] = defaultHorizontal
   }
 
   /// Default character to use for vertical rules
-  defaultVertical: Char = "|"
+  defaultVertical: String(!fixedWidth || length == 1) = "|"
 
   /// Characters to use for specific horizontal rules
-  verticals: Mapping<HorizontalPosition, Char?> = new {
+  verticals: Mapping<HorizontalPosition, String(!fixedWidth || length == 1)?> = new {
     ["left"] = defaultVertical
     ["inner"] = defaultVertical
     ["right"] = defaultVertical
   }
 
+  /// Characters to use for specific vertical rules in the header
+  headerVerticals: Mapping<HorizontalPosition, String(!fixedWidth || length == 1)?> = new {
+    ["left"] = verticals["left"]
+    ["inner"] = verticals["inner"]
+    ["right"] = verticals["right"]
+  }
+
   /// Default character to use for corners
-  defaultCorner: Char = "+"
+  defaultCorner: String(!fixedWidth || length == 1) = "+"
 
   /// Characters to use for specific corners
-  corners: Mapping<HorizontalPosition, Mapping<VerticalPosition, Char>> = new {
+  corners: Mapping<HorizontalPosition, Mapping<VerticalPosition, String(!fixedWidth || length == 1)>> = new {
     ["left"] {
       ["top"] = defaultCorner
       ["inner"] = defaultCorner
@@ -88,6 +107,34 @@ class TableStyle {
       ["inner"] = defaultCorner
       ["bottom"] = defaultCorner
     }
+  }
+}
+
+/// Style options specific to HTML tables
+/// Default values produce a table with two-space indentation
+open class TableStyleHTML extends TableStyle {
+  /// Controls which character(s) are used for one indentation level
+  indent: String = "  "
+
+  /// Indent controls the baseline indent level applied to every line
+  baseIndent: String = ""
+
+  fixedWidth = false
+  defaultCorner = ""
+  horizontals {
+    ["top"] = "\(baseIndent)<table>\n\(indent)<thead>"
+    ["inner"] = "\(baseIndent)\(indent)</thead>\n\(baseIndent)\(indent)<tbody>"
+    ["bottom"] = "\(baseIndent)\(indent)</tbody>\n\(baseIndent)</table>"
+  }
+  verticals {
+    ["left"] = "\(baseIndent)\(indent.repeat(2))<tr>\n\(baseIndent)\(indent.repeat(3))<td>"
+    ["inner"] = "</td>\n\(baseIndent)\(indent.repeat(3))<td>"
+    ["right"] = "</td>\n\(baseIndent)\(indent.repeat(2))</tr>"
+  }
+  headerVerticals {
+    ["left"] = "\(baseIndent)\(indent.repeat(2))<tr>\n\(baseIndent)\(indent.repeat(3))<th>"
+    ["inner"] = "</th>\n\(baseIndent)\(indent.repeat(3))<th>"
+    ["right"] = "</th>\n\(baseIndent)\(indent.repeat(2))</tr>"
   }
 }
 
@@ -110,11 +157,15 @@ local class InterimTable {
     }
   }
 
-  renderedCells: Listing<Mapping<ColumnKey, String>> = new {
+  renderedCells: Listing<*Mapping<ColumnKey, String> | RowDirective> = new {
     for (row in rows) {
-      new {
-        for (column in columns) {
-          [column.key] = renderCell(column.key, row.getPropertyOrNull(column.key))
+      when (row is RowDirective) {
+        row
+      } else {
+        new {
+          for (column in columns) {
+            [column.key] = renderCell(column.key, row.getPropertyOrNull(column.key))
+          }
         }
       }
     }
@@ -125,13 +176,17 @@ local class InterimTable {
         renderHorizontalRule("top")
       }
       when (style.includeHeader) {
-        renderRow(columns.toList().toMap((col) -> col.key, (col) -> col.title))
+        renderRow(columns.toList().toMap((col) -> col.key, (col) -> col.title), true)
         when (style.horizontals["inner"] != null) {
           renderHorizontalRule("inner")
         }
       }
       for (row in renderedCells) {
-        renderRow(row.toMap())
+        when (row is RowDirective) {
+          row.render(style)
+        } else {
+          renderRow(row.toMap(), false)
+        }
       }
       when (style.horizontals["bottom"] != null) {
         renderHorizontalRule("bottom")
@@ -144,25 +199,34 @@ local class InterimTable {
         value?.toString() ??
           style.nullPlaceholder
 
-  function renderRow(renderedCells: Map<ColumnKey, String>) = new Listing {
-    style.verticals["left"] ?? ""
+  function renderRow(renderedCells: Map<ColumnKey, String>, inHeader: Boolean) = new Listing {
+    local verticals = if (inHeader) style.headerVerticals else style.verticals
+    verticals["left"] ?? ""
     for (i, col in columns) {
-      " "
-      if (col.align == "left")
-        renderedCells[col.key].padEnd(columnWidths[col.key], " ")
-      else if (col.align == "right")
-        renderedCells[col.key].padStart(columnWidths[col.key], " ")
-      else ""
-      " "
-      style.verticals[if (i == columns.length - 1) "right" else "inner"] ?? ""
+      when (style.fixedWidth) {
+        " "
+        if (col.align == "left")
+          renderedCells[col.key].padEnd(columnWidths[col.key], " ")
+        else if (col.align == "right")
+          renderedCells[col.key].padStart(columnWidths[col.key], " ")
+        else ""
+        " "
+      } else {
+        renderedCells[col.key]
+      }
+      verticals[if (i == columns.length - 1) "right" else "inner"] ?? ""
     }
   }.join("")
 
   function renderHorizontalRule(verticalPosition: VerticalPosition): String = new Listing {
     style.corners["left"][verticalPosition]
-    for (i, col in columns) {
-      style.horizontals[verticalPosition].repeat(columnWidths[col.key] + 2)
-      style.corners[if (i == columns.length - 1) "right" else "inner"][verticalPosition]
+    when (style.fixedWidth) {
+      for (i, col in columns) {
+        style.horizontals[verticalPosition].repeat(columnWidths[col.key] + 2)
+        style.corners[if (i == columns.length - 1) "right" else "inner"][verticalPosition]
+      }
+    } else {
+      style.horizontals[verticalPosition]
     }
   }.join("")
 }
@@ -249,3 +313,6 @@ const markdownStyle: TableStyle = new {
     ["bottom"] = null
   }
 }
+
+/// [TableStyle] that renders HTML tables
+const htmlStyle: TableStyleHTML = new {}

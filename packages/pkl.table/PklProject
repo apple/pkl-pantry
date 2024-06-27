@@ -17,6 +17,6 @@
 amends "../basePklProject.pkl"
 
 package {
-  version = "1.0.1"
-  description = "Generates pretty human-readable and markdown-compatible tables."
+  version = "1.1.0"
+  description = "Generates pretty human-readable, markdown-compatible, and HTML tables."
 }
