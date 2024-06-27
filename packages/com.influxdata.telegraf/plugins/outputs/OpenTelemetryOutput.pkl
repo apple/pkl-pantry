@@ -27,6 +27,7 @@ extends "Output.pkl"
 service_address: String?
 
 /// The timeout for the connection.
+///
 /// Default: `5.s`
 timeout: Duration?
 
@@ -35,9 +36,11 @@ timeout: Duration?
 /// Root certificates for verifying server certificates encoded in PEM format.
 tls_ca: String?
 
-/// The public and private key pairs for the client encoded in PEM format.
+/// Path to the TLS certificate for the client encoded in PEM format.
 /// May contain intermediate certificates.
 tls_cert: String?
+
+/// Path to the TLS private key for the client encoded in PEM format.
 tls_key: String?
 
 /// Send the specified TLS server name via SNI.
@@ -47,6 +50,7 @@ tls_server_name: String?
 ///
 /// Warning: it is insecure to enable this option.
 /// If enabled, crypto/tls accepts any certificate presented by the server and any host name in that certificate.
+///
 /// Default: `false`
 insecure_skip_verify: Boolean?
 
