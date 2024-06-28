@@ -51,6 +51,14 @@ examples {
       }
     }.renderDocument(data)
   }
+  ["row directive"] {
+    new table.TableRenderer {
+      style = table.htmlStyle
+      columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma") }
+    }.renderDocument((data) {
+      new table.RowDirective { content = "\(table.htmlStyle.indent.repeat(2))<tr><th colspan=\"3\">this is a colspan</th></tr>" }
+    })
+  }
   ["coverter"] {
     new table.TableRenderer {
       columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma"); table.Column("delta") }
@@ -75,6 +83,22 @@ examples {
   ["markdown"] {
     new table.TableRenderer {
       style = table.markdownStyle
+      columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma") }
+    }.renderDocument(data)
+  }
+  ["html"] {
+    new table.TableRenderer {
+      style = table.htmlStyle
+      columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma") }
+    }.renderDocument(data)
+  }
+  ["html with custom indent and no header"] {
+    new table.TableRenderer {
+      style = (table.htmlStyle) {
+        baseIndent = "indent:"
+        indent = "\t"
+        includeHeader = false
+      }
       columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma") }
     }.renderDocument(data)
   }
