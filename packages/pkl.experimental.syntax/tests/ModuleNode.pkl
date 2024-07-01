@@ -167,4 +167,35 @@ examples {
       }
     }.output.text
   }
+  ["typealiases"] {
+    new ModuleNode {
+      typealiases {
+        new {
+          name { value = "Short" }
+          type = new TypeNode.UnionTypeNode {
+            members {
+              new TypeNode.StringLiteralTypeNode { value = "A" }
+              new TypeNode.StringLiteralTypeNode { value = "B" }
+            }
+          }
+        }
+        new {
+          name { value = "Long" }
+          type = new TypeNode.UnionTypeNode {
+            members {
+              new TypeNode.StringLiteralTypeNode { value = "Apple" }
+              new TypeNode.StringLiteralTypeNode { value = "Blackberry" }
+              new TypeNode.StringLiteralTypeNode { value = "Cherry" }
+              new TypeNode.StringLiteralTypeNode { value = "Durian" }
+              new TypeNode.StringLiteralTypeNode { value = "Elderberry" }
+              new TypeNode.StringLiteralTypeNode { value = "Fig" }
+              new TypeNode.StringLiteralTypeNode { value = "Guava" }
+              new TypeNode.StringLiteralTypeNode { value = "Huckleberry" }
+              new TypeNode.StringLiteralTypeNode { value = "I_can't_think_of_a_fruit_that_starts_with_I" }
+            }
+          }
+        }
+      }
+    }.output.text
+  }
 }

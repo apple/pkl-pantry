@@ -34,4 +34,21 @@ examples {
     
     """
   }
+  ["typealiases"] {
+    """
+    typealias Short = "A"|"B"
+    
+    typealias Long =
+      "Apple"
+      |"Blackberry"
+      |"Cherry"
+      |"Durian"
+      |"Elderberry"
+      |"Fig"
+      |"Guava"
+      |"Huckleberry"
+      |"I_can't_think_of_a_fruit_that_starts_with_I"
+    
+    """
+  }
 }
