@@ -32,12 +32,21 @@ annotations: Listing<AnnotationNode>?
 
 modifiers: Listing<"external"|"local">(isDistinct)?
 
-local function renderAlias(currentIndent: String) = new Listing {
+local function renderAlias(currentIndent: String) =
+  let (typeRendered = type.render(currentIndent))
+    new Listing {
+      renderHeader(currentIndent)
+      when (!typeRendered.startsWith("\n")) { // if the type is rendered starting on the next line, do not add a space
+        " "
+      }
+      typeRendered
+    }.join("")
+
+function renderHeader(currentIndent: String) = new Listing {
   ...?modifiers
   "typealias"
   name.render(currentIndent)
   "="
-  type.render(currentIndent)
 }.join(" ")
 
 function render(currentIndent: String) = List(

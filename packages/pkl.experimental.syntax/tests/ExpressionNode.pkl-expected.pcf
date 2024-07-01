@@ -1,6 +1,6 @@
 examples {
   ["binary operators - basic"] {
-    "\"foo\" + \"bar\""
+    #""foo" + "bar""#
   }
   ["binary operators - precedence: no parentheses when child precedence is higher"] {
     "5 * 5 + 5 * 5"
@@ -39,10 +39,10 @@ examples {
     "super.someProperty(true)"
   }
   ["super subscript"] {
-    "super[\"test\"]"
+    #"super["test"]"#
   }
   ["subscript"] {
-    "test[\"key\"]"
+    #"test["key"]"#
     """
     (if (test)
       testTrue
@@ -51,9 +51,9 @@ examples {
     """
   }
   ["read"] {
-    "read(\"env:HOME\")"
-    "read*(\"env:HOME\")"
-    "read?(\"env:HOME\")"
+    #"read("env:HOME")"#
+    #"read*("env:HOME")"#
+    #"read?("env:HOME")"#
   }
   ["trace"] {
     "trace(test)"
