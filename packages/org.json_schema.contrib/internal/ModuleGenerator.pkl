@@ -142,6 +142,7 @@ local function generateClassBody(
       if (referencedSchema == null) new {}
       else if (referencedSchema is Boolean) let (_ = trace("WARN: `$ref` points to a boolean somehow")) new {}
       else generateClassBody(referencedSchema as JsonSchema, typeNames)
+  else if (schema.allOf != null) generateClassBody(TypesGenerator.collateAllOf(schema), typeNames)
   else
     new {
       for (propName, propSchema in schema.properties!!) {
@@ -157,10 +158,10 @@ local function generateClassBody(
             // If this property doesn't appear in the `required` array, mark it as nullable.
             // We can't do this within [TypesGenerator] because it doesn't have enough information available.
             type = let (underlyingType = typesGenerator.generateTypeNode(propSchema, typeNames))
-              if (schema.required?.toSet()?.contains(propName) ?? false) underlyingType
-              // If the type is already nullable, no need to make it *more* nullable.
-              else if (underlyingType is TypeNode.NullableTypeNode) underlyingType
-              else new TypeNode.NullableTypeNode { typeNode = underlyingType }
+                if (schema.required?.toSet()?.contains(propName) ?? false) underlyingType
+                // If the type is already nullable, no need to make it *more* nullable.
+                else if (underlyingType is TypeNode.NullableTypeNode) underlyingType
+                else new TypeNode.NullableTypeNode { typeNode = underlyingType }
           }
         }
       }
@@ -223,11 +224,11 @@ local classSchemas: Type.TypeNames =
     schemas
       .entries
       .fold(Map(), (accumulator: Type.TypeNames, pair) ->
-        let (path = pair.first)
+      let (path = pair.first)
         let (schema = pair.second)
-        let (typeName = determineTypeName(path.dropLast(1), path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
-          accumulator.put(schema, typeName)
-      )
+          let (typeName = determineTypeName(path.dropLast(1), path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
+            accumulator.put(schema, typeName)
+    )
 
 local classNames: Set<Type> = classSchemas.values.toSet()
 
@@ -240,22 +241,22 @@ local typeAliasSchemas: Type.TypeNames =
   let (schemasWithDefinitions = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
     schemasWithDefinitions
       .entries
-      // For each schema, return the child json schema properties that are not class-like
+    // For each schema, return the child json schema properties that are not class-like
       .flatMap((pair) ->
-        let (path = pair.first)
+      let (path = pair.first)
         let (schema = pair.second)
           (schema.definitions ?? schema.$defs ?? new Mapping<String, JsonSchema> {}).toMap()
             .filter((_, value) -> value is JsonSchema && value.$ref == null && !isClassLike(value))
             .mapKeys((key, _) -> path.add(key))
             .entries
-      )
+    )
       .filter((pair) -> pair.second is JsonSchema)
       .fold(Map(), (accumulator: Type.TypeNames, pair: Pair<List<String>, JsonSchema.Schema>) ->
-        if (pair.second is Boolean)
-          accumulator
-        else
-          let (schema = pair.second as JsonSchema)
+      if (pair.second is Boolean)
+        accumulator
+      else
+        let (schema = pair.second as JsonSchema)
           let (path = pair.first)
-          let (typeName = determineTypeName(path, path.last.capitalize(), accumulator.values.toSet() + classNames, 0))
-            accumulator.put(schema, typeName)
-      )
+            let (typeName = determineTypeName(path, path.last.capitalize(), accumulator.values.toSet() + classNames, 0))
+              accumulator.put(schema, typeName)
+    )

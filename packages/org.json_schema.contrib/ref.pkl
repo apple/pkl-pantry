@@ -100,4 +100,9 @@ function resolveRef(baseUri: URI, schema: JsonSchema): JsonSchema.Schema? =
             $$baseSchema = this
           })
             resolveRefImpl(parsedJsonSchema, parts.drop(1), ref)
-              .ifNonNull((it) -> utils.mergeSchemas((schema) { $ref = null }, List(it)))
+              .ifNonNull((it) -> utils.mergeSchemas((schema) {
+              $ref = null
+              _inline_ {
+                ["__ref__"] = schema
+              }
+            }, List(it)))
