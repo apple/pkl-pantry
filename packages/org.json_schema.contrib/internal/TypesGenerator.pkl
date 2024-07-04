@@ -60,11 +60,8 @@ function generateTypeNode(
     else
       new TypeNode.BuiltInTypeNode { type = "nothing" }
   // If we have generated a class or typealias definition already, simply use it.
-  else if (typeNames.containsKey(schema))
-    let (type = typeNames[schema as JsonSchema])
-      utils.declaredType1(type, type.moduleName != enclosingModuleName)
-  else if (typeNames.containsKey((schema) { type = null }))
-    let (type = typeNames[(schema) { type = null } as JsonSchema])
+  else if (typeNames.containsKey(schema._inline_?.getOrNull("__ref_orig__") ?? schema))
+    let (type = typeNames[(schema._inline_?.getOrNull("__ref_orig__") ?? schema) as JsonSchema])
       utils.declaredType1(type, type.moduleName != enclosingModuleName)
   // Edge case: if `type` includes `"null"`, treat this as a nullable type.
   else if (schema.type is Listing && schema.type.toList().contains("null"))

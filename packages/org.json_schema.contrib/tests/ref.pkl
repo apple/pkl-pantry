@@ -21,6 +21,12 @@ import "@jsonschema/JsonSchema.pkl"
 import "@uri/URI.pkl"
 import "../ref.pkl"
 
+local function stripRefOrig(schema: JsonSchema.Schema?): JsonSchema.Schema? =
+  schema.ifNonNull((it) -> (it as JsonSchema.Schema) {
+    local newInline = super._inline_.toMap().remove("__ref_orig__").toMapping()
+    _inline_ = if (newInline.isEmpty) null else newInline
+  })
+
 facts {
   ["resolveRef()"] {
     local schema: JsonSchema = new {
@@ -45,13 +51,13 @@ facts {
         }
       }
     }
-    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar"; $$baseSchema = schema }) == schema.definitions!!["bar"]
-    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/properties/baz"; $$baseSchema = schema }) == schema.definitions!!["bar"].properties!!["baz"]
-    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/properties/foo"; $$baseSchema = schema }) == schema.properties!!["foo"]
-    ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema }) == schema.definitions!!["bar"]._inline_!!["bizzy"]
-    ref.resolveRef(new URI {}, new JsonSchema { description = "This is a bizzy"; $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema }) == new JsonSchema {
-      description = "This is a bizzy"
-      type = "array"
-    }
+    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar"; $$baseSchema = schema })) == schema.definitions!!["bar"]
+    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/properties/baz"; $$baseSchema = schema })) == schema.definitions!!["bar"].properties!!["baz"]
+    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/properties/foo"; $$baseSchema = schema })) == schema.properties!!["foo"]
+    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema })) == schema.definitions!!["bar"]._inline_!!["bizzy"]
+    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { description = "This is a bizzy"; $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema })) == new JsonSchema {
+        description = "This is a bizzy"
+        type = "array"
+      }
   }
 }

@@ -394,7 +394,7 @@ examples {
     }
     
     class CcUsersGroups {
-      groups: (String(!isEmpty)|Listing<UsersGroupsGroupsByGroupname>(!isEmpty))?
+      groups: UsersGroupsGroupsByGroupname?
     
       /// The ``user`` dictionary values override the ``default_user`` configuration from
       /// ``/etc/cloud/cloud.cfg``. The `user` dictionary keys supported for the default_user are the same as

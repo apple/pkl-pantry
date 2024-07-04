@@ -27,8 +27,8 @@ local function parseJsonPointer(ref: String): List<String|Int> =
   ref
     .split("/")
     .map((str) -> str
-      .replaceAll("~0", "~")
-      .replaceAll("~1", "/"))
+    .replaceAll("~0", "~")
+    .replaceAll("~1", "/"))
     .map((it) -> URI.percentDecode(it))
     .map((str) -> str.toIntOrNull() ?? str)
 
@@ -82,27 +82,31 @@ local function isSameDocument(origin: URI, ref: URI) =
 /// The returned schema merges the resolved schema into [schema].
 function resolveRef(baseUri: URI, schema: JsonSchema): JsonSchema.Schema? =
   let (ref = schema.$$refUri!!)
-  let (parts = parseJsonPointer(ref.fragment ?? ""))
-    if (isSameDocument(baseUri, ref))
-      resolveRefImpl(schema.$$baseSchema, parts.drop(1), ref)
-        .ifNonNull((it) -> utils.mergeSchemas((schema) { $ref = null }, List(it)))
-    // Otherwise, we need to figure out the correct relative path.
-    // This is done by resolving [ref] against the base URI.
-    // If the resolved URI is a different document, it is read and parsed first.
-    else
-      let (resolvedUri = baseUri.resolveUri(ref))
-      let (jsonSchemaBlob = read?(resolvedUri.basePath.toString()))
-        if (jsonSchemaBlob == null)
-          let (_ = trace("WARN: Failed to read external URI \(resolvedUri)"))
-            null
-        else
-          let (parsedJsonSchema = (Parser.parse(jsonSchemaBlob)) {
-            $$baseSchema = this
-          })
-            resolveRefImpl(parsedJsonSchema, parts.drop(1), ref)
-              .ifNonNull((it) -> utils.mergeSchemas((schema) {
-              $ref = null
-              _inline_ {
-                ["__ref__"] = schema
-              }
-            }, List(it)))
+    let (parts = parseJsonPointer(ref.fragment ?? ""))
+      if (isSameDocument(baseUri, ref))
+        resolveRefImpl(schema.$$baseSchema, parts.drop(1), ref)
+          .ifNonNull((it) -> (utils.mergeSchemas((schema) { $ref = null }, List(it as JsonSchema.Schema))) {
+          // store the original content of the referent for subsequent typeNames lookup in generateTypeNode
+          _inline_ { ["__ref_orig__"] = it }
+        })
+      // Otherwise, we need to figure out the correct relative path.
+      // This is done by resolving [ref] against the base URI.
+      // If the resolved URI is a different document, it is read and parsed first.
+      else
+        let (resolvedUri = baseUri.resolveUri(ref))
+          let (jsonSchemaBlob = read?(resolvedUri.basePath.toString()))
+            if (jsonSchemaBlob == null)
+              let (_ = trace("WARN: Failed to read external URI \(resolvedUri)"))
+                null
+            else
+              let (parsedJsonSchema = (Parser.parse(jsonSchemaBlob)) {
+                $$baseSchema = this
+              })
+                resolveRefImpl(parsedJsonSchema, parts.drop(1), ref)
+                  .ifNonNull((it) -> (utils.mergeSchemas(
+                  (schema) { $ref = null },
+                  List(it as JsonSchema.Schema)
+                )) {
+                  // store the original content of the referent for subsequent typeNames lookup in generateTypeNode
+                  _inline_ { ["__ref_orig__"] = it }
+                })
