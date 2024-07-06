@@ -3,7 +3,7 @@
   "resolvedDependencies": {
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.1",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.2",
       "path": "../pkl.toml"
     }
   }

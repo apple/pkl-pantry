@@ -194,8 +194,8 @@ class Renderer extends ValueRenderer {
     let (nativeProps = m.filter((_, value) -> !isTableTypeProp(value)))
       let (tableProps = m.filter((_, value) -> isTableTypeProp(value)))
         new Listing {
-          // If we are in an object's context, render the object header. Skip if all children are also objects.
-          when (!path.isEmpty && nativeProps.length > 0) {
+          // Only render the table header if we are in an object's context or empty map context
+          when (!path.isEmpty && (nativeProps.length > 0 || m.length == 0)) {
               """
 
               [\(makeKey(path))]
