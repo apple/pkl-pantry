@@ -29,31 +29,46 @@ import "@deepToTyped/deepToTyped.pkl"
 /// will need to parse the passed flags, then provide them to Pkl via a custom
 /// [Resource Reader](https://pkl-lang.org/main/current/language-reference/index.html#extending-resource-readers),
 /// or by passing them in as external properties.
-function apply(target: Class|Module) =
+function fill(target: Class|Module|Dynamic) =
   let (targetClass =
-    if (target is Module)
+    if (!(target is Class))
       target.getClass()
     else
       target
   )
-    let (mappedInputs = applyToClass(targetClass, List()))
+    let (mappedInputs =
+      if (targetClass == Dynamic)
+        applyToDynamic(List(), target)
+      else
+        applyToClass(targetClass, List()))
       let (failures = findFailures(mappedInputs))
       if (failures.length > 0)
         throwFailures(targetClass, failures)
       else
-        deepToTyped.apply(targetClass, mappedInputs)
+        if (targetClass != Dynamic)
+          deepToTyped.apply(targetClass, mappedInputs)
+        else
+          mappedInputs
 
 /// Sets the scheme used with `read()`. By default is `prop:` so values
 /// are read from external properties passed using the `-p` flag.
 ///
 /// If set to `env:` this would result in values being read from
 /// environment variables.
-hidden inputScheme: String = "prop:"
+hidden inputScheme: String(matches(Regex(#"^[\d\w-]+:$"#)))
 
 /// Path seperator used to when computing the `read()` URI of a nested
 /// value. By default `.` which means that nested values are passed in
 /// using a dot seperated path as the key value.
-hidden pathSeperator: String = "."
+hidden pathSeperator: String
+
+/// Template used to convert a path of elements into a complete URI to
+/// be passed to `read?()`
+hidden pathTemplate: (List<String>) -> String = (path: List<String>) -> "\(inputScheme)\(path.join(pathSeperator))"
+
+/// Function used to read in values. Can be overwritten to change how
+/// values are read. Useful for testing
+hidden readFunc = (s) -> read?(s)
 
 function applyToClass(target: Class, path: List<String>): Mapping<String, Any?> =
   let (reflected = reflect.Class(target))
@@ -155,7 +170,10 @@ local function applyToDynamic(path, default: Dynamic) =
        if (potentialValue is ReadFailure)
          default
        else if (potentialValue != null)
-         parseArraySyntax(potentialValue)
+         if (potentialValue is String)
+           parseArraySyntax(potentialValue)
+         else
+           potentialValue
        else
          default
   else
@@ -195,9 +213,10 @@ hidden classHandlers: Mapping<Class, (String) -> Any> = new {
     This is normally caused by a schema property having default value of `null` but no explicit type
   """)
 
+  [Resource] = (value) -> value
 }
 
-local function coerceInput(value: String?, clazz: Class|TypeAlias, path:List<String>) =
+local function coerceInput(value: String?|Resource?, clazz: Class|TypeAlias, path:List<String>) =
     if (classHandlers.containsKey(clazz))
       if (value == null)
         ReadFail(
@@ -205,7 +224,10 @@ local function coerceInput(value: String?, clazz: Class|TypeAlias, path:List<Str
           "Not provided. Make sure you pass the argument '-p \(path.join(pathSeperator))=<\(clazz.simpleName)>' to pkl eval"
         )
       else
-        classHandlers[clazz].apply(value) ?? CoerceFail(path, "Unable to coerce '\(value)' into type \(clazz.simpleName)")
+        if (value is String)
+          classHandlers[clazz].apply(value) ?? CoerceFail(path, "Unable to coerce '\(value)' into type \(clazz.simpleName)")
+        else
+          value
     else
       if (clazz is Class)
         applyToClass(clazz, path)
@@ -236,5 +258,4 @@ local function readValueToTarget(path: List<String>, name: String, target: refle
   else
     null
 
-hidden readFunc = (s) -> read?(s)
-local function readValue(path: List<String>) = readFunc.apply("\(inputScheme)\(path.join(pathSeperator))")
+local function readValue(path: List<String>) = readFunc.apply(pathTemplate.apply(path))

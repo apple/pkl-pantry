@@ -17,9 +17,11 @@ module pkl.experimental.structuredRead.tests.structuredRead
 amends "pkl:test"
 
 import "fixtures/TestStructure.pkl"
-import "../structuredRead.pkl"
+import "../fromExternalProps.pkl"
+import "../fromEnv.pkl"
+import "../fromHttps.pkl"
 
-local function testHarness(name: String, value: String) = (structuredRead) {
+local function testHarness(name: String, value: String) = (fromExternalProps) {
   local responses = Map(name, value)
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }
@@ -38,11 +40,11 @@ local testValues = new Mapping {
     ["secondFloat"] = "23"
 }
 
-local allNulls = (structuredRead) {
+local allNulls = (fromExternalProps) {
   readFunc = (s) -> null
 }
 
-local topLevelProvided = (structuredRead) {
+local topLevelProvided = (fromExternalProps) {
   local responses = new Mapping {
     ["test"] = "string"
     ["other"] = "12312"
@@ -51,7 +53,7 @@ local topLevelProvided = (structuredRead) {
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }
 
-local incorrectTypes = (structuredRead) {
+local incorrectTypes = (fromExternalProps) {
   local responses = new Mapping {
     ["test"] = "string"
     ["other"] = "this should be an int"
@@ -61,12 +63,12 @@ local incorrectTypes = (structuredRead) {
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }
 
-local correctInput = (structuredRead) {
+local correctInput = (fromExternalProps) {
   local responses = testValues.toMap()
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }
 
-local correctEnvVars = (structuredRead) {
+local correctEnvVars = (fromExternalProps) {
   local responses = new Mapping {
     ["test"] = "string"
     ["other"] = "123123"
@@ -86,31 +88,53 @@ local correctEnvVars = (structuredRead) {
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }
 
-local incorrectNullableType = (structuredRead) {
+local incorrectNullableType = (fromExternalProps) {
   local responses = (testValues) {
    ["nullableWithDefault"] = "Should be an int"
   }
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }
 
+local class EnvConfig {
+  SHELL: String?
+  USER: String?
+  PWD: String?
+  LANG: String?
+}
+
+local Http = new Dynamic {
+  `raw.githubusercontent.com/apple/pkl-pantry` {
+    `8fcea0e535d2eb473545305d8a573144f2b0d33d` {
+      `README.adoc` {}
+      `CONTRIBUTING.adoc` {}
+    }
+  }
+}
+
 examples {
   ["missing properties"] {
-    module.catch(() -> allNulls.apply(TestStructure))
+    module.catch(() -> allNulls.fill(TestStructure))
   }
   ["top level provided properties"] {
-    module.catch(() -> topLevelProvided.apply(TestStructure))
+    module.catch(() -> topLevelProvided.fill(TestStructure))
   }
   ["incorrect types"] {
-    module.catch(() -> incorrectTypes.apply(TestStructure))
+    module.catch(() -> incorrectTypes.fill(TestStructure))
   }
   ["incorrect nullable type"] {
-    module.catch(() -> incorrectNullableType.apply(TestStructure))
+    module.catch(() -> incorrectNullableType.fill(TestStructure))
   }
   ["correct input"] {
-    correctInput.apply(TestStructure)
+    correctInput.fill(TestStructure)
   }
   ["correct env type input"] {
-    correctEnvVars.apply(TestStructure)
+    correctEnvVars.fill(TestStructure)
+  }
+  ["load from enviroment"] {
+    fromEnv.fill(EnvConfig)
+  }
+  ["load from https"] {
+    fromHttps.fill(Http)
   }
 }
 
@@ -138,24 +162,24 @@ local class DynamicValues {
 
 facts {
   ["incorrect type for nullable with default still results in coerce error"] {
-    module.catch(() -> testHarness("TestInput", "not a bool").apply(NullableTypeWithDefault)).contains("coerce")
+    module.catch(() -> testHarness("TestInput", "not a bool").fill(NullableTypeWithDefault)).contains("coerce")
   }
   ["incorrect type for typed prop with default still results in coerce error"] {
-    module.catch(() -> testHarness("TestInput", "not an int").apply(TypedWithDefaults)).contains("coerce")
+    module.catch(() -> testHarness("TestInput", "not an int").fill(TypedWithDefaults)).contains("coerce")
   }
   ["incorrect type for un-typed prop with default still results in coerce error"] {
-    module.catch(() -> testHarness("TestInput", "not a float").apply(TypelessWithDefault)).contains("coerce")
+    module.catch(() -> testHarness("TestInput", "not a float").fill(TypelessWithDefault)).contains("coerce")
   }
   ["un-typed null property causes failure"] {
-    module.catch(() -> testHarness("TestInput", "9999").apply(NullValueProperty)).contains("ambiguous type")
+    module.catch(() -> testHarness("TestInput", "9999").fill(NullValueProperty)).contains("ambiguous type")
   }
   ["nullable with default inherits default value"] {
-    (testHarness("", "").apply(NullableTypeWithDefault) as NullableTypeWithDefault).TestInput == true
+    (testHarness("", "").fill(NullableTypeWithDefault) as NullableTypeWithDefault).TestInput == true
   }
   ["typed prop with default inherits default value"] {
-    (testHarness("", "").apply(TypedWithDefaults) as TypedWithDefaults).TestInput == 10
+    (testHarness("", "").fill(TypedWithDefaults) as TypedWithDefaults).TestInput == 10
   }
   ["un-typed prop with default still coerces correctly"] {
-    (testHarness("TestInput", "9999").apply(TypelessWithDefault) as TypelessWithDefault).TestInput == 9999
+    (testHarness("TestInput", "9999").fill(TypelessWithDefault) as TypelessWithDefault).TestInput == 9999
   }
 }

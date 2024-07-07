@@ -27,10 +27,10 @@
 module chart
 
 import "values.pkl"
-import ".../structuredRead.pkl"
+import ".../fromExternalProps.pkl"
 
 // Use the default structured read settings
-local _values = structuredRead.apply(values) as values
+local _values = fromExternalProps.fill(values) as values
 
 name = _values.nameOverride
 replicas = _values.replicas

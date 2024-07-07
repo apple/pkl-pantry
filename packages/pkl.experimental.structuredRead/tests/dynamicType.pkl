@@ -16,9 +16,9 @@
 module pkl.experimental.structuredRead.tests.dynamicType
 amends "pkl:test"
 
-import "../structuredRead.pkl"
+import "../fromExternalProps.pkl"
 
-local function testHarness(name: String, value: String) = (structuredRead) {
+local function testHarness(name: String, value: String) = (fromExternalProps) {
   local responses = Map(name, value)
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }
@@ -44,21 +44,21 @@ local class NestedDynamic {
 }
 examples {
   ["dynamic types"] {
-    testHarness("TestInput.Nested", "A new string").apply(DynamicValues)
+    testHarness("TestInput.Nested", "A new string").fill(DynamicValues)
   }
   ["nested dynamic types"] {
-    testHarness("Layer1.Layer2.Layer3.TestValue", "999").apply(NestedDynamic)
+    testHarness("Layer1.Layer2.Layer3.TestValue", "999").fill(NestedDynamic)
   }
   ["incorrect dynamic value"] {
-    module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").apply(NestedDynamic))
+    module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").fill(NestedDynamic))
   }
 }
 
-local underTest = testHarness("Layer1.Layer2.Layer3.TestValue", "999").apply(NestedDynamic) as NestedDynamic
+local underTest = testHarness("Layer1.Layer2.Layer3.TestValue", "999").fill(NestedDynamic) as NestedDynamic
 
 facts {
   ["incorrect type for dynamic property causes coerce error"] {
-    module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").apply(NestedDynamic)).contains("coerce")
+    module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").fill(NestedDynamic)).contains("coerce")
   }
   ["nested dynamic value set"] {
       underTest.Layer1.Layer2.Layer3.TestValue == 999
