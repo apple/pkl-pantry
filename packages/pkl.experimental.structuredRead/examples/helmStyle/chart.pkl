@@ -1,0 +1,42 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Example of using structuredRead to recreate the behaviour of `values`
+/// in helm charts.
+///
+/// In this example the default values are loaded from values.pkl, but any
+/// value can be overwritten by passing `-p <valueName>=<newValue>` to `pkl eval`.
+///
+/// Try running `pkl eval chart.pkl -p nameOverride="BetterVector" -p replicas=30 -p args.1="/config"`
+///
+/// The overwritten values are automatically coersed into the same type as the default
+/// so `replicas` retains its `Int` type, and the string value `30` is automatically
+/// converted as needed.
+module chart
+
+import "values.pkl"
+import ".../structuredRead.pkl"
+
+// Use the default structured read settings
+local _values = structuredRead.apply(values) as values
+
+name = _values.nameOverride
+replicas = _values.replicas
+
+image = _values.image
+
+args = _values.args
+
+commonLabels = _values.commonLabels

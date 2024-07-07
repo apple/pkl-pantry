@@ -1,0 +1,161 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.structuredRead.tests.structuredRead
+amends "pkl:test"
+
+import "fixtures/TestStructure.pkl"
+import "../structuredRead.pkl"
+
+local function testHarness(name: String, value: String) = (structuredRead) {
+  local responses = Map(name, value)
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local testValues = new Mapping {
+    ["test"] = "string"
+    ["other"] = "123123"
+    ["c"] = "afe"
+    ["t.stuff"] = "TRUE"
+    ["t.nested.num"] = "23"
+    ["t.nested.float"] = "23"
+    ["t.nested.string"] = "AFWFAWEf"
+    ["number"] = "234234"
+    ["secondNumber"] = "342.023"
+    ["float"] = "20.0"
+    ["secondFloat"] = "23"
+}
+
+local allNulls = (structuredRead) {
+  readFunc = (s) -> null
+}
+
+local topLevelProvided = (structuredRead) {
+  local responses = new Mapping {
+    ["test"] = "string"
+    ["other"] = "12312"
+    ["c"] = "afe"
+  }.toMap()
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local incorrectTypes = (structuredRead) {
+  local responses = new Mapping {
+    ["test"] = "string"
+    ["other"] = "this should be an int"
+    ["c"] = "afe"
+    ["t.stuff"] = "Should be a bool"
+  }.toMap()
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local correctInput = (structuredRead) {
+  local responses = testValues.toMap()
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local correctEnvVars = (structuredRead) {
+  local responses = new Mapping {
+    ["test"] = "string"
+    ["other"] = "123123"
+    ["c"] = "afe"
+    ["t_stuff"] = "TRUE"
+    ["t_nested_num"] = "12"
+    ["t_nested_float"] = "23.3"
+    ["t_nested_string"] = "afwf"
+    ["number"] = "234234"
+    ["secondNumber"] = "342.023"
+    ["float"] = "20.0"
+    ["secondFloat"] = "23"
+  }.toMap()
+  pathSeperator = "_"
+  inputScheme = "env:"
+
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local incorrectNullableType = (structuredRead) {
+  local responses = (testValues) {
+   ["nullableWithDefault"] = "Should be an int"
+  }
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+examples {
+  ["missing properties"] {
+    module.catch(() -> allNulls.apply(TestStructure))
+  }
+  ["top level provided properties"] {
+    module.catch(() -> topLevelProvided.apply(TestStructure))
+  }
+  ["incorrect types"] {
+    module.catch(() -> incorrectTypes.apply(TestStructure))
+  }
+  ["incorrect nullable type"] {
+    module.catch(() -> incorrectNullableType.apply(TestStructure))
+  }
+  ["correct input"] {
+    correctInput.apply(TestStructure)
+  }
+  ["correct env type input"] {
+    correctEnvVars.apply(TestStructure)
+  }
+}
+
+local class NullableTypeWithDefault {
+  TestInput: Boolean? = true
+}
+
+local class TypedWithDefaults {
+  TestInput: Int = 10
+}
+
+local class TypelessWithDefault {
+  TestInput = 20.0
+}
+
+local class NullValueProperty {
+  TestInput = null
+}
+
+local class DynamicValues {
+  TestInput {
+    Nested = "String"
+  }
+}
+
+facts {
+  ["incorrect type for nullable with default still results in coerce error"] {
+    module.catch(() -> testHarness("TestInput", "not a bool").apply(NullableTypeWithDefault)).contains("coerce")
+  }
+  ["incorrect type for typed prop with default still results in coerce error"] {
+    module.catch(() -> testHarness("TestInput", "not an int").apply(TypedWithDefaults)).contains("coerce")
+  }
+  ["incorrect type for un-typed prop with default still results in coerce error"] {
+    module.catch(() -> testHarness("TestInput", "not a float").apply(TypelessWithDefault)).contains("coerce")
+  }
+  ["un-typed null property causes failure"] {
+    module.catch(() -> testHarness("TestInput", "9999").apply(NullValueProperty)).contains("ambiguous type")
+  }
+  ["nullable with default inherits default value"] {
+    (testHarness("", "").apply(NullableTypeWithDefault) as NullableTypeWithDefault).TestInput == true
+  }
+  ["typed prop with default inherits default value"] {
+    (testHarness("", "").apply(TypedWithDefaults) as TypedWithDefaults).TestInput == 10
+  }
+  ["un-typed prop with default still coerces correctly"] {
+    (testHarness("TestInput", "9999").apply(TypelessWithDefault) as TypelessWithDefault).TestInput == 9999
+  }
+}

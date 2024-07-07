@@ -1,0 +1,58 @@
+examples {
+  ["missing properties"] {
+    "Error processing properties in TestStructure):  \t'other'          : Not provided. Make sure you pass the argument '-p other=<Int>' to pkl eval \t't.stuff'        : Not provided. Make sure you pass the argument '-p t.stuff=<Boolean>' to pkl eval \t't.nested.num'   : Not provided. Make sure you pass the argument '-p t.nested.num=<Int>' to pkl eval \t't.nested.float' : Not provided. Make sure you pass the argument '-p t.nested.float=<Float>' to pkl eval \t't.nested.string': Not provided. Make sure you pass the argument '-p t.nested.string=<String>' to pkl eval \t'c'              : Not provided. Make sure you pass the argument '-p c=<String>' to pkl eval \t'number'         : Not provided. Make sure you pass the argument '-p number=<Number>' to pkl eval \t'secondNumber'   : Not provided. Make sure you pass the argument '-p secondNumber=<Number>' to pkl eval \t'float'          : Not provided. Make sure you pass the argument '-p float=<Float>' to pkl eval \t'secondFloat'    : Not provided. Make sure you pass the argument '-p secondFloat=<Float>' to pkl eval"
+  }
+  ["top level provided properties"] {
+    "Error processing properties in TestStructure):  \t't.stuff'        : Not provided. Make sure you pass the argument '-p t.stuff=<Boolean>' to pkl eval \t't.nested.num'   : Not provided. Make sure you pass the argument '-p t.nested.num=<Int>' to pkl eval \t't.nested.float' : Not provided. Make sure you pass the argument '-p t.nested.float=<Float>' to pkl eval \t't.nested.string': Not provided. Make sure you pass the argument '-p t.nested.string=<String>' to pkl eval \t'number'         : Not provided. Make sure you pass the argument '-p number=<Number>' to pkl eval \t'secondNumber'   : Not provided. Make sure you pass the argument '-p secondNumber=<Number>' to pkl eval \t'float'          : Not provided. Make sure you pass the argument '-p float=<Float>' to pkl eval \t'secondFloat'    : Not provided. Make sure you pass the argument '-p secondFloat=<Float>' to pkl eval"
+  }
+  ["incorrect types"] {
+    "Error processing properties in TestStructure):  \t'other'          : Unable to coerce 'this should be an int' into type Int \t't.stuff'        : Unable to coerce 'Should be a bool' into type Boolean \t't.nested.num'   : Not provided. Make sure you pass the argument '-p t.nested.num=<Int>' to pkl eval \t't.nested.float' : Not provided. Make sure you pass the argument '-p t.nested.float=<Float>' to pkl eval \t't.nested.string': Not provided. Make sure you pass the argument '-p t.nested.string=<String>' to pkl eval \t'number'         : Not provided. Make sure you pass the argument '-p number=<Number>' to pkl eval \t'secondNumber'   : Not provided. Make sure you pass the argument '-p secondNumber=<Number>' to pkl eval \t'float'          : Not provided. Make sure you pass the argument '-p float=<Float>' to pkl eval \t'secondFloat'    : Not provided. Make sure you pass the argument '-p secondFloat=<Float>' to pkl eval"
+  }
+  ["incorrect nullable type"] {
+    "Error processing property in TestStructure:  \t'nullableWithDefault': Unable to coerce 'Should be an int' into type Int"
+  }
+  ["correct input"] {
+    new {
+      test = "string"
+      other = 123123
+      t {
+        stuff = true
+        nested {
+          num = 23
+          float = 23.0
+          string = "AFWFAWEf"
+          nullable = null
+          hasDefault = 23.3
+        }
+      }
+      c = "afe"
+      number = 234234
+      secondNumber = 342.023
+      float = 20.0
+      secondFloat = 23.0
+      nullableWithDefault = 10
+    }
+  }
+  ["correct env type input"] {
+    new {
+      test = "string"
+      other = 123123
+      t {
+        stuff = true
+        nested {
+          num = 12
+          float = 23.3
+          string = "afwf"
+          nullable = null
+          hasDefault = 23.3
+        }
+      }
+      c = "afe"
+      number = 234234
+      secondNumber = 342.023
+      float = 20.0
+      secondFloat = 23.0
+      nullableWithDefault = 10
+    }
+  }
+}

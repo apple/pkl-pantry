@@ -1,0 +1,240 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.structuredRead.structuredRead
+import "pkl:reflect"
+import "@deepToTyped/deepToTyped.pkl"
+
+/// Takes a given class or module and attempts to fill the properties using values
+/// read using the `read()` function and the set `inputScheme` (default is `prop:`)
+///
+/// Read values are coerced into the types specified in the class or module, making
+/// it easy to get external properties (passed using the `-p` flag) or environment
+/// variables (if `inputScheme` is `env:`) into a structured and typed format.
+///
+/// When embeded in another application, this Pkl module can be used to provide a
+/// basic ability to override loaded configuration using CLI flags. The application
+/// will need to parse the passed flags, then provide them to Pkl via a custom
+/// [Resource Reader](https://pkl-lang.org/main/current/language-reference/index.html#extending-resource-readers),
+/// or by passing them in as external properties.
+function apply(target: Class|Module) =
+  let (targetClass =
+    if (target is Module)
+      target.getClass()
+    else
+      target
+  )
+    let (mappedInputs = applyToClass(targetClass, List()))
+      let (failures = findFailures(mappedInputs))
+      if (failures.length > 0)
+        throwFailures(targetClass, failures)
+      else
+        deepToTyped.apply(targetClass, mappedInputs)
+
+/// Sets the scheme used with `read()`. By default is `prop:` so values
+/// are read from external properties passed using the `-p` flag.
+///
+/// If set to `env:` this would result in values being read from
+/// environment variables.
+hidden inputScheme: String = "prop:"
+
+/// Path seperator used to when computing the `read()` URI of a nested
+/// value. By default `.` which means that nested values are passed in
+/// using a dot seperated path as the key value.
+hidden pathSeperator: String = "."
+
+function applyToClass(target: Class, path: List<String>): Mapping<String, Any?> =
+  let (reflected = reflect.Class(target))
+  new Mapping {
+    for (name, property in reflected.properties) {
+      when (isCoerceable(property)) {
+        when (isNullableProp(property)) {
+          [name] = let (potentialValue = readValueToTarget(path, name, property)) if (!(potentialValue is ReadFailure)) potentialValue else property.defaultValue
+        } else {
+          [name] = let (potentialValue = readValueToTarget(path, name, property)) if (!(potentialValue is ReadFailure)) potentialValue else property.defaultValue ?? potentialValue
+        }
+      }
+    }
+  }
+
+local function isCoerceable(prop: reflect.Property) =
+  let (_ = prop.type.getClass().simpleName)
+  (prop.type is reflect.DeclaredType) ||
+    (prop.type is reflect.NullableType) ||
+    (prop.type is reflect.TypeAlias) ||
+    (prop.type is reflect.UnknownType)
+local function isNullableProp(prop: reflect.Property) =
+  prop.type is reflect.NullableType
+
+local function throwFailures(target: Class, fails: List<Failure>) =
+  throw(
+    let (msg =
+      if (fails.length > 1)
+        new Listing {
+          "Error processing properties in \(target)):\n"
+          for (fail in fails) {
+            renderFail(fail, fails)
+          }
+        }
+      else
+        new Listing {
+          "Error processing property in \(target):\n"
+          renderFail(fails[0], fails)
+        }
+    ) msg.join("\n")
+  )
+
+local function renderFail(fail: Failure, fails: List<Failure>): String =
+  let (path = fail.path.join(pathSeperator))
+    let (longestPath = longestPath(fails))
+      let (padding = " ".repeat(longestPath - path.length))
+        "\t'\(path)'\(padding): \(fail.message)"
+
+local function longestPath(fails: List<Failure>) =
+  fails.fold(0, (acc, f) ->
+    let (path = f.path.join(pathSeperator))
+      if (path.length > acc)
+        path.length
+      else acc
+  )
+
+local function findFailures(output: Mapping<String, Any?>|Dynamic): List<Failure> =
+  output.toMap().fold(List(), (acc: List<Failure>, _, value) ->
+    if (value is Failure)
+      acc.add(value)
+    else if (value is Mapping<String, Any?>)
+      acc + findFailures(value)
+    else if (value is Dynamic)
+      acc + findFailures(value)
+    else
+      acc
+  )
+
+abstract class Failure {
+  message: String
+  path: List<String>
+}
+
+class ReadFailure extends Failure
+class CoerceFailure extends Failure
+
+local function ReadFail(path: List<String>, msg: String) = let (_path = path ) new ReadFailure {
+  message = msg
+  path = _path
+}
+
+local function CoerceFail(path: List<String>, msg: String) = let (_path = path ) new CoerceFailure {
+  message = msg
+  path = _path
+}
+
+local function parseArraySyntax(input: String): Listing = new {
+  when (input.matches(Regex(#"^\{.*}$"#))) {
+    ...input.drop(1).dropLast(1).split(",")
+  } else {
+    input
+  }
+}
+
+local function applyToDynamic(path, default: Dynamic) =
+  if (default.length() == 0 && default.toMap().length == 0)
+    // Do some special handling for empty dynamic types
+     let (potentialValue = readValue(path))
+       if (potentialValue is ReadFailure)
+         default
+       else if (potentialValue != null)
+         parseArraySyntax(potentialValue)
+       else
+         default
+  else
+    new Mapping {
+      for (name, defaultValue in default) {
+        when (defaultValue is Dynamic) {
+          [name] = applyToDynamic(path.add(name.toString()), defaultValue)
+        } else {
+          [name] = let (_path = path.add(name.toString()))
+            let (potentialValue = coerceInput(readValue(_path), defaultValue.getClass(), _path))
+            if (potentialValue is ReadFailure)
+              defaultValue
+            else
+              potentialValue
+        }
+      }
+    }.toMap().toDynamic()
+
+hidden classHandlers: Mapping<Class, (String) -> Any> = new {
+  [Int] = (value) ->
+    value.toIntOrNull()
+
+  [String] = (value) ->
+    value
+
+  [Float] = (value) ->
+    value.toFloatOrNull()
+
+  [Number] = (value) ->
+    value.toIntOrNull() ?? value.toFloatOrNull()
+
+  [Boolean] = (value) ->
+    value.toBooleanOrNull()
+
+  [Null] = (_) -> throw("""
+    Unable to perform structured read due to ambiguous type in schema.
+    This is normally caused by a schema property having default value of `null` but no explicit type
+  """)
+
+}
+
+local function coerceInput(value: String?, clazz: Class|TypeAlias, path:List<String>) =
+    if (classHandlers.containsKey(clazz))
+      if (value == null)
+        ReadFail(
+          path,
+          "Not provided. Make sure you pass the argument '-p \(path.join(pathSeperator))=<\(clazz.simpleName)>' to pkl eval"
+        )
+      else
+        classHandlers[clazz].apply(value) ?? CoerceFail(path, "Unable to coerce '\(value)' into type \(clazz.simpleName)")
+    else
+      if (clazz is Class)
+        applyToClass(clazz, path)
+      else
+        coerceInput(value, reflect.TypeAlias(clazz).referent.referent.reflectee, path)
+
+
+local function readValueToTarget(path: List<String>, name: String, target: reflect.Property): Any? =
+  let (path = path.add(name))
+    let (clazz =
+      if (target is Class)
+        target
+      else if (target.type is reflect.UnknownType)
+        target.defaultValue.getClass()
+      else if (target.type is reflect.NullableType)
+        let (_type = target.type as reflect.NullableType)
+          _type.member.referent.reflectee
+      else if (target.type is reflect.DeclaredType)
+        let (_type = target.type as reflect.DeclaredType)
+           _type.referent.reflectee
+      else
+        null
+    )
+  if (clazz == Dynamic)
+    applyToDynamic(path, target.defaultValue)
+  else if (clazz != null)
+    coerceInput(readValue(path), clazz, path)
+  else
+    null
+
+hidden readFunc = (s) -> read?(s)
+local function readValue(path: List<String>) = readFunc.apply("\(inputScheme)\(path.join(pathSeperator))")
