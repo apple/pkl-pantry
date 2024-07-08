@@ -18,7 +18,7 @@
 ///
 /// Try running `pkl eval envVars.pkl`
 module envVars
-import ".../fromEnv.pkl"
+import ".../structuredRead.pkl"
 
 class EnvConfig {
   SHELL: String?
@@ -28,5 +28,5 @@ class EnvConfig {
 }
 
 output {
-  value = fromEnv.fill(EnvConfig)
+  value = structuredRead.fromEnv.fill(EnvConfig)
 }

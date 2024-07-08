@@ -26,17 +26,8 @@
 /// converted as needed.
 module chart
 
-import "values.pkl"
-import ".../fromExternalProps.pkl"
+amends "values.pkl"
 
-// Use the default structured read settings
-local _values = fromExternalProps.fill(values) as values
-
-name = _values.nameOverride
-replicas = _values.replicas
-
-image = _values.image
-
-args = _values.args
-
-commonLabels = _values.commonLabels
+output {
+  value = module.fromExternalProps
+}

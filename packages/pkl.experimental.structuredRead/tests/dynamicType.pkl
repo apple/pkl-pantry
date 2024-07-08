@@ -16,9 +16,9 @@
 module pkl.experimental.structuredRead.tests.dynamicType
 amends "pkl:test"
 
-import "../fromExternalProps.pkl"
+import ".../structuredRead.pkl"
 
-local function testHarness(name: String, value: String) = (fromExternalProps) {
+local function testHarness(name: String, value: String) = (structuredRead.fromExternalProps) {
   local responses = Map(name, value)
   readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
 }

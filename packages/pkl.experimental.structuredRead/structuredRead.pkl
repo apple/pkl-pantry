@@ -17,12 +17,65 @@ module pkl.experimental.structuredRead.structuredRead
 import "pkl:reflect"
 import "@deepToTyped/deepToTyped.pkl"
 
-/// Takes a given class or module and attempts to fill the properties using values
-/// read using the `read()` function and the set `inputScheme` (default is `prop:`)
+/// Configures structureRead to read from environment variables
 ///
-/// Read values are coerced into the types specified in the class or module, making
-/// it easy to get external properties (passed using the `-p` flag) or environment
-/// variables (if `inputScheme` is `env:`) into a structured and typed format.
+/// ```
+/// import "structuredRead.pkl"
+///
+/// class Environment {
+///   SHELL: String
+///   PWD: String
+///   USER: Int
+/// }
+///
+/// structuredRead.fromEnv.fill(Environment)
+/// ```
+hidden fixed fromEnv: module = (module) {
+  inputScheme = "env:"
+  pathSeparator = "_"
+}
+
+/// Configures structureRead to read from external properties
+///
+/// ```
+/// import "structuredRead.pkl"
+///
+/// class Config {
+///   name: String
+///   location: String
+///   age: Int
+/// }
+///
+/// structuredRead.fromHttps.fill(Config)
+/// ```
+hidden fixed fromExternalProps: module = (module) {
+  inputScheme = "prop:"
+  pathSeparator = "."
+}
+
+/// Configures structureRead to read from https:// resources
+///
+/// ```
+/// import "structuredRead.pkl"
+///
+/// data {
+///   `apple.com` {}
+/// }
+///
+/// structuredRead.fromHttps.fill(data)
+/// ```
+hidden fixed fromHttps: module = (module) {
+  inputScheme = "https:"
+  pathSeparator = "/"
+  pathTemplate = (path) -> "\(inputScheme)//\(path.join(pathSeparator))"
+}
+
+/// Takes a given class or module and attempts to fill the properties from external resources.
+///
+/// Resources are read in by constructing resource URIs from the structure of the provided class
+/// or modules. The read values are then coerced into the types specified in the class or module, making
+/// it easy to get external properties (using [fromExternalProps] and passed using the `-p` flag)
+/// or environment variables (using [fromEnv]) into a structured and typed format.
 ///
 /// When embeded in another application, this Pkl module can be used to provide a
 /// basic ability to override loaded configuration using CLI flags. The application
@@ -41,95 +94,69 @@ function fill(target: Class|Module|Dynamic) =
         applyToDynamic(List(), target)
       else
         applyToClass(targetClass, List()))
-      let (failures = findFailures(mappedInputs))
-      if (failures.length > 0)
-        throwFailures(targetClass, failures)
-      else
-        if (targetClass != Dynamic)
-          deepToTyped.apply(targetClass, mappedInputs)
-        else
-          mappedInputs
+    if (assertNoFailures(targetClass, mappedInputs) && targetClass != Dynamic)
+      deepToTyped.apply(targetClass, mappedInputs)
+    else
+      mappedInputs
 
-/// Sets the scheme used with `read()`. By default is `prop:` so values
-/// are read from external properties passed using the `-p` flag.
+/// The scheme used to read resources from.
 ///
-/// If set to `env:` this would result in values being read from
-/// environment variables.
-hidden inputScheme: String(matches(Regex(#"^[\d\w-]+:$"#)))
+/// By default, this is `"prop:"` so values are read from external
+/// properties passed using the `-p` flag.
+hidden inputScheme: String(matches(Regex(#"[\w-]+:"#)))
 
-/// Path seperator used to when computing the `read()` URI of a nested
-/// value. By default `.` which means that nested values are passed in
+/// Path separator used to when building resource URI.
+///
+/// Default is `.` which means that nested values are passed in
 /// using a dot seperated path as the key value.
-hidden pathSeperator: String
+hidden pathSeparator: String
 
-/// Template used to convert a path of elements into a complete URI to
-/// be passed to `read?()`
-hidden pathTemplate: (List<String>) -> String = (path: List<String>) -> "\(inputScheme)\(path.join(pathSeperator))"
+/// Template used to convert a path of elements into a resource URI.
+///
+/// Default joins the path components with [pathSeparator] and
+/// prepends the [inputScheme].
+hidden pathTemplate: (List<String>) -> String = (path: List<String>) -> "\(inputScheme)\(path.join(pathSeparator))"
 
-/// Function used to read in values. Can be overwritten to change how
-/// values are read. Useful for testing
+/// Function used to read in resources. Can be overwritten to change how
+/// values are read. Useful for testing.
 hidden readFunc = (s) -> read?(s)
 
 function applyToClass(target: Class, path: List<String>): Mapping<String, Any?> =
   let (reflected = reflect.Class(target))
   new Mapping {
     for (name, property in reflected.properties) {
-      when (isCoerceable(property)) {
-        when (isNullableProp(property)) {
-          [name] = let (potentialValue = readValueToTarget(path, name, property)) if (!(potentialValue is ReadFailure)) potentialValue else property.defaultValue
-        } else {
-          [name] = let (potentialValue = readValueToTarget(path, name, property)) if (!(potentialValue is ReadFailure)) potentialValue else property.defaultValue ?? potentialValue
-        }
+      when (property.type is Coerceable) {
+        [name] = let (potentialValue = readValueToTarget(path, name, property))
+            if (!(potentialValue is ReadFailure)) potentialValue
+            else if (property.type is reflect.NullableType) property.defaultValue
+            else property.defaultValue ?? potentialValue
       }
     }
   }
 
-local function isCoerceable(prop: reflect.Property) =
-  let (_ = prop.type.getClass().simpleName)
-  (prop.type is reflect.DeclaredType) ||
-    (prop.type is reflect.NullableType) ||
-    (prop.type is reflect.TypeAlias) ||
-    (prop.type is reflect.UnknownType)
-local function isNullableProp(prop: reflect.Property) =
-  prop.type is reflect.NullableType
+typealias Coerceable = reflect.DeclaredType | reflect.NullableType | reflect.TypeAlias | reflect.UnknownType
 
-local function throwFailures(target: Class, fails: List<Failure>) =
-  throw(
-    let (msg =
-      if (fails.length > 1)
-        new Listing {
-          "Error processing properties in \(target)):\n"
-          for (fail in fails) {
-            renderFail(fail, fails)
-          }
+local function assertNoFailures(target: Class, output: Mapping<String, Any?>|Dynamic): Boolean =
+  let (fails = findFailures(output))
+    fails.isEmpty ||
+      let (msg = new Listing {
+        "Error processing \(if (fails.length > 1) "properties" else "property") in \(target):\n"
+        local maxPathLength = fails.map((f) -> f.path.join(pathSeparator).length).max
+        for (fail in fails) {
+          let (path = fail.path.join(pathSeparator))
+            "\t'\(path)'\(" ".repeat(maxPathLength - path.length)): \(fail.message)"
         }
-      else
-        new Listing {
-          "Error processing property in \(target):\n"
-          renderFail(fails[0], fails)
-        }
-    ) msg.join("\n")
-  )
-
-local function renderFail(fail: Failure, fails: List<Failure>): String =
-  let (path = fail.path.join(pathSeperator))
-    let (longestPath = longestPath(fails))
-      let (padding = " ".repeat(longestPath - path.length))
-        "\t'\(path)'\(padding): \(fail.message)"
+      }.join("\n"))
+        throw(msg)
 
 local function longestPath(fails: List<Failure>) =
-  fails.fold(0, (acc, f) ->
-    let (path = f.path.join(pathSeperator))
-      if (path.length > acc)
-        path.length
-      else acc
-  )
+  fails.map((f) -> f.path.join(pathSeparator).length).max
 
 local function findFailures(output: Mapping<String, Any?>|Dynamic): List<Failure> =
   output.toMap().fold(List(), (acc: List<Failure>, _, value) ->
     if (value is Failure)
       acc.add(value)
-    else if (value is Mapping<String, Any?>)
+    else if (value is Mapping)
       acc + findFailures(value)
     else if (value is Dynamic)
       acc + findFailures(value)
@@ -156,26 +183,23 @@ local function CoerceFail(path: List<String>, msg: String) = let (_path = path )
 }
 
 local function parseArraySyntax(input: String): Listing = new {
-  when (input.matches(Regex(#"^\{.*}$"#))) {
-    ...input.drop(1).dropLast(1).split(",")
+  when (input.startsWith("{") && input.endsWith("}")) {
+    ...input.drop(1).dropLast(1).split(",").map((e) -> e.trim())
   } else {
     input
   }
 }
 
 local function applyToDynamic(path, default: Dynamic) =
-  if (default.length() == 0 && default.toMap().length == 0)
+  if (default.toList().isEmpty && default.toMap().isEmpty)
     // Do some special handling for empty dynamic types
      let (potentialValue = readValue(path))
        if (potentialValue is ReadFailure)
          default
-       else if (potentialValue != null)
-         if (potentialValue is String)
-           parseArraySyntax(potentialValue)
-         else
-           potentialValue
+       else if (potentialValue is String)
+         parseArraySyntax(potentialValue)
        else
-         default
+         potentialValue ?? default
   else
     new Mapping {
       for (name, defaultValue in default) {
@@ -210,37 +234,28 @@ hidden classHandlers: Mapping<Class, (String) -> Any> = new {
 
   [Null] = (_) -> throw("""
     Unable to perform structured read due to ambiguous type in schema.
-    This is normally caused by a schema property having default value of `null` but no explicit type
+    This is normally caused by a schema property having default value of `null`, and no type signature.
   """)
 
   [Resource] = (value) -> value
 }
 
 local function coerceInput(value: String?|Resource?, clazz: Class|TypeAlias, path:List<String>) =
-    if (classHandlers.containsKey(clazz))
-      if (value == null)
-        ReadFail(
-          path,
-          "Not provided. Make sure you pass the argument '-p \(path.join(pathSeperator))=<\(clazz.simpleName)>' to pkl eval"
-        )
-      else
-        if (value is String)
-          classHandlers[clazz].apply(value) ?? CoerceFail(path, "Unable to coerce '\(value)' into type \(clazz.simpleName)")
-        else
-          value
-    else
-      if (clazz is Class)
-        applyToClass(clazz, path)
-      else
-        coerceInput(value, reflect.TypeAlias(clazz).referent.referent.reflectee, path)
+ if (clazz is TypeAlias) coerceInput(value, reflect.TypeAlias(clazz).referent.referent.reflectee, path)
+  else if (!classHandlers.containsKey(clazz)) applyToClass(clazz, path)
+  else if (value is String)
+    classHandlers[clazz].apply(value) ?? CoerceFail(path, "Unable to coerce '\(value)' into type \(clazz.simpleName)")
+  else
+    value ?? ReadFail(
+      path,
+      "Not provided. Make sure you pass the argument '-p \(path.join(pathSeparator))=<\(clazz.simpleName)>' to pkl eval"
+    )
 
 
 local function readValueToTarget(path: List<String>, name: String, target: reflect.Property): Any? =
   let (path = path.add(name))
     let (clazz =
-      if (target is Class)
-        target
-      else if (target.type is reflect.UnknownType)
+      if (target.type is reflect.UnknownType)
         target.defaultValue.getClass()
       else if (target.type is reflect.NullableType)
         let (_type = target.type as reflect.NullableType)

@@ -19,7 +19,7 @@
 /// Try `pkl eval fromHttps.pkl`
 module https
 
-import ".../fromHttps.pkl"
+import ".../structuredRead.pkl"
 
 Http {
   `raw.githubusercontent.com/apple/pkl-pantry` {
@@ -31,5 +31,5 @@ Http {
 }
 
 output {
-  value = fromHttps.fill(Http)
+  value = structuredRead.fromHttps.fill(Http)
 }

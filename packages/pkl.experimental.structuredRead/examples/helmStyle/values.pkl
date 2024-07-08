@@ -18,28 +18,21 @@
 /// https://vector.dev/docs/setup/installation/package-managers/helm/
 module values
 
-/// Override the name of resources.
+// !!! IMPORTANT !!!
+// This property **must** be fixed *and* hidden, otherwise a stack overflow will occur!
+hidden fixed fromExternalProps: module =
+  import(".../structuredRead.pkl").fromExternalProps.fill(module) as module
+
 nameOverride = ""
 
-/// Override the full name of resources.
 fullnameOverride = ""
 
-/// role -- [Role](https://vector.dev/docs/setup/deployment/roles/) for this Vector instance, valid options are:
-/// "Agent", "Aggregator", and "Stateless-Aggregator".
-///
-/// Each role is created with the following workloads:
-/// Agent = DaemonSet
-/// Aggregator = StatefulSet
-/// Stateless-Aggregator = Deployment
-role = "Aggregator"
+role = "Agent"
 
-/// Add a checksum of the generated ConfigMap to workload annotations.
 rollWorkload = true
 
-/// Add additional labels to all created resources.
 commonLabels {}
 
-/// Define the Vector image to use.
 image {
   repository = "timberio/vector"
   pullPolicy = "IfNotPresent"
