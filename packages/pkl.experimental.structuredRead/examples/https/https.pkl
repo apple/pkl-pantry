@@ -23,7 +23,7 @@ import ".../structuredRead.pkl"
 
 Http {
   `raw.githubusercontent.com/apple/pkl-pantry` {
-    main {
+    `8fcea0e535d2eb473545305d8a573144f2b0d33d` {
       `README.adoc` {}
       `CONTRIBUTING.adoc` {}
     }

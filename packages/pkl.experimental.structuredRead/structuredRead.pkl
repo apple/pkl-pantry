@@ -28,7 +28,7 @@ import "@deepToTyped/deepToTyped.pkl"
 ///   USER: Int
 /// }
 ///
-/// structuredRead.fromEnv.fill(Environment)
+/// environment = structuredRead.fromEnv.fill(Environment)
 /// ```
 hidden fixed fromEnv: module = (module) {
   inputScheme = "env:"
@@ -46,7 +46,7 @@ hidden fixed fromEnv: module = (module) {
 ///   age: Int
 /// }
 ///
-/// structuredRead.fromHttps.fill(Config)
+/// config = structuredRead.fromHttps.fill(Config)
 /// ```
 hidden fixed fromExternalProps: module = (module) {
   inputScheme = "prop:"
@@ -58,11 +58,11 @@ hidden fixed fromExternalProps: module = (module) {
 /// ```
 /// import "structuredRead.pkl"
 ///
-/// data {
+/// Data {
 ///   `apple.com` {}
 /// }
 ///
-/// structuredRead.fromHttps.fill(data)
+/// data = structuredRead.fromHttps.fill(Data)
 /// ```
 hidden fixed fromHttps: module = (module) {
   inputScheme = "https:"
@@ -117,8 +117,7 @@ hidden pathSeparator: String
 /// prepends the [inputScheme].
 hidden pathTemplate: (List<String>) -> String = (path: List<String>) -> "\(inputScheme)\(path.join(pathSeparator))"
 
-/// Function used to read in resources. Can be overwritten to change how
-/// values are read. Useful for testing.
+/// Debug hook for overriding how values are read.
 hidden readFunc = (s) -> read?(s)
 
 function applyToClass(target: Class, path: List<String>): Mapping<String, Any?> =
@@ -127,9 +126,9 @@ function applyToClass(target: Class, path: List<String>): Mapping<String, Any?> 
     for (name, property in reflected.properties) {
       when (property.type is Coerceable) {
         [name] = let (potentialValue = readValueToTarget(path, name, property))
-            if (!(potentialValue is ReadFailure)) potentialValue
-            else if (property.type is reflect.NullableType) property.defaultValue
-            else property.defaultValue ?? potentialValue
+          if (!(potentialValue is ReadFailure)) potentialValue
+          else if (property.type is reflect.NullableType) property.defaultValue
+          else property.defaultValue ?? potentialValue
       }
     }
   }
@@ -149,20 +148,13 @@ local function assertNoFailures(target: Class, output: Mapping<String, Any?>|Dyn
       }.join("\n"))
         throw(msg)
 
-local function longestPath(fails: List<Failure>) =
-  fails.map((f) -> f.path.join(pathSeparator).length).max
-
 local function findFailures(output: Mapping<String, Any?>|Dynamic): List<Failure> =
-  output.toMap().fold(List(), (acc: List<Failure>, _, value) ->
-    if (value is Failure)
-      acc.add(value)
-    else if (value is Mapping)
-      acc + findFailures(value)
-    else if (value is Dynamic)
-      acc + findFailures(value)
-    else
-      acc
-  )
+  findFailureAcc.apply(List(), null, output)
+
+local findFailureAcc = (result, _, value) ->
+  if (value is Failure) result.add(value)
+  else if (value is Mapping|Dynamic) value.toMap().fold(result, findFailureAcc)
+  else result
 
 abstract class Failure {
   message: String
@@ -192,14 +184,14 @@ local function parseArraySyntax(input: String): Listing = new {
 
 local function applyToDynamic(path, default: Dynamic) =
   if (default.toList().isEmpty && default.toMap().isEmpty)
-    // Do some special handling for empty dynamic types
-     let (potentialValue = readValue(path))
-       if (potentialValue is ReadFailure)
-         default
-       else if (potentialValue is String)
-         parseArraySyntax(potentialValue)
-       else
-         potentialValue ?? default
+    // Do some special handling for empty dynamic objects
+    let (potentialValue = readValue(path))
+      if (potentialValue is ReadFailure)
+        default
+      else if (potentialValue is String)
+        parseArraySyntax(potentialValue)
+      else
+        potentialValue ?? default
   else
     new Mapping {
       for (name, defaultValue in default) {
@@ -208,10 +200,10 @@ local function applyToDynamic(path, default: Dynamic) =
         } else {
           [name] = let (_path = path.add(name.toString()))
             let (potentialValue = coerceInput(readValue(_path), defaultValue.getClass(), _path))
-            if (potentialValue is ReadFailure)
-              defaultValue
-            else
-              potentialValue
+              if (potentialValue is ReadFailure)
+                defaultValue
+              else
+                potentialValue
         }
       }
     }.toMap().toDynamic()
@@ -235,13 +227,13 @@ hidden classHandlers: Mapping<Class, (String) -> Any> = new {
   [Null] = (_) -> throw("""
     Unable to perform structured read due to ambiguous type in schema.
     This is normally caused by a schema property having default value of `null`, and no type signature.
-  """)
+    """)
 
   [Resource] = (value) -> value
 }
 
 local function coerceInput(value: String?|Resource?, clazz: Class|TypeAlias, path:List<String>) =
- if (clazz is TypeAlias) coerceInput(value, reflect.TypeAlias(clazz).referent.referent.reflectee, path)
+  if (clazz is TypeAlias) coerceInput(value, reflect.TypeAlias(clazz).referent.referent.reflectee, path)
   else if (!classHandlers.containsKey(clazz)) applyToClass(clazz, path)
   else if (value is String)
     classHandlers[clazz].apply(value) ?? CoerceFail(path, "Unable to coerce '\(value)' into type \(clazz.simpleName)")
@@ -262,15 +254,15 @@ local function readValueToTarget(path: List<String>, name: String, target: refle
           _type.member.referent.reflectee
       else if (target.type is reflect.DeclaredType)
         let (_type = target.type as reflect.DeclaredType)
-           _type.referent.reflectee
+          _type.referent.reflectee
       else
         null
     )
-  if (clazz == Dynamic)
-    applyToDynamic(path, target.defaultValue)
-  else if (clazz != null)
-    coerceInput(readValue(path), clazz, path)
-  else
-    null
+      if (clazz == Dynamic)
+        applyToDynamic(path, target.defaultValue)
+      else if (clazz != null)
+        coerceInput(readValue(path), clazz, path)
+      else
+        null
 
 local function readValue(path: List<String>) = readFunc.apply(pathTemplate.apply(path))
