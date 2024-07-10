@@ -18,6 +18,12 @@ examples {
     connection_max = 5000
     enabled = true
     
+    [database.datasource_properties]
+    driverClassName = "com.mysql.jdbc.Driver"
+    initialSize = "5"
+
+    [database.empty_properties]
+
     [servers.alpha]
     ip = "10.0.0.1"
     dc = "eqdc10"
