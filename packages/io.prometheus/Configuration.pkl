@@ -202,7 +202,7 @@ open class ScrapeConfig extends HttpClientConfig {
 /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config>
 class KubernetesSdConfig extends HttpClientConfig {
   /// The Kubernetes role of entities that should be discovered.
-  role: * "pod"|"service"|"node"|"endpoints"|"endpointslice"|"ingress"
+  role: KubernetesSdConfigRole
 
   /// Optional namespace discovery.
   ///
@@ -240,8 +240,10 @@ class KubernetesSdConfig extends HttpClientConfig {
   attach_metadata: KubernetesSdConfigAttachMetadata(node?.implies(role == "pod" || role == "endpoints" || role == "endpointslice") || true)?
 }
 
+typealias KubernetesSdConfigRole = "pod"|"service"|"node"|"endpoints"|"endpointslice"|"ingress"
+
 class KubernetesSdConfigSelector {
-  role: * "pod"|"service"|"node"|"endpoints"|"ingress"
+  role: KubernetesSdConfigRole
 
   /// A `key=value` pair describing a Kubernetes resource label.
   ///.
@@ -397,7 +399,7 @@ class RelabelConfig {
 /// * `"labeldrop"`: Match `regex` against all label names.
 ///   Any label that matches will be removed from the set of labels.
 /// * `"labelkeep"`: Match `regex` against all label names.
-typealias RelabelAction = * "replace"|"keep"|"drop"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
+typealias RelabelAction = "replace"|"keep"|"drop"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
 
 /// Allows specifying a list of targets and a common label set for them.
 ///
@@ -464,7 +466,7 @@ class RemoteWriteConfig extends HttpClientConfig {
   ///
   /// Signature Verification signs requests.
   /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
-  sigv4: Sigv4Config((_self.basic_auth ?? _self.authorization) == null)?
+  sigv4: Sigv4Config?(onlyOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
 }
 
 class MetadataConfig {
@@ -594,7 +596,7 @@ class AlertManagerConfig extends HttpClientConfig {
   ///
   /// Signature Verification signs requests.
   /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
-  sigv4: Sigv4Config((_self.basic_auth ?? _self.authorization) == null)?
+  sigv4: Sigv4Config?(onlyOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
 }
 
 class RemoteReadConfig extends HttpClientConfig {
@@ -625,8 +627,10 @@ class Sigv4Config {
   /// The AWS region (if blank, the region from the default credentials chain is used).
   region: String?
 
-  /// The AWS API keys.
+  /// The AWS API access key.
   access_key: String?
+
+  /// The AWS API secret key.
   secret_key: String?
 
   /// AWS profile used to authenticate.
@@ -636,7 +640,7 @@ class Sigv4Config {
   role_arn: String?
 }
 
-open class ProxyConfig {
+abstract class ProxyConfig {
   /// Optional proxy URL.
   proxy_url: String?
 
@@ -653,17 +657,17 @@ open class ProxyConfig {
   proxy_connect_haeder: Mapping<String, Listing<String>>?
 }
 
-open class HttpClientConfig extends ProxyConfig {
+abstract class HttpClientConfig extends ProxyConfig {
   /// Sets the `Authorization` header on every request
   /// with the configured username and password.
-  basic_auth: BasicAuth((authorization ?? oauth2) == null)?
+  basic_auth: BasicAuth?(onlyOneSet(List(this, authorization, oauth2)))
 
   /// Sets the `Authorization` header on every request with the configured credentials.
-  authorization: Authorization((basic_auth ?? oauth2) == null)?
+  authorization: Authorization?
 
   /// Optional OAuth 2.0 configuration.
   /// Cannot be used at the same time as basic_auth or authorization.
-  oauth2: OAuth2((basic_auth ?? authorization) == null)?
+  oauth2: OAuth2?
 
   /// Configures the remote read request's TLS settings.
   tls_config: TLSConfig?
@@ -769,3 +773,7 @@ class TLSConfig {
 }
 
 typealias TLSVersion = "TLS10"|"TLS11"|"TLS12"|"TLS13"
+
+/// Tells if only one of the values is not null.
+local const function onlyOneSet(values: List<Any>): Boolean =
+  values.filter((it) -> it != null).length == 1
