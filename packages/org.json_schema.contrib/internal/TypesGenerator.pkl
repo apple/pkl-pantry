@@ -609,7 +609,7 @@ local function generateListingType(schema: JsonSchema, typeNames: Type.TypeNames
 /// Used for determining the base type.
 local function constOrEnumsMatch(schema: JsonSchema, predicate: (JsonSchema.JsonSchemaValue?) -> Boolean): Boolean =
   predicate.apply(schema.`const`)
-    || (schema.enum?.toList()?.every(predicate) ?? predicate.apply(schema.enum))
+  || (schema.enum?.toList()?.every(predicate) ?? predicate.apply(schema.enum))
 
 /// Returns the name of the schema's type if there is only one type.
 ///
@@ -682,6 +682,20 @@ function collateAllOf(schema: JsonSchema(allOf != null)): JsonSchema =
     let (resolvedElem = if (rawElem is JsonSchema && rawElem.$$refUri != null) ref.resolveRef(baseUri, rawElem) else rawElem)
       let (elem = if (resolvedElem is JsonSchema && resolvedElem.allOf != null) collateAllOf(resolvedElem) else resolvedElem)
         new JsonSchema {
+          // metadata
+          title = collateInformation(elem.title, res.title)
+          description = collateInformation(elem.description, res.description)
+          default = if (elem.default != null && res.default != null) let (_ = trace("Unable to combine allOf elements into one schema: dropping conflicting default")) res.default
+            else elem.default ?? res.default
+          examples = if (elem.examples != null && res.examples != null) new {
+            when (elem.examples is Listing) { ...elem.examples as Listing } else { elem.examples }
+            when (res.examples is Listing) { ...res.examples as Listing } else { res.examples }
+          } else elem.examples ?? res.examples
+          deprecated = if (elem.deprecated == true && res.deprecated == true) true
+            else null // if we have a mix of null/false/true, this is undeterminable
+          readOnly = collateMetadataBoolean(elem.readOnly, res.readOnly, "readOnly")
+          writeOnly = collateMetadataBoolean(elem.writeOnly, res.writeOnly, "writeOnly")
+
           // core
           type = if (res.type != null && elem.type != null && res.type != elem.type) allOfErr("conflicting type")
           else elem.type ?? res.type
@@ -755,7 +769,8 @@ local function collateProperties(lhs: Mapping<String(isRegex), JsonSchema.Schema
 
 local function collateSchema(lhs: JsonSchema.Schema?, rhs: JsonSchema.Schema?, fieldName: String): JsonSchema.Schema? =
   if (lhs != null && rhs != null)
-    if (lhs is JsonSchema && rhs is JsonSchema) collateAllOf(new JsonSchema { allOf { lhs; rhs } })
+    if (lhs is Boolean && rhs is Boolean) lhs || rhs
+    else if (lhs is JsonSchema && rhs is JsonSchema) collateAllOf(new JsonSchema { allOf { lhs; rhs } })
     else allOfErr("multiple non-JsonSchema \(fieldName)")
   else lhs ?? rhs
 
@@ -766,3 +781,11 @@ local function collateMin(lhs: Number?, rhs: Number?): Number? =
 local function collateMax(lhs: Number?, rhs: Number?): Number? =
   if (lhs != null && rhs != null) math.min(lhs, rhs)
   else lhs ?? rhs
+
+local function collateInformation(lhs: String?, rhs: String?): String? =
+  if (lhs != null && rhs != null) "\(lhs)\n----\n\(rhs)"
+  else lhs ?? rhs
+
+local function collateMetadataBoolean(lhs: Boolean?, rhs: Boolean?, fieldName: String): Boolean? =
+  if (lhs != rhs) allOfErr("conflicting \(fieldName)")
+  else lhs
