@@ -454,7 +454,8 @@ local function generateNumberType(schema: JsonSchema): Pair<JsonSchema, TypeNode
     if (isInt)
       let (minimum = if (schema.exclusiveMinimum != null) schema.exclusiveMinimum!! + 1 else schema.minimum)
       let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
-      let (refinedInt = if (minimum == 0 && maximum == math.maxUInt32)
+      let (refinedInt =
+        if (minimum == 0 && maximum == math.maxUInt32)
           utils.declaredType("UInt32")
         else if (minimum == 0 && maximum == math.maxUInt16)
           utils.declaredType("UInt16")
@@ -685,25 +686,33 @@ function collateAllOf(schema: JsonSchema(allOf != null)): JsonSchema =
           // metadata
           title = collateInformation(elem.title, res.title)
           description = collateInformation(elem.description, res.description)
-          default = if (elem.default != null && res.default != null) let (_ = trace("Unable to combine allOf elements into one schema: dropping conflicting default")) res.default
+          default =
+            if (elem.default != null && res.default != null) let (_ = trace("Unable to combine allOf elements into one schema: dropping conflicting default")) res.default
             else elem.default ?? res.default
-          examples = if (elem.examples != null && res.examples != null) new {
-            when (elem.examples is Listing) { ...elem.examples as Listing } else { elem.examples }
-            when (res.examples is Listing) { ...res.examples as Listing } else { res.examples }
-          } else elem.examples ?? res.examples
-          deprecated = if (elem.deprecated == true && res.deprecated == true) true
+          examples =
+            if (elem.examples != null && res.examples != null)
+              new {
+                when (elem.examples is Listing) { ...elem.examples as Listing } else { elem.examples }
+                when (res.examples is Listing) { ...res.examples as Listing } else { res.examples }
+              }
+            else elem.examples ?? res.examples
+          deprecated =
+            if (elem.deprecated == true && res.deprecated == true) true
             else null // if we have a mix of null/false/true, this is undeterminable
           readOnly = collateMetadataBoolean(elem.readOnly, res.readOnly, "readOnly")
           writeOnly = collateMetadataBoolean(elem.writeOnly, res.writeOnly, "writeOnly")
 
           // core
-          type = if (res.type != null && elem.type != null && res.type != elem.type) allOfErr("conflicting type")
-          else elem.type ?? res.type
-          `const` = if (res.`const` != null && elem.`const` != null && res.`const` != elem.`const`) allOfErr("conflicting const")
-          else elem.`const` ?? res.`const`
+          type =
+            if (res.type != null && elem.type != null && res.type != elem.type) allOfErr("conflicting type")
+            else elem.type ?? res.type
+          `const` =
+            if (res.`const` != null && elem.`const` != null && res.`const` != elem.`const`) allOfErr("conflicting const")
+            else elem.`const` ?? res.`const`
 
           // number
-          multipleOf = if (elem.multipleOf != null && res.multipleOf != null)
+          multipleOf =
+            if (elem.multipleOf != null && res.multipleOf != null)
             if (elem.multipleOf is Int && res.multipleOf is Int) math.lcm(elem.multipleOf!! as Int, res.multipleOf!! as Int)
             else allOfErr("multiple non-integer multipleOf")
           else elem.multipleOf ?? res.multipleOf
@@ -713,32 +722,37 @@ function collateAllOf(schema: JsonSchema(allOf != null)): JsonSchema =
           exclusiveMaximum = collateMax(elem.exclusiveMaximum, res.exclusiveMaximum)
 
           // string
-          pattern = if (elem.pattern != null && res.pattern != null) "(?:\(elem.pattern))|(?:\(res.pattern))"
+          pattern =
+            if (elem.pattern != null && res.pattern != null) "(?:\(elem.pattern))|(?:\(res.pattern))"
             else elem.pattern ?? res.pattern
           minLength = collateMin(elem.minLength, res.minLength) as UInt?
           maxLength = collateMax(elem.maxLength, res.maxLength) as UInt?
-          format = if (res.format != null && elem.format != null && res.format != elem.format) allOfErr("conflicting format")
-          else elem.format ?? res.format
+          format =
+            if (res.format != null && elem.format != null && res.format != elem.format) allOfErr("conflicting format")
+            else elem.format ?? res.format
 
           // object
           properties = collateProperties(elem.properties, res.properties)
           patternProperties = collateProperties(elem.patternProperties, res.patternProperties)
           additionalProperties = collateSchema(elem.additionalProperties, res.additionalProperties, "additionalProperties")
-          required = if (elem.required == null && res.required == null) null
-          else ((elem.required?.toSet() ?? Set()) + (res.required?.toSet() ?? Set())).toListing()
+          required =
+            if (elem.required == null && res.required == null) null
+            else ((elem.required?.toSet() ?? Set()) + (res.required?.toSet() ?? Set())).toListing()
           propertyNames = collateSchema(elem.propertyNames, res.propertyNames, "propertyNames")
           minProperties = collateMin(elem.minProperties, res.minProperties) as UInt?
           maxProperties = collateMax(elem.maxProperties, res.maxProperties) as UInt?
 
           // array
-          items = if (elem.items == null && res.items == null) null
-          else if ((res.items == null) != (elem.items == null)) elem.items ?? res.items
-          else if (res.items is JsonSchema && elem.items is JsonSchema) collateAllOf(new JsonSchema { allOf { res.items; elem.items as JsonSchema } })
-          else allOfErr("conflicting items lhs:'\(elem.items)' rhs:'\(res.items)'")
+          items =
+            if (elem.items == null && res.items == null) null
+            else if ((res.items == null) != (elem.items == null)) elem.items ?? res.items
+            else if (res.items is JsonSchema && elem.items is JsonSchema) collateAllOf(new JsonSchema { allOf { res.items; elem.items as JsonSchema } })
+            else allOfErr("conflicting items lhs:'\(elem.items)' rhs:'\(res.items)'")
           additionalItems = collateSchema(elem.additionalItems, res.additionalItems, "additionalItems")
           minItems = collateMin(elem.minItems, res.minItems) as UInt?
           maxItems = collateMax(elem.maxItems, res.maxItems) as UInt?
-          uniqueItems = if (elem.uniqueItems == true || res.uniqueItems == true) true
+          uniqueItems =
+            if (elem.uniqueItems == true || res.uniqueItems == true) true
             else elem.uniqueItems ?? res.uniqueItems
 
           // composition
@@ -756,15 +770,16 @@ local function collateSet(lhs: Listing<JsonSchema.Schema>(!isEmpty)?, rhs: Listi
   else lhs ?? rhs
 
 local function collateProperties(lhs: Mapping<String(isRegex), JsonSchema.Schema>?, rhs: Mapping<String(isRegex), JsonSchema.Schema>?): Mapping<String(isRegex), JsonSchema.Schema>? =
-  if (lhs != null && rhs != null) new {
-    for (key in lhs.keys + rhs.keys) {
-      when (lhs.containsKey(key) && rhs.containsKey(key)) {
-        [key] = collateAllOf(new JsonSchema { allOf { lhs[key]; rhs[key] } })
-      } else {
-        [key] = lhs.getOrNull(key) ?? rhs[key]
+  if (lhs != null && rhs != null)
+    new {
+      for (key in lhs.keys + rhs.keys) {
+        when (lhs.containsKey(key) && rhs.containsKey(key)) {
+          [key] = collateAllOf(new JsonSchema { allOf { lhs[key]; rhs[key] } })
+        } else {
+          [key] = lhs.getOrNull(key) ?? rhs[key]
+        }
       }
     }
-  }
   else lhs ?? rhs
 
 local function collateSchema(lhs: JsonSchema.Schema?, rhs: JsonSchema.Schema?, fieldName: String): JsonSchema.Schema? =
