@@ -37,7 +37,8 @@ local jsonRenderer = new JsonRenderer {}
 /// The root schema, used to resolve `$ref` values.
 rootSchema: JsonSchema
 
-local collatedRootSchema = TypesGenerator.collateAllOf(rootSchema)
+// local collatedRootSchema = rootSchema
+local collatedRootSchema = if (rootSchema.allOf != null) TypesGenerator.collateAllOf(rootSchema) else rootSchema
 
 /// The URI representing the root schema, used to resolve `$ref` values.
 baseUri: URI
@@ -222,8 +223,9 @@ local function determineTypeName(path: List<String>, candidateName: String, exis
 ///
 /// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not have [JsonSchema.`$ref`] defined.
 local classSchemas: Type.TypeNames =
-  let (schemas = utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> elem != collatedRootSchema && isClassLike(elem)))
-    schemas
+  let (schemas = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> elem != rootSchema && isClassLike(elem)))
+  let (collatedSchemas = if (collatedRootSchema == rootSchema) Map() else utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> elem != collatedRootSchema && isClassLike(elem)))
+    (schemas + collatedSchemas)
       .entries
       .fold(Map(), (accumulator: Type.TypeNames, pair) ->
         let (path = pair.first)
@@ -240,8 +242,9 @@ local classNames: Set<Type> = classSchemas.values.toSet()
 /// Typealiases get rendered for any [JsonSchema.definitions] or [JsonSchema.`$defs`] that should not be rendered as a class.
 local typeAliasSchemas: Type.TypeNames =
   // Grab all schemas that have `definitions` or `$defs`
-  let (schemasWithDefinitions = utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
-    schemasWithDefinitions
+  let (schemasWithDefinitions = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
+  let (collatedSchemasWithDefinitions = if (collatedRootSchema == rootSchema) Map() else utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
+    (schemasWithDefinitions + collatedSchemasWithDefinitions)
       .entries
       // For each schema, return the child json schema properties that are not class-like
       .flatMap((pair) ->

@@ -237,8 +237,13 @@ examples {
     /// This module was generated from JSON Schema from <>.
     module com.apple.Example
     
+    growpart: Growpart0?
+    
     groups: (String(!isEmpty)|Listing<UsersGroupsGroupsByGroupname>(!isEmpty))?
     
+    /// The ``user`` dictionary values override the ``default_user`` configuration from
+    /// ``/etc/cloud/cloud.cfg``. The `user` dictionary keys supported for the default_user are the same as
+    /// the ``users`` schema.
     user: (String|UsersGroupsUser)?
     
     users: (String|Listing<String|Listing<String>|UsersGroupsUser>)?
@@ -402,6 +407,68 @@ examples {
       user: (String|UsersGroupsUser)?
     
       users: (String|Listing<String|Listing<String>|UsersGroupsUser>)?
+    }
+    
+    class CcGrowpart {
+      growpart: Growpart?
+    }
+    
+    class Growpart {
+      /// The utility to use for resizing. Default: ``auto``
+      ///
+      /// Possible options:
+      ///
+      /// * ``auto`` - Use any available utility
+      ///
+      /// * ``growpart`` - Use growpart utility
+      ///
+      /// * ``gpart`` - Use BSD gpart utility
+      ///
+      /// * ``'off'`` - Take no action
+      ///
+      /// Default if undefined: `"auto"`
+      mode: ("auto"|"growpart"|"gpart"|"off"|Boolean(this == false))?
+    
+      /// The devices to resize. Each entry can either be the path to the device's mountpoint in the
+      /// filesystem or a path to the block device in '/dev'. Default: ``[/]``
+      ///
+      /// Default if undefined: `{ "/" }`
+      devices: Listing<String>?
+    
+      /// If ``true``, ignore the presence of ``/etc/growroot-disabled``. If ``false`` and the file exists,
+      /// then don't resize. Default: ``false``
+      ///
+      /// Default if undefined: `false`
+      ignore_growroot_disabled: Boolean?
+    }
+    
+    class Growpart0 {
+      /// The utility to use for resizing. Default: ``auto``
+      ///
+      /// Possible options:
+      ///
+      /// * ``auto`` - Use any available utility
+      ///
+      /// * ``growpart`` - Use growpart utility
+      ///
+      /// * ``gpart`` - Use BSD gpart utility
+      ///
+      /// * ``'off'`` - Take no action
+      ///
+      /// Default if undefined: `"auto"`
+      mode: ("auto"|"growpart"|"gpart"|"off"|Boolean(this == false))?
+    
+      /// The devices to resize. Each entry can either be the path to the device's mountpoint in the
+      /// filesystem or a path to the block device in '/dev'. Default: ``[/]``
+      ///
+      /// Default if undefined: `{ "/" }`
+      devices: Listing<String>?
+    
+      /// If ``true``, ignore the presence of ``/etc/growroot-disabled``. If ``false`` and the file exists,
+      /// then don't resize. Default: ``false``
+      ///
+      /// Default if undefined: `false`
+      ignore_growroot_disabled: Boolean?
     }
     
     typealias AllModules = "users_groups"
