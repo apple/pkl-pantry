@@ -146,148 +146,148 @@ local function numberConstraints(schema: JsonSchema): List<ExpressionNode> =
     List()
   else
     let (minimum = if (schema.exclusiveMinimum != null) schema.exclusiveMinimum!! + 1 else schema.minimum)
-      let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
-        let (isBetween = constraintIsBetween(minimum, maximum))
-          let (isPositive = numberConstraintsIsPositive(minimum, maximum))
-            new Listing {
-              when (isBetween != null) {
-                isBetween
-              }
-              when (isPositive != null) {
-                isPositive
-              }
-              when (isPositive == null && isBetween == null) {
-                when (schema.minimum != null) {
-                  utils.binaryOperatorNode(utils.THIS, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minimum!!))
-                }
+    let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
+    let (isBetween = constraintIsBetween(minimum, maximum))
+    let (isPositive = numberConstraintsIsPositive(minimum, maximum))
+      new Listing {
+        when (isBetween != null) {
+          isBetween
+        }
+        when (isPositive != null) {
+          isPositive
+        }
+        when (isPositive == null && isBetween == null) {
+          when (schema.minimum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minimum!!))
+          }
 
-                when (schema.exclusiveMinimum != null) {
-                  utils.binaryOperatorNode(utils.THIS, operators.GREATER_THAN, utils.numberLiteral(schema.exclusiveMinimum!!))
-                }
+          when (schema.exclusiveMinimum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.GREATER_THAN, utils.numberLiteral(schema.exclusiveMinimum!!))
+          }
 
-                when (schema.maximum != null) {
-                  utils.binaryOperatorNode(utils.THIS, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maximum!!))
-                }
+          when (schema.maximum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maximum!!))
+          }
 
-                when (schema.exclusiveMaximum != null) {
-                  utils.binaryOperatorNode(utils.THIS, operators.LESS_THAN, utils.numberLiteral(schema.exclusiveMaximum!!))
-                }
+          when (schema.exclusiveMaximum != null) {
+            utils.binaryOperatorNode(utils.THIS, operators.LESS_THAN, utils.numberLiteral(schema.exclusiveMaximum!!))
+          }
+        }
+        when (schema.multipleOf != null) {
+          if (schema.multipleOf == 2)
+            new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "isEven"
               }
-              when (schema.multipleOf != null) {
-                if (schema.multipleOf == 2)
-                  new ExpressionNode.MemberAccessExpressionNode {
-                    identifier {
-                      value = "isEven"
-                    }
-                  }
-                else
-                  utils.binaryOperatorNode(
-                    utils.binaryOperatorNode(utils.THIS, operators.MODULO, utils.numberLiteral(schema.multipleOf!!)),
-                    operators.EQUALS,
-                    utils.numberLiteral(0)
-                  )
-              }
-            }.toList()
+            }
+          else
+            utils.binaryOperatorNode(
+              utils.binaryOperatorNode(utils.THIS, operators.MODULO, utils.numberLiteral(schema.multipleOf!!)),
+              operators.EQUALS,
+              utils.numberLiteral(0)
+            )
+        }
+      }.toList()
 
 local function arrayConstraints(schema: JsonSchema): List<ExpressionNode> =
   if (!isListingSchema(schema))
     List()
   else
     let (isBetween = constraintLengthIsBetween(schema.minItems, schema.maxItems))
-      let (isEmpty = constraintIsEmpty(schema.minItems, schema.maxItems))
-        new Listing {
-          when (isBetween != null) {
-            isBetween
-          }
-          when (isEmpty != null) {
-            isEmpty
-          }
-          when (isBetween == null && isEmpty == null) {
-            when (schema.minItems != null) {
-              utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
-                identifier {
-                  value = "length"
-                }
-              }, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minItems!!))
-            }
-
-            when (schema.maxItems != null) {
-              utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
-                identifier {
-                  value = "length"
-                }
-              }, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maxItems!!))
-            }
-          }
-          when (schema.uniqueItems == true) {
-            new ExpressionNode.MemberAccessExpressionNode {
+    let (isEmpty = constraintIsEmpty(schema.minItems, schema.maxItems))
+      new Listing {
+        when (isBetween != null) {
+          isBetween
+        }
+        when (isEmpty != null) {
+          isEmpty
+        }
+        when (isBetween == null && isEmpty == null) {
+          when (schema.minItems != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
               identifier {
-                value = "isDistinct"
+                value = "length"
               }
+            }, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minItems!!))
+          }
+
+          when (schema.maxItems != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maxItems!!))
+          }
+        }
+        when (schema.uniqueItems == true) {
+          new ExpressionNode.MemberAccessExpressionNode {
+            identifier {
+              value = "isDistinct"
             }
           }
-        }.toList()
+        }
+      }.toList()
 
 local function stringConstraints(schema: JsonSchema): List<ExpressionNode> =
   if (!isStringSchema(schema))
     List()
   else
     let (isBetween = constraintLengthIsBetween(schema.minLength, schema.maxLength))
-      let (isEmpty = constraintIsEmpty(schema.minLength, schema.maxLength))
-        new Listing {
-          when (isBetween != null) {
-            isBetween
-          }
-          when (isEmpty != null) {
-            isEmpty
-          }
-          when (isBetween == null && isEmpty == null) {
-            when (schema.minLength != null) {
-              utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
-                identifier {
-                  value = "length"
-                }
-              }, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minLength!!))
-            }
-
-            when (schema.maxLength != null) {
-              utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
-                identifier {
-                  value = "length"
-                }
-              }, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maxLength!!))
-            }
-          }
-
-          when (schema.pattern != null) {
-            new ExpressionNode.MemberAccessExpressionNode {
+    let (isEmpty = constraintIsEmpty(schema.minLength, schema.maxLength))
+      new Listing {
+        when (isBetween != null) {
+          isBetween
+        }
+        when (isEmpty != null) {
+          isEmpty
+        }
+        when (isBetween == null && isEmpty == null) {
+          when (schema.minLength != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
               identifier {
-                value = "matches"
+                value = "length"
               }
-              arguments {
-                new ExpressionNode.MemberAccessExpressionNode {
-                  identifier {
-                    value = "Regex"
-                  }
-                  arguments {
-                    new ExpressionNode.LiteralValueExpressionNode {
-                      value = schema.pattern
-                    }
+            }, operators.GREATER_THAN_OR_EQUALS, utils.numberLiteral(schema.minLength!!))
+          }
+
+          when (schema.maxLength != null) {
+            utils.binaryOperatorNode(new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "length"
+              }
+            }, operators.LESS_THAN_OR_EQUALS, utils.numberLiteral(schema.maxLength!!))
+          }
+        }
+
+        when (schema.pattern != null) {
+          new ExpressionNode.MemberAccessExpressionNode {
+            identifier {
+              value = "matches"
+            }
+            arguments {
+              new ExpressionNode.MemberAccessExpressionNode {
+                identifier {
+                  value = "Regex"
+                }
+                arguments {
+                  new ExpressionNode.LiteralValueExpressionNode {
+                    value = schema.pattern
                   }
                 }
               }
             }
           }
+        }
 
-          // For formats, regex is easy, but not really clear how to describe anything else.
-          when (schema.format == "regex") {
-            new ExpressionNode.MemberAccessExpressionNode {
-              identifier {
-                value = "isRegex"
-              }
+        // For formats, regex is easy, but not really clear how to describe anything else.
+        when (schema.format == "regex") {
+          new ExpressionNode.MemberAccessExpressionNode {
+            identifier {
+              value = "isRegex"
             }
           }
-        }.toList()
+        }
+      }.toList()
 
 /// Constraints for [Mapping] types.
 ///
@@ -390,10 +390,10 @@ local function constraintExpressions(schema: JsonSchema.Schema): List<Expression
   if (schema is Boolean) List()
   else
     numberConstraints(schema as JsonSchema)
-    + arrayConstraints(schema as JsonSchema)
-    + stringConstraints(schema as JsonSchema)
-    + mappingConstraints(schema as JsonSchema)
-    + literalValueConstraints(schema as JsonSchema)
+      + arrayConstraints(schema as JsonSchema)
+      + stringConstraints(schema as JsonSchema)
+      + mappingConstraints(schema as JsonSchema)
+      + literalValueConstraints(schema as JsonSchema)
 
 /// Constraints to be added to a base type.
 ///
@@ -406,41 +406,41 @@ local function constraintExpressions(schema: JsonSchema.Schema): List<Expression
 /// We accomplish this by only applying constraints when the type is detected to be exactly the desired subtype.
 /// When generating base types, we split the types into a union type, and synthesize a subschema of that type.
 local function addConstraints(schema: JsonSchema): Mixin<TypeNode> = (_typeNode) ->
-    let (baseConstraints = constraintExpressions(schema))
-      let (notConstraints =
-        if (schema.not == null) List()
-        else
-          let (_not = (schema.not!!) { type = schema.type })
-            constraintExpressions(_not).map((_expression) ->
-              // `isOdd` instead of `!isEven` etc
-              if (_expression is ExpressionNode.MemberAccessExpressionNode && memberAccessAntonyms.containsKey(_expression.identifier.value))
-                (_expression) {
-                  identifier {
-                    value = memberAccessAntonyms[_expression.identifier.value]
-                  }
-                }
-              // Use antonyms if available. For example, we can use the expression `this > 5` instead of `!(this <= 4)`
-              else if (_expression is ExpressionNode.BinaryOperatorExpressionNode && antonyms.containsKey(_expression.operator))
-                (_expression) {
-                  operator = antonyms[_expression.operator]
-                }
-              else
-                new ExpressionNode.PrefixOperatorExpressionNode {
-                  operator = operators.NOT
-                  expression = _expression
-                })
-      )
-        let (allOfConstraints =
-          if (schema.allOf == null) List()
+  let (baseConstraints = constraintExpressions(schema))
+  let (notConstraints =
+    if (schema.not == null) List()
+    else
+      let (_not = (schema.not!!) { type = schema.type })
+        constraintExpressions(_not).map((_expression) ->
+          // `isOdd` instead of `!isEven` etc
+          if (_expression is ExpressionNode.MemberAccessExpressionNode && memberAccessAntonyms.containsKey(_expression.identifier.value))
+            (_expression) {
+              identifier {
+                value = memberAccessAntonyms[_expression.identifier.value]
+              }
+            }
+          // Use antonyms if available. For example, we can use the expression `this > 5` instead of `!(this <= 4)`
+          else if (_expression is ExpressionNode.BinaryOperatorExpressionNode && antonyms.containsKey(_expression.operator))
+            (_expression) {
+              operator = antonyms[_expression.operator]
+            }
           else
-            let (merged = utils.mergeSchemas(schema, schema.allOf!!.toList()))
-              constraintExpressions(merged)
+            new ExpressionNode.PrefixOperatorExpressionNode {
+              operator = operators.NOT
+              expression = _expression
+            })
         )
-          let (allConstraints = baseConstraints + notConstraints + allOfConstraints)
-            if (allConstraints.isEmpty)
-              _typeNode
-            else
-              new TypeNode.ConstrainedTypeNode { typeNode = _typeNode; constraints = allConstraints.toListing() }
+  let (allOfConstraints =
+    if (schema.allOf == null) List()
+    else
+      let (merged = utils.mergeSchemas(schema, schema.allOf!!.toList()))
+        constraintExpressions(merged)
+  )
+  let (allConstraints = baseConstraints + notConstraints + allOfConstraints)
+    if (allConstraints.isEmpty)
+      _typeNode
+    else
+      new TypeNode.ConstrainedTypeNode { typeNode = _typeNode; constraints = allConstraints.toListing() }
 
 /// Generates the declared type of a schema, without constraints.
 ///
@@ -453,34 +453,34 @@ local function generateNumberType(schema: JsonSchema): Pair<JsonSchema, TypeNode
   let (isInt = schema.type == "integer" || (schema.multipleOf != null && schema.multipleOf == schema.multipleOf?.floor))
     if (isInt)
       let (minimum = if (schema.exclusiveMinimum != null) schema.exclusiveMinimum!! + 1 else schema.minimum)
-        let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
-          let (refinedInt = if (minimum == 0 && maximum == math.maxUInt32)
-            utils.declaredType("UInt32")
-          else if (minimum == 0 && maximum == math.maxUInt16)
-            utils.declaredType("UInt16")
-          else if (minimum == 0 && maximum == math.maxUInt8)
-            utils.declaredType("UInt8")
-          else if (minimum == math.minInt32 && maximum == math.maxInt32)
-            utils.declaredType("Int32")
-          else if (minimum == math.minInt16 && maximum == math.maxInt16)
-            utils.declaredType("Int16")
-          else if (minimum == math.minInt8 && maximum == math.maxInt8)
-            utils.declaredType("Int8")
-          else null
-          )
-            let (_schema = (schema) {
-              when (refinedInt != null) {
-                minimum = null
-                maximum = null
-                exclusiveMinimum = null
-                exclusiveMaximum = null
-              }
-              // `multipleOf: 1` is redundant if the type is already [Int].
-              when (schema.multipleOf == 1) {
-                multipleOf = null
-              }
-            })
-              Pair(_schema, refinedInt ?? utils.declaredType("Int"))
+      let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
+      let (refinedInt = if (minimum == 0 && maximum == math.maxUInt32)
+          utils.declaredType("UInt32")
+        else if (minimum == 0 && maximum == math.maxUInt16)
+          utils.declaredType("UInt16")
+        else if (minimum == 0 && maximum == math.maxUInt8)
+          utils.declaredType("UInt8")
+        else if (minimum == math.minInt32 && maximum == math.maxInt32)
+          utils.declaredType("Int32")
+        else if (minimum == math.minInt16 && maximum == math.maxInt16)
+          utils.declaredType("Int16")
+        else if (minimum == math.minInt8 && maximum == math.maxInt8)
+          utils.declaredType("Int8")
+        else null
+      )
+        let (_schema = (schema) {
+          when (refinedInt != null) {
+            minimum = null
+            maximum = null
+            exclusiveMinimum = null
+            exclusiveMaximum = null
+          }
+          // `multipleOf: 1` is redundant if the type is already [Int].
+          when (schema.multipleOf == 1) {
+            multipleOf = null
+          }
+        })
+          Pair(_schema, refinedInt ?? utils.declaredType("Int"))
     else
       Pair(schema, utils.declaredType("Number"))
 
@@ -609,7 +609,7 @@ local function generateListingType(schema: JsonSchema, typeNames: Type.TypeNames
 /// Used for determining the base type.
 local function constOrEnumsMatch(schema: JsonSchema, predicate: (JsonSchema.JsonSchemaValue?) -> Boolean): Boolean =
   predicate.apply(schema.`const`)
-  || (schema.enum?.toList()?.every(predicate) ?? predicate.apply(schema.enum))
+    || (schema.enum?.toList()?.every(predicate) ?? predicate.apply(schema.enum))
 
 /// Returns the name of the schema's type if there is only one type.
 ///
@@ -699,7 +699,7 @@ function collateAllOf(schema: JsonSchema(allOf != null)): JsonSchema =
           exclusiveMaximum = collateMax(elem.exclusiveMaximum, res.exclusiveMaximum)
 
           // string
-          pattern = if (elem.pattern != null && res.pattern != null) "\(elem.pattern)|\(res.pattern)"
+          pattern = if (elem.pattern != null && res.pattern != null) "(?:\(elem.pattern))|(?:\(res.pattern))"
             else elem.pattern ?? res.pattern
           minLength = collateMin(elem.minLength, res.minLength) as UInt?
           maxLength = collateMax(elem.maxLength, res.maxLength) as UInt?
