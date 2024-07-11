@@ -18,6 +18,7 @@ module org.json_schema.contrib.tests.ModuleGenerator
 amends "pkl:test"
 
 import "@jsonschema/JsonSchema.pkl"
+import "@jsonschema/Parser.pkl"
 import "../internal/ModuleGenerator.pkl"
 
 examples {
@@ -364,6 +365,10 @@ examples {
         }
       }
     }
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+  }
+  ["allOf"] {
+    local schema = Parser.parse(read("./test_allOf.json")) as JsonSchema
     new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
   }
 }

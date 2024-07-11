@@ -1,0 +1,432 @@
+{
+  "$comment": "This is a minimized subset of the schema from https://github.com/canonical/cloud-init/blob/main/cloudinit/config/schemas/schema-cloud-config-v1.json. This is derived from the original project under the terms of the Apache 2.0 license.",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$defs": {
+    "all_modules": {
+      "enum": ["users_groups"]
+    },
+    "users_groups.groups_by_groupname": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^.+$": {
+          "label": "<group_name>",
+          "description": "Optional string of single username or a list of usernames to add to the group",
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "users_groups.user": {
+      "oneOf": [
+        {
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "required": [
+            "snapuser"
+          ]
+        }
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "The user's login name. Required otherwise user creation will be skipped for this user.",
+          "type": "string"
+        },
+        "doas": {
+          "description": "List of doas rules to add for a user. doas or opendoas must be installed for rules to take effect.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "expiredate": {
+          "default": null,
+          "description": "Optional. Date on which the user's account will be disabled. Default: ``null``",
+          "type": "string",
+          "format": "date"
+        },
+        "gecos": {
+          "description": "Optional comment about the user, usually a comma-separated string of real name and contact information",
+          "type": "string"
+        },
+        "groups": {
+          "description": "Optional comma-separated string of groups to add the user to.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string"
+                ]
+              },
+              "minItems": 1
+            },
+            {
+              "type": "object",
+              "patternProperties": {
+                "^.+$": {
+                  "label": "<group_name>",
+                  "deprecated": true,
+                  "deprecated_version": "23.1",
+                  "deprecated_description": "The use of ``object`` type is deprecated. Use ``string`` or ``array`` of ``string`` instead.",
+                  "type": [
+                    "null"
+                  ],
+                  "minItems": 1
+                }
+              },
+              "hidden": [
+                "patternProperties"
+              ]
+            }
+          ]
+        },
+        "homedir": {
+          "description": "Optional home dir for user. Default: ``/home/<username>``",
+          "default": "``/home/<username>``",
+          "type": "string"
+        },
+        "inactive": {
+          "description": "Optional string representing the number of days until the user is disabled. ",
+          "type": "string"
+        },
+        "lock-passwd": {
+          "type": "boolean",
+          "deprecated": true,
+          "deprecated_version": "22.3",
+          "deprecated_description": "Use ``lock_passwd`` instead."
+        },
+        "lock_passwd": {
+          "default": true,
+          "description": "Disable password login. Default: ``true``",
+          "type": "boolean"
+        },
+        "no-create-home": {
+          "type": "boolean",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``no_create_home`` instead."
+        },
+        "no_create_home": {
+          "default": false,
+          "description": "Do not create home directory. Default: ``false``",
+          "type": "boolean"
+        },
+        "no-log-init": {
+          "type": "boolean",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``no_log_init`` instead."
+        },
+        "no_log_init": {
+          "default": false,
+          "description": "Do not initialize lastlog and faillog for user. Default: ``false``",
+          "type": "boolean"
+        },
+        "no-user-group": {
+          "type": "boolean",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``no_user_group`` instead."
+        },
+        "no_user_group": {
+          "default": false,
+          "description": "Do not create group named after user. Default: ``false``",
+          "type": "boolean"
+        },
+        "passwd": {
+          "description": "Hash of user password applied when user does not exist. This will NOT be applied if the user already exists. To generate this hash, run: ``mkpasswd --method=SHA-512 --rounds=500000`` **Note:** Your password might possibly be visible to unprivileged users on your system, depending on your cloud's security model. Check if your cloud's IMDS server is visible from an unprivileged user to evaluate risk.",
+          "type": "string"
+        },
+        "hashed-passwd": {
+          "type": "string",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``hashed_passwd`` instead."
+        },
+        "hashed_passwd": {
+          "description": "Hash of user password to be applied. This will be applied even if the user is preexisting. To generate this hash, run: ``mkpasswd --method=SHA-512 --rounds=500000``. **Note:** Your password might possibly be visible to unprivileged users on your system, depending on your cloud's security model. Check if your cloud's IMDS server is visible from an unprivileged user to evaluate risk.",
+          "type": "string"
+        },
+        "plain-text-passwd": {
+          "type": "string",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``plain_text_passwd`` instead."
+        },
+        "plain_text_passwd": {
+          "description": "Clear text of user password to be applied. This will be applied even if the user is preexisting. **Note:** SSH keys or certificates are a safer choice for logging in to your system. For local escalation, supplying a hashed password is a safer choice than plain text. Your password might possibly be visible to unprivileged users on your system, depending on your cloud's security model. An exposed plain text password is an immediate security concern. Check if your cloud's IMDS server is visible from an unprivileged user to evaluate risk.",
+          "type": "string"
+        },
+        "create-groups": {
+          "type": "boolean",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``create_groups`` instead."
+        },
+        "create_groups": {
+          "default": true,
+          "description": "Boolean set ``false`` to disable creation of specified user ``groups``. Default: ``true``.",
+          "type": "boolean"
+        },
+        "primary-group": {
+          "type": "string",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``primary_group`` instead."
+        },
+        "primary_group": {
+          "default": "``<username>``",
+          "description": "Primary group for user. Default: ``<username>``",
+          "type": "string"
+        },
+        "selinux-user": {
+          "type": "string",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``selinux_user`` instead."
+        },
+        "selinux_user": {
+          "description": "SELinux user for user's login. Default: the default SELinux user.",
+          "type": "string"
+        },
+        "shell": {
+          "description": "Path to the user's login shell. Default: the host system's default shell.",
+          "type": "string"
+        },
+        "snapuser": {
+          "description": " Specify an email address to create the user as a Snappy user through ``snap create-user``. If an Ubuntu SSO account is associated with the address, username and SSH keys will be requested from there.",
+          "type": "string"
+        },
+        "ssh_authorized_keys": {
+          "description": "List of SSH keys to add to user's authkeys file. Can not be combined with ``ssh_redirect_user``",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "ssh-authorized-keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "deprecated": true,
+          "deprecated_version": "18.3",
+          "deprecated_description": "Use ``ssh_authorized_keys`` instead."
+        },
+        "ssh-import-id": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``ssh_import_id`` instead."
+        },
+        "ssh_import_id": {
+          "description": "List of ssh ids to import for user. Can not be combined with ``ssh_redirect_user``. See the man page[1] for more details. [1] https://manpages.ubuntu.com/manpages/noble/en/man1/ssh-import-id.1.html",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "ssh-redirect-user": {
+          "type": "boolean",
+          "deprecated": true,
+          "deprecated_version": "24.2",
+          "deprecated_description": "Use ``ssh_redirect_user`` instead."
+        },
+        "ssh_redirect_user": {
+          "type": "boolean",
+          "default": false,
+          "description": "Boolean set to true to disable SSH logins for this user. When specified, all cloud meta-data public SSH keys will be set up in a disabled state for this username. Any SSH login as this username will timeout and prompt with a message to login instead as the ``default_username`` for this instance. Default: ``false``. This key can not be combined with ``ssh_import_id`` or ``ssh_authorized_keys``."
+        },
+        "system": {
+          "description": "Optional. Create user as system user with no home directory. Default: ``false``.",
+          "type": "boolean",
+          "default": false
+        },
+        "sudo": {
+          "oneOf": [
+            {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Sudo rule to use or false. Absence of a sudo value or ``null`` will result in no sudo rules added for this user."
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            {
+              "type": "boolean",
+              "changed": true,
+              "changed_version": "22.2",
+              "changed_description": "The value ``false`` is deprecated for this key, use ``null`` instead."
+            }
+          ]
+        },
+        "uid": {
+          "description": "The user's ID. Default value [system default]",
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "changed": true,
+              "changed_description": "The use of ``string`` type is deprecated. Use an ``integer`` instead.",
+              "changed_version": "22.3"
+            }
+          ]
+        }
+      }
+    },
+    "cc_users_groups": {
+      "type": "object",
+      "properties": {
+        "groups": {
+          "type": [
+            "string",
+            "object",
+            "array"
+          ],
+          "hidden": [
+            "patternProperties"
+          ],
+          "$ref": "#/$defs/users_groups.groups_by_groupname",
+          "items": {
+            "type": [
+              "string",
+              "object"
+            ],
+            "$ref": "#/$defs/users_groups.groups_by_groupname"
+          },
+          "minItems": 1
+        },
+        "user": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "$ref": "#/$defs/users_groups.user"
+            }
+          ],
+          "description": "The ``user`` dictionary values override the ``default_user`` configuration from ``/etc/cloud/cloud.cfg``. The `user` dictionary keys supported for the default_user are the same as the ``users`` schema."
+        },
+        "users": {
+          "type": [
+            "string",
+            "array",
+            "object"
+          ],
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "object",
+                "$ref": "#/$defs/users_groups.user"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cc_growpart": {
+      "type": "object",
+      "properties": {
+        "growpart": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "default": "auto",
+              "description": "The utility to use for resizing. Default: ``auto``\n\nPossible options:\n\n* ``auto`` - Use any available utility\n\n* ``growpart`` - Use growpart utility\n\n* ``gpart`` - Use BSD gpart utility\n\n* ``'off'`` - Take no action",
+              "oneOf": [
+                {
+                  "enum": [
+                    "auto",
+                    "growpart",
+                    "gpart",
+                    "off"
+                  ]
+                },
+                {
+                  "enum": [
+                    false
+                  ],
+                  "changed": true,
+                  "changed_version": "22.3",
+                  "changed_description": "Specifying a boolean ``false`` value for ``mode`` is deprecated. Use the string ``'off'`` instead."
+                }
+              ]
+            },
+            "devices": {
+              "type": "array",
+              "default": [
+                "/"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The devices to resize. Each entry can either be the path to the device's mountpoint in the filesystem or a path to the block device in '/dev'. Default: ``[/]``"
+            },
+            "ignore_growroot_disabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "If ``true``, ignore the presence of ``/etc/growroot-disabled``. If ``false`` and the file exists, then don't resize. Default: ``false``"
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/cc_users_groups"
+    },
+    {
+      "$ref": "#/$defs/cc_growpart"
+    }
+  ],
+  "properties": {
+    "groups": {},
+    "user": {},
+    "users": {},
+    "growpart": {}
+  },
+  "additionalProperties": false
+}

@@ -29,9 +29,20 @@
 ///   Otherwise, this falls back to [Dynamic], which is the loosest constraint.
 /// - Cannot generate tuple types (this is missing in Pkl).
 /// - Properties called `default` cannot be generated (currently a limitation of the json parser).
+/// - `allOf` schemas have several limitations
+///   * `default` will only be combined when all subschemas have the same value
+///   * `deprecated` will be [true] if an only if all subschemas have it set to [true], otherwise it will be null
+///   * `readOnly` and `writeOnly` must be identical for all subschemas
+///   * `type` must be identical (or null) for all subschemas
+///   * `const` must be identical (or null) for all subschemas
+///   * if multiple subschemas set `multipleOf`, all must be integers
+///   * `format` must be identical (or null) for all subschemas
+///   * overlapping `properties` and `patternProperties` entries are merged as `allOf` according to these rules
+///   * fields that accept [JsonSchema.Schema] values must all be [JsonSchema] values (or null)
+///   * `items` must be [JsonSchema] or null, not [Listing]<[JsonSchema]>
+///   * there must be precise overlap between elements of `oneOf` and `anyOf`
 ///
 /// TODO:
-/// - Handle usages of `allOf`. We can do this by merging subschemas into a larger schema.
 /// - Copy doc comments from a class or typealias to its usage sites if there isn't a doc comment already.
 /// - Handle if schema root is not an object type (Example: ansible's schema root has `"type": "array"`).
 /// - Handle if schema root should be a mapping (it has `additionalProperties` or `patternProperties` set).
