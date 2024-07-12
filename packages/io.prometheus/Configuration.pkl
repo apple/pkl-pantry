@@ -469,7 +469,7 @@ class RemoteWriteConfig extends HttpClientConfig {
   ///
   /// Signature Verification signs requests.
   /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
-  sigv4: Sigv4Config?(onlyOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
+  sigv4: Sigv4Config?(atMostOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
 }
 
 class MetadataConfig {
@@ -599,7 +599,7 @@ class AlertManagerConfig extends HttpClientConfig {
   ///
   /// Signature Verification signs requests.
   /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
-  sigv4: Sigv4Config?(onlyOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
+  sigv4: Sigv4Config?(atMostOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
 }
 
 class RemoteReadConfig extends HttpClientConfig {
@@ -663,7 +663,7 @@ abstract class ProxyConfig {
 abstract class HttpClientConfig extends ProxyConfig {
   /// Sets the `Authorization` header on every request
   /// with the configured username and password.
-  basic_auth: BasicAuth?(onlyOneSet(List(this, authorization, oauth2, bearer_token, bearer_token_file)))
+  basic_auth: BasicAuth?(atMostOneSet(List(this, authorization, oauth2, bearer_token, bearer_token_file)))
 
   /// Sets the `Authorization` header on every scrape request with the configured bearer token.
   ///
@@ -791,5 +791,5 @@ class TLSConfig {
 typealias TLSVersion = "TLS10"|"TLS11"|"TLS12"|"TLS13"
 
 /// Tells if only one of the values is not null.
-local const function onlyOneSet(values: List<Any>): Boolean =
-  values.filter((it) -> it != null).length == 1
+local const function atMostOneSet(values: List<Any>): Boolean =
+  values.filterNonNull().length <= 1
