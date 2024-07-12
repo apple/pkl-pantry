@@ -237,10 +237,13 @@ class KubernetesSdConfig extends HttpClientConfig {
 
   /// Optional metadata to attach to discovered targets.
   /// If omitted, no additional metadata is attached.
-  attach_metadata: KubernetesSdConfigAttachMetadata(node?.implies(role == "pod" || role == "endpoints" || role == "endpointslice") || true)?
+  attach_metadata: KubernetesSdConfigAttachMetadata(node?.implies(role is KubernetesSdConfigRoleWithNodeMetadata) || true)?
 }
 
-typealias KubernetesSdConfigRole = "pod"|"service"|"node"|"endpoints"|"endpointslice"|"ingress"
+typealias KubernetesSdConfigRole = *"pod"|"service"|"node"|"endpoints"|"endpointslice"|"ingress"
+
+/// [KubernetesSdConfig.role] values that [KubernetesSdConfigAttachMetadata.node] may be enabled with
+typealias KubernetesSdConfigRoleWithNodeMetadata = "pod"|"endpoints"|"endpointslice"
 
 class KubernetesSdConfigSelector {
   role: KubernetesSdConfigRole
@@ -435,7 +438,7 @@ class RemoteWriteConfig extends HttpClientConfig {
   /// Custom HTTP headers to be sent along with each remote write request.
   ///
   /// Be aware that headers that are set by Prometheus itself can't be overwritten.
-  headers: Mapping<LabelNameFormat, String>?
+  headers: Labels?
 
   /// List of remote write relabel configurations.
   write_relabel_configs: Listing<RelabelConfig>?
@@ -660,7 +663,20 @@ abstract class ProxyConfig {
 abstract class HttpClientConfig extends ProxyConfig {
   /// Sets the `Authorization` header on every request
   /// with the configured username and password.
-  basic_auth: BasicAuth?(onlyOneSet(List(this, authorization, oauth2)))
+  basic_auth: BasicAuth?(onlyOneSet(List(this, authorization, oauth2, bearer_token, bearer_token_file)))
+
+  /// Sets the `Authorization` header on every scrape request with the configured bearer token.
+  ///
+  /// Mutually exclusive with [bearer_token_file].
+  @Deprecated { message = "Deprecated in favor of [Authorization.credentials]" }
+  bearer_token: String?
+
+  /// Sets the `Authorization` header on every scrape request
+  /// with the bearer token read from the configured file.
+  ///
+  /// Mutually exclusive with [bearer_token].
+  @Deprecated { message = "Deprecated in favor of [Authorization.credentials_file]" }
+  bearer_token_file: String?
 
   /// Sets the `Authorization` header on every request with the configured credentials.
   authorization: Authorization?
