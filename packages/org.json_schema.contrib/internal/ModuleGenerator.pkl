@@ -37,6 +37,9 @@ local jsonRenderer = new JsonRenderer {}
 /// The root schema, used to resolve `$ref` values.
 rootSchema: JsonSchema
 
+// local collatedRootSchema = rootSchema
+local collatedRootSchema = if (rootSchema.allOf != null) TypesGenerator.collateAllOf(rootSchema) else rootSchema
+
 /// The URI representing the root schema, used to resolve `$ref` values.
 baseUri: URI
 
@@ -74,7 +77,7 @@ moduleNode: ModuleNode =
         }
       }
       declaration {
-        docComment = getDocComment(rootSchema, "module")
+        docComment = getDocComment(collatedRootSchema, "module")
         when (moduleName != null) {
           moduleHeader {
             name {
@@ -88,8 +91,8 @@ moduleNode: ModuleNode =
         }
       }
       properties =
-        if (isClassLike(rootSchema))
-          generateClassBody(rootSchema, allTypeNames)
+        if (isClassLike(collatedRootSchema))
+          generateClassBody(collatedRootSchema, allTypeNames)
         else null
     }
 
@@ -142,6 +145,7 @@ local function generateClassBody(
       if (referencedSchema == null) new {}
       else if (referencedSchema is Boolean) let (_ = trace("WARN: `$ref` points to a boolean somehow")) new {}
       else generateClassBody(referencedSchema as JsonSchema, typeNames)
+  else if (schema.allOf != null) generateClassBody(TypesGenerator.collateAllOf(schema), typeNames)
   else
     new {
       for (propName, propSchema in schema.properties!!) {
@@ -220,7 +224,8 @@ local function determineTypeName(path: List<String>, candidateName: String, exis
 /// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not have [JsonSchema.`$ref`] defined.
 local classSchemas: Type.TypeNames =
   let (schemas = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> elem != rootSchema && isClassLike(elem)))
-    schemas
+  let (collatedSchemas = if (collatedRootSchema == rootSchema) Map() else utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> elem != collatedRootSchema && isClassLike(elem)))
+    (schemas + collatedSchemas)
       .entries
       .fold(Map(), (accumulator: Type.TypeNames, pair) ->
         let (path = pair.first)
@@ -238,7 +243,8 @@ local classNames: Set<Type> = classSchemas.values.toSet()
 local typeAliasSchemas: Type.TypeNames =
   // Grab all schemas that have `definitions` or `$defs`
   let (schemasWithDefinitions = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
-    schemasWithDefinitions
+  let (collatedSchemasWithDefinitions = if (collatedRootSchema == rootSchema) Map() else utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
+    (schemasWithDefinitions + collatedSchemasWithDefinitions)
       .entries
       // For each schema, return the child json schema properties that are not class-like
       .flatMap((pair) ->

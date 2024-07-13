@@ -21,14 +21,14 @@ examples {
     "String(length >= 5)"
     "String(length <= 10)"
     "String(length.isBetween(5, 10))"
-    "String(matches(Regex(\"[a-z]\")))"
+    #"String(matches(Regex("[a-z]")))"#
     "Uri"
     "String(isRegex)"
   }
   ["string literals"] {
-    "\"Hello\""
-    "\"Hello\""
-    "\"Bart\"|\"Lisa\""
+    #""Hello""#
+    #""Hello""#
+    #""Bart"|"Lisa""#
   }
   ["booleans"] {
     "Boolean"
@@ -49,7 +49,7 @@ examples {
   }
   ["mappings"] {
     "Mapping<String, String>"
-    "Mapping<String(matches(Regex(\"[a-z]\"))), Number>"
+    #"Mapping<String(matches(Regex("[a-z]"))), Number>"#
   }
   ["nullables"] {
     "String(length >= 10)?"
@@ -60,7 +60,7 @@ examples {
     "String(length >= 5)|Int(this % 10 == 0)"
   }
   ["not"] {
-    "String(this != \"foo\")"
+    #"String(this != "foo")"#
     "String(!length.isBetween(5, 10))"
   }
   ["allOf"] {

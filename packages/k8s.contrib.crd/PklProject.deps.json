@@ -15,7 +15,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1.0.9",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1.1.0",
       "path": "../org.json_schema.contrib"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1": {

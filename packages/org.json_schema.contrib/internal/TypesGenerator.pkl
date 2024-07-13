@@ -60,8 +60,8 @@ function generateTypeNode(
     else
       new TypeNode.BuiltInTypeNode { type = "nothing" }
   // If we have generated a class or typealias definition already, simply use it.
-  else if (typeNames.containsKey(schema))
-    let (type = typeNames[schema as JsonSchema])
+  else if (typeNames.containsKey(schema._inline_?.getOrNull("__ref_orig__") ?? schema))
+    let (type = typeNames[(schema._inline_?.getOrNull("__ref_orig__") ?? schema) as JsonSchema])
       utils.declaredType1(type, type.moduleName != enclosingModuleName)
   // Edge case: if `type` includes `"null"`, treat this as a nullable type.
   else if (schema.type is Listing && schema.type.toList().contains("null"))
@@ -454,7 +454,8 @@ local function generateNumberType(schema: JsonSchema): Pair<JsonSchema, TypeNode
     if (isInt)
       let (minimum = if (schema.exclusiveMinimum != null) schema.exclusiveMinimum!! + 1 else schema.minimum)
       let (maximum = if (schema.exclusiveMaximum != null) schema.exclusiveMaximum!! - 1 else schema.maximum)
-      let (refinedInt = if (minimum == 0 && maximum == math.maxUInt32)
+      let (refinedInt =
+        if (minimum == 0 && maximum == math.maxUInt32)
           utils.declaredType("UInt32")
         else if (minimum == 0 && maximum == math.maxUInt16)
           utils.declaredType("UInt16")
@@ -564,11 +565,11 @@ local function generateUnionType(schema: JsonSchema, typeNames: Type.TypeNames):
       // Force no further constraints to be added by passing on an empty json schema.
       new JsonSchema {},
       new TypeNode.UnionTypeNode {
-        members {
+        members = new Listing<TypeNode> {
           for (_type in (schema.type as Listing)) {
             generateTypeNode((schema) { type = _type }, typeNames)
           }
-        }
+        }.distinct
       }
     )
   else
@@ -578,7 +579,7 @@ local function generateUnionType(schema: JsonSchema, typeNames: Type.TypeNames):
         anyOf = null
       },
       new TypeNode.UnionTypeNode {
-        members {
+        members = new Listing<TypeNode> {
           when (schema.oneOf != null) {
             for (s in schema.oneOf!!) {
               generateTypeNode(s, typeNames)
@@ -591,7 +592,7 @@ local function generateUnionType(schema: JsonSchema, typeNames: Type.TypeNames):
               generateTypeNode(s, typeNames)
             }
           }
-        }
+        }.distinct
       }
     )
 
@@ -609,7 +610,7 @@ local function generateListingType(schema: JsonSchema, typeNames: Type.TypeNames
 /// Used for determining the base type.
 local function constOrEnumsMatch(schema: JsonSchema, predicate: (JsonSchema.JsonSchemaValue?) -> Boolean): Boolean =
   predicate.apply(schema.`const`)
-    || (schema.enum?.toList()?.every(predicate) ?? predicate.apply(schema.enum))
+  || (schema.enum?.toList()?.every(predicate) ?? predicate.apply(schema.enum))
 
 /// Returns the name of the schema's type if there is only one type.
 ///
@@ -630,7 +631,7 @@ local function unwrappedSingularType(schema: JsonSchema): JsonSchema.JsonSchemaT
 /// Tells if the [schema] should be generated as [Number] or [Integer].
 local function isNumberSchema(schema: JsonSchema) =
   let (type = unwrappedSingularType(schema))
-    type == "number" || type == "integer" ||  constOrEnumsMatch(schema, (elem) -> elem is Number)
+    type == "number" || type == "integer" || constOrEnumsMatch(schema, (elem) -> elem is Number)
 
 /// Tells if the [schema] should be generated as a [String].
 local function isStringSchema(schema: JsonSchema) =
@@ -650,7 +651,7 @@ local function isListingSchema(schema: JsonSchema) =
 /// Tells if the [schema] should be generated as a [Mapping].
 local function isMappingSchema(schema: JsonSchema) =
   let (type = unwrappedSingularType(schema))
-    type == "object" ||  schema.properties != null || schema.additionalProperties != null
+    type == "object" || schema.properties != null || schema.additionalProperties != null
 
 /// Generates the basic declared type (Int, Float, etc).
 ///
@@ -669,5 +670,137 @@ local function generateBaseType(schema: JsonSchema, typeNames: Type.TypeNames): 
     Pair(schema, generateListingType(schema, typeNames))
   else if (isMappingSchema(schema))
     Pair(schema, generateObjectType(schema, typeNames))
+  else if (schema.allOf != null)
+    let (collatedSchema = collateAllOf(schema))
+      generateBaseType(collatedSchema, typeNames)
   else
     Pair(schema, utils.declaredType("Any"))
+
+local function allOfErr(msg: String) = throw("Unable to combine allOf elements into one schema: \(msg)")
+
+function collateAllOf(schema: JsonSchema(allOf != null)): JsonSchema =
+  schema.allOf.fold(schema, (res, rawElem) ->
+    let (resolvedElem = if (rawElem is JsonSchema && rawElem.$$refUri != null) ref.resolveRef(baseUri, rawElem) else rawElem)
+      let (elem = if (resolvedElem is JsonSchema && resolvedElem.allOf != null) collateAllOf(resolvedElem) else resolvedElem)
+        new JsonSchema {
+          // metadata
+          title = collateInformation(elem.title, res.title)
+          description = collateInformation(elem.description, res.description)
+          default =
+            if (elem.default != null && res.default != null) let (_ = trace("Unable to combine allOf elements into one schema: dropping conflicting default")) res.default
+            else elem.default ?? res.default
+          examples =
+            if (elem.examples != null && res.examples != null)
+              new {
+                when (elem.examples is Listing) { ...elem.examples as Listing } else { elem.examples }
+                when (res.examples is Listing) { ...res.examples as Listing } else { res.examples }
+              }
+            else elem.examples ?? res.examples
+          deprecated =
+            if (elem.deprecated == true && res.deprecated == true) true
+            else null // if we have a mix of null/false/true, this is undeterminable
+          readOnly = collateMetadataBoolean(elem.readOnly, res.readOnly, "readOnly")
+          writeOnly = collateMetadataBoolean(elem.writeOnly, res.writeOnly, "writeOnly")
+
+          // core
+          type =
+            if (res.type != null && elem.type != null && res.type != elem.type) allOfErr("conflicting type")
+            else elem.type ?? res.type
+          `const` =
+            if (res.`const` != null && elem.`const` != null && res.`const` != elem.`const`) allOfErr("conflicting const")
+            else elem.`const` ?? res.`const`
+
+          // number
+          multipleOf =
+            if (elem.multipleOf != null && res.multipleOf != null)
+            if (elem.multipleOf is Int && res.multipleOf is Int) math.lcm(elem.multipleOf!! as Int, res.multipleOf!! as Int)
+            else allOfErr("multiple non-integer multipleOf")
+          else elem.multipleOf ?? res.multipleOf
+          minimum = collateMin(elem.minimum, res.minimum)
+          exclusiveMinimum = collateMin(elem.exclusiveMinimum, res.exclusiveMinimum)
+          maximum = collateMax(elem.maximum, res.maximum)
+          exclusiveMaximum = collateMax(elem.exclusiveMaximum, res.exclusiveMaximum)
+
+          // string
+          pattern =
+            if (elem.pattern != null && res.pattern != null) "(?:\(elem.pattern))|(?:\(res.pattern))"
+            else elem.pattern ?? res.pattern
+          minLength = collateMin(elem.minLength, res.minLength) as UInt?
+          maxLength = collateMax(elem.maxLength, res.maxLength) as UInt?
+          format =
+            if (res.format != null && elem.format != null && res.format != elem.format) allOfErr("conflicting format")
+            else elem.format ?? res.format
+
+          // object
+          properties = collateProperties(elem.properties, res.properties)
+          patternProperties = collateProperties(elem.patternProperties, res.patternProperties)
+          additionalProperties = collateSchema(elem.additionalProperties, res.additionalProperties, "additionalProperties")
+          required =
+            if (elem.required == null && res.required == null) null
+            else ((elem.required?.toSet() ?? Set()) + (res.required?.toSet() ?? Set())).toListing()
+          propertyNames = collateSchema(elem.propertyNames, res.propertyNames, "propertyNames")
+          minProperties = collateMin(elem.minProperties, res.minProperties) as UInt?
+          maxProperties = collateMax(elem.maxProperties, res.maxProperties) as UInt?
+
+          // array
+          items =
+            if (elem.items == null && res.items == null) null
+            else if ((res.items == null) != (elem.items == null)) elem.items ?? res.items
+            else if (res.items is JsonSchema && elem.items is JsonSchema) collateAllOf(new JsonSchema { allOf { res.items; elem.items as JsonSchema } })
+            else allOfErr("conflicting items lhs:'\(elem.items)' rhs:'\(res.items)'")
+          additionalItems = collateSchema(elem.additionalItems, res.additionalItems, "additionalItems")
+          minItems = collateMin(elem.minItems, res.minItems) as UInt?
+          maxItems = collateMax(elem.maxItems, res.maxItems) as UInt?
+          uniqueItems =
+            if (elem.uniqueItems == true || res.uniqueItems == true) true
+            else elem.uniqueItems ?? res.uniqueItems
+
+          // composition
+          oneOf = collateSet(elem.oneOf, res.oneOf)
+          anyOf = collateSet(elem.anyOf, res.anyOf)
+          not = collateSchema(elem.not, res.not, "not")
+        }
+  )
+
+local function collateSet(lhs: Listing<JsonSchema.Schema>(!isEmpty)?, rhs: Listing<JsonSchema.Schema>(!isEmpty)?): Listing<JsonSchema.Schema>(!isEmpty)? =
+  if (lhs != null && rhs != null)
+    let (intersection = lhs.toSet().intersect(rhs.toSet()))
+      if (intersection.isEmpty) allOfErr("conflicting oneOf")
+      else intersection.toListing()
+  else lhs ?? rhs
+
+local function collateProperties(lhs: Mapping<String(isRegex), JsonSchema.Schema>?, rhs: Mapping<String(isRegex), JsonSchema.Schema>?): Mapping<String(isRegex), JsonSchema.Schema>? =
+  if (lhs != null && rhs != null)
+    new {
+      for (key in lhs.keys + rhs.keys) {
+        when (lhs.containsKey(key) && rhs.containsKey(key)) {
+          [key] = collateAllOf(new JsonSchema { allOf { lhs[key]; rhs[key] } })
+        } else {
+          [key] = lhs.getOrNull(key) ?? rhs[key]
+        }
+      }
+    }
+  else lhs ?? rhs
+
+local function collateSchema(lhs: JsonSchema.Schema?, rhs: JsonSchema.Schema?, fieldName: String): JsonSchema.Schema? =
+  if (lhs != null && rhs != null)
+    if (lhs is Boolean && rhs is Boolean) lhs || rhs
+    else if (lhs is JsonSchema && rhs is JsonSchema) collateAllOf(new JsonSchema { allOf { lhs; rhs } })
+    else allOfErr("multiple non-JsonSchema \(fieldName)")
+  else lhs ?? rhs
+
+local function collateMin(lhs: Number?, rhs: Number?): Number? =
+  if (lhs != null && rhs != null) math.max(lhs, rhs)
+  else lhs ?? rhs
+
+local function collateMax(lhs: Number?, rhs: Number?): Number? =
+  if (lhs != null && rhs != null) math.min(lhs, rhs)
+  else lhs ?? rhs
+
+local function collateInformation(lhs: String?, rhs: String?): String? =
+  if (lhs != null && rhs != null) "\(lhs)\n----\n\(rhs)"
+  else lhs ?? rhs
+
+local function collateMetadataBoolean(lhs: Boolean?, rhs: Boolean?, fieldName: String): Boolean? =
+  if (lhs != rhs) allOfErr("conflicting \(fieldName)")
+  else lhs

@@ -38,7 +38,14 @@ database {
   }
   connection_max = 5000
   enabled = true
+  datasource_properties = new Mapping<String, String> {
+    ["driverClassName"] = "com.mysql.jdbc.Driver"
+    ["initialSize"] = "5"
+  }
+  empty_properties = new Mapping<String, String> {}
 }
+
+optional_config: Mapping<String, String>? = null
 
 servers {
   alpha {
