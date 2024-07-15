@@ -26,14 +26,14 @@ import "pkl:reflect"
 /// local dynamicBar = new Dynamic { foo { x = 1 } }
 /// apply(Bar, dynamicBar) == new Bar { foo = new Foo { x = 1 } }
 /// ```
-function apply(type: Class|TypeAlias, value: Any) =
+function apply(type: Class|TypeAlias, value: Any): Any =
   let (result =
     attemptApply(type, value)
   )
     if (result is ConversionFailure) throw(result.message) else result
 
 /// Same as [apply], but returns [ConversionFailure] rather than throwing.
-function attemptApply(type: Class|TypeAlias, value: Any) =
+function attemptApply(type: Class|TypeAlias, value: Any): Any|ConversionFailure =
   if (type is Class)
     applyClass(reflect.Class(type), List(), value)
   else
