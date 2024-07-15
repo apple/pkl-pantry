@@ -13,9 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// An experimental module that does a deep-conversion of [Dynamic] into [Typed].
-amends "../basePklProject.pkl"
+/// Example reading values from the enviroment to fill
+/// in a Pkl class.
+///
+/// Try running `pkl eval envVars.pkl`
+module envVars
+import ".../structuredRead.pkl"
 
-package {
-  version = "1.0.3"
+class EnvConfig {
+  SHELL: String?
+  USER: String?
+  PWD: String?
+  LANG: String?
+}
+
+output {
+  value = structuredRead.fromEnv.fill(EnvConfig)
 }

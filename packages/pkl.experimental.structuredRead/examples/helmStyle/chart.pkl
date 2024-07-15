@@ -13,9 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// An experimental module that does a deep-conversion of [Dynamic] into [Typed].
-amends "../basePklProject.pkl"
+/// Example of using structuredRead to recreate the behaviour of `values`
+/// in helm charts.
+///
+/// In this example the default values are loaded from values.pkl, but any
+/// value can be overwritten by passing `-p <valueName>=<newValue>` to `pkl eval`.
+///
+/// Try running `pkl eval chart.pkl -p nameOverride="BetterVector" -p replicas=30 -p args.1="/config"`
+///
+/// The overwritten values are automatically coersed into the same type as the default
+/// so `replicas` retains its `Int` type, and the string value `30` is automatically
+/// converted as needed.
+module chart
 
-package {
-  version = "1.0.3"
+amends "values.pkl"
+
+output {
+  value = module.fromExternalProps
 }

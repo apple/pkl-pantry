@@ -1,0 +1,190 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.structuredRead.tests.structuredRead
+amends "pkl:test"
+
+import "fixtures/TestStructure.pkl"
+import "../structuredRead.pkl"
+
+local extProps = structuredRead.fromExternalProps
+local env = structuredRead.fromEnv
+local https = structuredRead.fromHttps
+
+local function testHarness(name: String, value: String) = new Mixin<structuredRead> {
+  local responses = Map(name, value)
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local testValues = new Mapping {
+    ["test"] = "string"
+    ["other"] = "123123"
+    ["c"] = "afe"
+    ["t.stuff"] = "TRUE"
+    ["t.nested.num"] = "23"
+    ["t.nested.float"] = "23"
+    ["t.nested.string"] = "AFWFAWEf"
+    ["number"] = "234234"
+    ["secondNumber"] = "342.023"
+    ["float"] = "20.0"
+    ["secondFloat"] = "23"
+}
+
+local allNulls = (extProps) {
+  readFunc = (s) -> null
+}
+
+local topLevelProvided = (extProps) {
+  local responses = new Mapping {
+    ["test"] = "string"
+    ["other"] = "12312"
+    ["c"] = "afe"
+  }.toMap()
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local incorrectTypes = (extProps) {
+  local responses = new Mapping {
+    ["test"] = "string"
+    ["other"] = "this should be an int"
+    ["c"] = "afe"
+    ["t.stuff"] = "Should be a bool"
+  }.toMap()
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local correctInput = (extProps) {
+  local responses = testValues.toMap()
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local correctEnvVars = (extProps) {
+  local responses = new Mapping {
+    ["test"] = "string"
+    ["other"] = "123123"
+    ["c"] = "afe"
+    ["t_stuff"] = "TRUE"
+    ["t_nested_num"] = "12"
+    ["t_nested_float"] = "23.3"
+    ["t_nested_string"] = "afwf"
+    ["number"] = "234234"
+    ["secondNumber"] = "342.023"
+    ["float"] = "20.0"
+    ["secondFloat"] = "23"
+  }.toMap()
+  pathSeparator = "_"
+  inputScheme = "env:"
+
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local incorrectNullableType = (extProps) {
+  local responses = (testValues) {
+   ["nullableWithDefault"] = "Should be an int"
+  }
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+local class EnvConfig {
+  SHELL: String?
+  USER: String?
+  PWD: String?
+  LANG: String?
+}
+
+local Http = new Dynamic {
+  `raw.githubusercontent.com/apple/pkl-pantry` {
+    `8fcea0e535d2eb473545305d8a573144f2b0d33d` {
+      `README.adoc` {}
+      `CONTRIBUTING.adoc` {}
+    }
+  }
+}
+
+examples {
+  ["missing properties"] {
+    module.catch(() -> allNulls.fill(TestStructure))
+  }
+  ["top level provided properties"] {
+    module.catch(() -> topLevelProvided.fill(TestStructure))
+  }
+  ["incorrect types"] {
+    module.catch(() -> incorrectTypes.fill(TestStructure))
+  }
+  ["incorrect nullable type"] {
+    module.catch(() -> incorrectNullableType.fill(TestStructure))
+  }
+  ["correct input"] {
+    correctInput.fill(TestStructure)
+  }
+  ["correct env type input"] {
+    correctEnvVars.fill(TestStructure)
+  }
+  ["load from enviroment"] {
+    (env |> testHarness("SHELL", "zsh")).fill(EnvConfig)
+  }
+  ["load from https"] {
+    https.fill(Http)
+  }
+}
+
+local class NullableTypeWithDefault {
+  TestInput: Boolean? = true
+}
+
+local class TypedWithDefaults {
+  TestInput: Int = 10
+}
+
+local class TypelessWithDefault {
+  TestInput = 20.0
+}
+
+local class NullValueProperty {
+  TestInput = null
+}
+
+local class DynamicList {
+  TestInput {
+    123
+  }
+}
+
+facts {
+  ["incorrect type for nullable with default still results in coerce error"] {
+    module.catch(() -> (extProps |> testHarness("TestInput", "not a bool")).fill(NullableTypeWithDefault)).contains("coerce")
+  }
+  ["incorrect type for typed prop with default still results in coerce error"] {
+    module.catch(() -> (extProps |> testHarness("TestInput", "not an int")).fill(TypedWithDefaults)).contains("coerce")
+  }
+  ["incorrect type for un-typed prop with default still results in coerce error"] {
+    module.catch(() -> (extProps |> testHarness("TestInput", "not a float")).fill(TypelessWithDefault)).contains("coerce")
+  }
+  ["un-typed null property causes failure"] {
+    module.catch(() -> (extProps |> testHarness("TestInput", "9999")).fill(NullValueProperty)).contains("ambiguous type")
+  }
+  ["incorrect type in dynamic list type"] {
+    module.catch(() -> (extProps |> testHarness("TestInput.0", "not an int")).fill(DynamicList)).contains("coerce")
+  }
+  ["nullable with default inherits default value"] {
+    ((extProps |> testHarness("", "")).fill(NullableTypeWithDefault) as NullableTypeWithDefault).TestInput == true
+  }
+  ["typed prop with default inherits default value"] {
+    ((extProps |> testHarness("", "")).fill(TypedWithDefaults) as TypedWithDefaults).TestInput == 10
+  }
+  ["un-typed prop with default still coerces correctly"] {
+    ((extProps |> testHarness("TestInput", "9999")).fill(TypelessWithDefault) as TypelessWithDefault).TestInput == 9999
+  }
+}

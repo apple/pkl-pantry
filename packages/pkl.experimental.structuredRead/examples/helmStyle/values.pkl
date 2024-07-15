@@ -1,0 +1,98 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Based on the Vector helm chart
+/// See Vector helm documentation to learn more:
+/// https://vector.dev/docs/setup/installation/package-managers/helm/
+module values
+
+// !!! IMPORTANT !!!
+// This property **must** be fixed *and* hidden, otherwise a stack overflow will occur!
+hidden fixed fromExternalProps: module =
+  import(".../structuredRead.pkl").fromExternalProps.fill(module) as module
+
+nameOverride = ""
+
+fullnameOverride = ""
+
+role = "Agent"
+
+rollWorkload = true
+
+commonLabels {}
+
+image {
+  repository = "timberio/vector"
+  pullPolicy = "IfNotPresent"
+  pullSecrets {}
+  tag = ""
+  sha = ""
+  base = ""
+}
+
+/// Specify the number of Pods to create. Valid for the "Aggregator" and "Stateless-Aggregator" roles.
+replicas = 1
+
+/// Specify the [podManagementPolicy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies)
+/// for the StatefulSet. Valid for the "Aggregator" role.
+podManagementPolicy = "OrderedReady"
+
+/// Create a Secret resource for Vector to use.
+secrets {
+  generic {}
+}
+
+autoscaling {
+  enabled = false
+  `external` = false
+  annotations {}
+  minReplicas = 1
+  maxReplicas = 10
+  targetCPUUtilizationPercentage = 80
+  targetMemoryUtilizationPercentage = null
+  customMetric {}
+  behavior {}
+}
+podDisruptionBudget {
+  enabled = false
+  minAvailable = 1
+  maxUnavailable = null
+}
+rbac {
+  create = true
+}
+psp {
+  create = false
+}
+serviceAccount {
+  create = true
+  annotations {}
+  name = null
+  automountToken = true
+}
+podAnnotations {}
+podLabels {
+  `vector.dev/exclude` = "true"
+}
+podPriorityClassName = ""
+podHostNetwork = false
+podSecurityContext {}
+workloadResourceAnnotations {}
+securityContext {}
+command {}
+args {
+  "--config-dir"
+  "/etc/vector/"
+}

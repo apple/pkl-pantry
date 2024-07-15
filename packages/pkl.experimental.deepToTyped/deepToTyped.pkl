@@ -132,7 +132,8 @@ local function applyDynamicOrMapping(type: reflect.Class, value: Dynamic|Mapping
       .fold(
         Map(),
         (acc: Map|ConversionFailure, name: String, prop: reflect.Property) ->
-          if (acc is ConversionFailure)
+          // Fixed properties are automatically initialised by `toTyped`
+          if (acc is ConversionFailure || prop.modifiers.contains("fixed"))
             acc
           else
             let (result = applyProperty(valueAsMap, prop))

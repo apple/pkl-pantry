@@ -1,0 +1,70 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.experimental.structuredRead.tests.dynamicType
+amends "pkl:test"
+
+import ".../structuredRead.pkl"
+
+local function testHarness(name: String, value: String) = (structuredRead.fromExternalProps) {
+  local responses = Map(name, value)
+  readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+}
+
+
+local class DynamicValues {
+  TestInput {
+    Nested = "String"
+  }
+}
+
+local class NestedDynamic {
+  Layer1 {
+    Layer2 {
+      Layer3 {
+        TestValue = 40
+        DefaultString = "Still here"
+      }
+      TestIntType = 32
+    }
+    DefaultInt = 42
+  }
+}
+examples {
+  ["dynamic types"] {
+    testHarness("TestInput.Nested", "A new string").fill(DynamicValues)
+  }
+  ["nested dynamic types"] {
+    testHarness("Layer1.Layer2.Layer3.TestValue", "999").fill(NestedDynamic)
+  }
+  ["incorrect dynamic value"] {
+    module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").fill(NestedDynamic))
+  }
+}
+
+local underTest = testHarness("Layer1.Layer2.Layer3.TestValue", "999").fill(NestedDynamic) as NestedDynamic
+
+facts {
+  ["incorrect type for dynamic property causes coerce error"] {
+    module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").fill(NestedDynamic)).contains("coerce")
+  }
+  ["nested dynamic value set"] {
+      underTest.Layer1.Layer2.Layer3.TestValue == 999
+  }
+  ["nested dynamic default values preserved"] {
+      underTest.Layer1.Layer2.Layer3.DefaultString == "Still here" &&
+      underTest.Layer1.DefaultInt == 42
+  }
+}

@@ -13,9 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// An experimental module that does a deep-conversion of [Dynamic] into [Typed].
-amends "../basePklProject.pkl"
+/// Example using structureRead to get resources https
+/// resources. Not necessarily recommended usage.
+///
+/// Try `pkl eval fromHttps.pkl`
+module https
 
-package {
-  version = "1.0.3"
+import ".../structuredRead.pkl"
+
+Http {
+  `raw.githubusercontent.com/apple/pkl-pantry` {
+    `8fcea0e535d2eb473545305d8a573144f2b0d33d` {
+      `README.adoc` {}
+      `CONTRIBUTING.adoc` {}
+    }
+  }
+}
+
+output {
+  value = structuredRead.fromHttps.fill(Http)
 }

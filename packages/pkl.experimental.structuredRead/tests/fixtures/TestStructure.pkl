@@ -13,9 +13,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// An experimental module that does a deep-conversion of [Dynamic] into [Typed].
-amends "../basePklProject.pkl"
+test = "Hello"
 
-package {
-  version = "1.0.3"
+other:Int
+
+class DoubleNested {
+  num: Int
+  float: Float
+  string: String
+  nullable: Number?
+  hasDefault = 23.3
 }
+
+class Thing {
+  stuff: Boolean
+  nested: DoubleNested
+}
+
+t:Thing
+
+typealias Stuff = String
+
+c:Stuff
+
+number:Number
+secondNumber: Number
+
+float: Float
+secondFloat: Float
+
+nullableWithDefault: Int? = 10

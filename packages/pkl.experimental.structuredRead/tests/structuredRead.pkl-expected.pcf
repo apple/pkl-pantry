@@ -1,0 +1,174 @@
+examples {
+  ["missing properties"] {
+    "Error processing properties in TestStructure:  \t'other'          : Not provided. Make sure you pass the argument '-p other=<Int>' to pkl eval \t't.stuff'        : Not provided. Make sure you pass the argument '-p t.stuff=<Boolean>' to pkl eval \t't.nested.num'   : Not provided. Make sure you pass the argument '-p t.nested.num=<Int>' to pkl eval \t't.nested.float' : Not provided. Make sure you pass the argument '-p t.nested.float=<Float>' to pkl eval \t't.nested.string': Not provided. Make sure you pass the argument '-p t.nested.string=<String>' to pkl eval \t'c'              : Not provided. Make sure you pass the argument '-p c=<String>' to pkl eval \t'number'         : Not provided. Make sure you pass the argument '-p number=<Number>' to pkl eval \t'secondNumber'   : Not provided. Make sure you pass the argument '-p secondNumber=<Number>' to pkl eval \t'float'          : Not provided. Make sure you pass the argument '-p float=<Float>' to pkl eval \t'secondFloat'    : Not provided. Make sure you pass the argument '-p secondFloat=<Float>' to pkl eval"
+  }
+  ["top level provided properties"] {
+    "Error processing properties in TestStructure:  \t't.stuff'        : Not provided. Make sure you pass the argument '-p t.stuff=<Boolean>' to pkl eval \t't.nested.num'   : Not provided. Make sure you pass the argument '-p t.nested.num=<Int>' to pkl eval \t't.nested.float' : Not provided. Make sure you pass the argument '-p t.nested.float=<Float>' to pkl eval \t't.nested.string': Not provided. Make sure you pass the argument '-p t.nested.string=<String>' to pkl eval \t'number'         : Not provided. Make sure you pass the argument '-p number=<Number>' to pkl eval \t'secondNumber'   : Not provided. Make sure you pass the argument '-p secondNumber=<Number>' to pkl eval \t'float'          : Not provided. Make sure you pass the argument '-p float=<Float>' to pkl eval \t'secondFloat'    : Not provided. Make sure you pass the argument '-p secondFloat=<Float>' to pkl eval"
+  }
+  ["incorrect types"] {
+    "Error processing properties in TestStructure:  \t'other'          : Unable to coerce 'this should be an int' into type Int \t't.stuff'        : Unable to coerce 'Should be a bool' into type Boolean \t't.nested.num'   : Not provided. Make sure you pass the argument '-p t.nested.num=<Int>' to pkl eval \t't.nested.float' : Not provided. Make sure you pass the argument '-p t.nested.float=<Float>' to pkl eval \t't.nested.string': Not provided. Make sure you pass the argument '-p t.nested.string=<String>' to pkl eval \t'number'         : Not provided. Make sure you pass the argument '-p number=<Number>' to pkl eval \t'secondNumber'   : Not provided. Make sure you pass the argument '-p secondNumber=<Number>' to pkl eval \t'float'          : Not provided. Make sure you pass the argument '-p float=<Float>' to pkl eval \t'secondFloat'    : Not provided. Make sure you pass the argument '-p secondFloat=<Float>' to pkl eval"
+  }
+  ["incorrect nullable type"] {
+    "Error processing property in TestStructure:  \t'nullableWithDefault': Unable to coerce 'Should be an int' into type Int"
+  }
+  ["correct input"] {
+    new {
+      test = "string"
+      other = 123123
+      t {
+        stuff = true
+        nested {
+          num = 23
+          float = 23.0
+          string = "AFWFAWEf"
+          nullable = null
+          hasDefault = 23.3
+        }
+      }
+      c = "afe"
+      number = 234234
+      secondNumber = 342.023
+      float = 20.0
+      secondFloat = 23.0
+      nullableWithDefault = 10
+    }
+  }
+  ["correct env type input"] {
+    new {
+      test = "string"
+      other = 123123
+      t {
+        stuff = true
+        nested {
+          num = 12
+          float = 23.3
+          string = "afwf"
+          nullable = null
+          hasDefault = 23.3
+        }
+      }
+      c = "afe"
+      number = 234234
+      secondNumber = 342.023
+      float = 20.0
+      secondFloat = 23.0
+      nullableWithDefault = 10
+    }
+  }
+  ["load from enviroment"] {
+    new {
+      SHELL = "zsh"
+      USER = null
+      PWD = null
+      LANG = null
+    }
+  }
+  ["load from https"] {
+    new {
+      `raw.githubusercontent.com/apple/pkl-pantry` {
+        `8fcea0e535d2eb473545305d8a573144f2b0d33d` {
+          `README.adoc` {
+            uri = "https://raw.githubusercontent.com/apple/pkl-pantry/8fcea0e535d2eb473545305d8a573144f2b0d33d/README.adoc"
+            text = """
+              = Pkl Pantry
+              
+              This is a monorepo of packages that are maintained and published by the Pkl team.
+              
+              == Using packages
+              
+              Packages within this repository are published as `package://pkg.pkl-lang.org/pkl-pantry/<NAME>@<VERSION>`.
+              
+              === Direct imports
+              
+              Modules from package can be imported directly. For example, the below line imports module `toml.pkl` from package link:packages/pkl.toml/[`pkl.toml`] at version `1.0.0`:
+              
+              [source,pkl]
+              ----
+              import "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0#/toml.pkl"
+              ----
+              
+              === In a project
+              
+              If using a link:https://pkl-lang.org/main/current/language-reference/index.html#projects[project], add a package as a dependency:
+              
+              [source,pkl]
+              ----
+              amends "pkl:Project"
+              
+              dependencies {
+                ["toml"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0" }
+              }
+              ----
+              
+              == Documentation
+              
+              The documentation for all packages published here can be found in our
+              link:https://pkl-lang.org/package-docs[Package Docs] website.
+              
+              """
+            base64 = "PSBQa2wgUGFudHJ5CgpUaGlzIGlzIGEgbW9ub3JlcG8gb2YgcGFja2FnZXMgdGhhdCBhcmUgbWFpbnRhaW5lZCBhbmQgcHVibGlzaGVkIGJ5IHRoZSBQa2wgdGVhbS4KCj09IFVzaW5nIHBhY2thZ2VzCgpQYWNrYWdlcyB3aXRoaW4gdGhpcyByZXBvc2l0b3J5IGFyZSBwdWJsaXNoZWQgYXMgYHBhY2thZ2U6Ly9wa2cucGtsLWxhbmcub3JnL3BrbC1wYW50cnkvPE5BTUU+QDxWRVJTSU9OPmAuCgo9PT0gRGlyZWN0IGltcG9ydHMKCk1vZHVsZXMgZnJvbSBwYWNrYWdlIGNhbiBiZSBpbXBvcnRlZCBkaXJlY3RseS4gRm9yIGV4YW1wbGUsIHRoZSBiZWxvdyBsaW5lIGltcG9ydHMgbW9kdWxlIGB0b21sLnBrbGAgZnJvbSBwYWNrYWdlIGxpbms6cGFja2FnZXMvcGtsLnRvbWwvW2Bwa2wudG9tbGBdIGF0IHZlcnNpb24gYDEuMC4wYDoKCltzb3VyY2UscGtsXQotLS0tCmltcG9ydCAicGFja2FnZTovL3BrZy5wa2wtbGFuZy5vcmcvcGtsLXBhbnRyeS9wa2wudG9tbEAxLjAuMCMvdG9tbC5wa2wiCi0tLS0KCj09PSBJbiBhIHByb2plY3QKCklmIHVzaW5nIGEgbGluazpodHRwczovL3BrbC1sYW5nLm9yZy9tYWluL2N1cnJlbnQvbGFuZ3VhZ2UtcmVmZXJlbmNlL2luZGV4Lmh0bWwjcHJvamVjdHNbcHJvamVjdF0sIGFkZCBhIHBhY2thZ2UgYXMgYSBkZXBlbmRlbmN5OgoKW3NvdXJjZSxwa2xdCi0tLS0KYW1lbmRzICJwa2w6UHJvamVjdCIKCmRlcGVuZGVuY2llcyB7CiAgWyJ0b21sIl0geyB1cmkgPSAicGFja2FnZTovL3BrZy5wa2wtbGFuZy5vcmcvcGtsLXBhbnRyeS9wa2wudG9tbEAxLjAuMCIgfQp9Ci0tLS0KCj09IERvY3VtZW50YXRpb24KClRoZSBkb2N1bWVudGF0aW9uIGZvciBhbGwgcGFja2FnZXMgcHVibGlzaGVkIGhlcmUgY2FuIGJlIGZvdW5kIGluIG91cgpsaW5rOmh0dHBzOi8vcGtsLWxhbmcub3JnL3BhY2thZ2UtZG9jc1tQYWNrYWdlIERvY3NdIHdlYnNpdGUuCg=="
+          }
+          `CONTRIBUTING.adoc` {
+            uri = "https://raw.githubusercontent.com/apple/pkl-pantry/8fcea0e535d2eb473545305d8a573144f2b0d33d/CONTRIBUTING.adoc"
+            text = """
+              :uri-github-issue-pkl: https://github.com/apple/pkl-pantry/issues/new
+              :uri-seven-rules: https://cbea.ms/git-commit/#seven-rules
+              
+              = Pkl Pantry Contributors Guide
+              
+              Welcome to the Pkl community, and thank you for contributing!
+              This guide explains how to get involved.
+              
+              * <<Licensing>>
+              * <<Issue Tracking>>
+              * <<Pull Requests>>
+              
+              == Licensing
+              
+              Pkl Pantry is released under the Apache 2.0 license.
+              This is why we require that, by submitting a pull request, you acknowledge that you have the right to license your contribution to Apple and the community, and agree that your contribution is licensed under the Apache 2.0 license.
+              
+              == Issue Tracking
+              
+              To file a bug or feature request, use {uri-github-issue-pkl}[GitHub].
+              Be sure to include the following information:
+              
+              * Context
+              ** What are/were you trying to achieve?
+              ** What's the impact of this bug/feature?
+              
+              For bug reports, additionally include the following information:
+              
+              * The output of `pkl --version`.
+              * The complete error message.
+              * The simplest possible steps to reproduce.
+              * Output produced from the template.
+              * Error messages from the target system.
+              
+              == Pull Requests
+              
+              When preparing a pull request, follow this checklist:
+              
+              * Imitate the conventions of surrounding code.
+              * Format the files in your PR with the JetBrains IDE formatter.
+              * Follow the {uri-seven-rules}[seven rules] of great Git commit messages:
+              ** Separate subject from body with a blank line.
+              ** Limit the subject line to 50 characters.
+              ** Capitalize the subject line.
+              ** Do not end the subject line with a period.
+              ** Use the imperative mood in the subject line.
+              ** Wrap the body at 72 characters.
+              ** Use the body to explain what and why vs. how.
+              
+              == Maintainers
+              
+              The project’s maintainers (those with write access to the upstream repository) are listed in link:MAINTAINERS.adoc[].
+              
+              """
+            base64 = "OnVyaS1naXRodWItaXNzdWUtcGtsOiBodHRwczovL2dpdGh1Yi5jb20vYXBwbGUvcGtsLXBhbnRyeS9pc3N1ZXMvbmV3Cjp1cmktc2V2ZW4tcnVsZXM6IGh0dHBzOi8vY2JlYS5tcy9naXQtY29tbWl0LyNzZXZlbi1ydWxlcwoKPSBQa2wgUGFudHJ5IENvbnRyaWJ1dG9ycyBHdWlkZQoKV2VsY29tZSB0byB0aGUgUGtsIGNvbW11bml0eSwgYW5kIHRoYW5rIHlvdSBmb3IgY29udHJpYnV0aW5nIQpUaGlzIGd1aWRlIGV4cGxhaW5zIGhvdyB0byBnZXQgaW52b2x2ZWQuCgoqIDw8TGljZW5zaW5nPj4KKiA8PElzc3VlIFRyYWNraW5nPj4KKiA8PFB1bGwgUmVxdWVzdHM+PgoKPT0gTGljZW5zaW5nCgpQa2wgUGFudHJ5IGlzIHJlbGVhc2VkIHVuZGVyIHRoZSBBcGFjaGUgMi4wIGxpY2Vuc2UuClRoaXMgaXMgd2h5IHdlIHJlcXVpcmUgdGhhdCwgYnkgc3VibWl0dGluZyBhIHB1bGwgcmVxdWVzdCwgeW91IGFja25vd2xlZGdlIHRoYXQgeW91IGhhdmUgdGhlIHJpZ2h0IHRvIGxpY2Vuc2UgeW91ciBjb250cmlidXRpb24gdG8gQXBwbGUgYW5kIHRoZSBjb21tdW5pdHksIGFuZCBhZ3JlZSB0aGF0IHlvdXIgY29udHJpYnV0aW9uIGlzIGxpY2Vuc2VkIHVuZGVyIHRoZSBBcGFjaGUgMi4wIGxpY2Vuc2UuCgo9PSBJc3N1ZSBUcmFja2luZwoKVG8gZmlsZSBhIGJ1ZyBvciBmZWF0dXJlIHJlcXVlc3QsIHVzZSB7dXJpLWdpdGh1Yi1pc3N1ZS1wa2x9W0dpdEh1Yl0uCkJlIHN1cmUgdG8gaW5jbHVkZSB0aGUgZm9sbG93aW5nIGluZm9ybWF0aW9uOgoKKiBDb250ZXh0CioqIFdoYXQgYXJlL3dlcmUgeW91IHRyeWluZyB0byBhY2hpZXZlPwoqKiBXaGF0J3MgdGhlIGltcGFjdCBvZiB0aGlzIGJ1Zy9mZWF0dXJlPwoKRm9yIGJ1ZyByZXBvcnRzLCBhZGRpdGlvbmFsbHkgaW5jbHVkZSB0aGUgZm9sbG93aW5nIGluZm9ybWF0aW9uOgoKKiBUaGUgb3V0cHV0IG9mIGBwa2wgLS12ZXJzaW9uYC4KKiBUaGUgY29tcGxldGUgZXJyb3IgbWVzc2FnZS4KKiBUaGUgc2ltcGxlc3QgcG9zc2libGUgc3RlcHMgdG8gcmVwcm9kdWNlLgoqIE91dHB1dCBwcm9kdWNlZCBmcm9tIHRoZSB0ZW1wbGF0ZS4KKiBFcnJvciBtZXNzYWdlcyBmcm9tIHRoZSB0YXJnZXQgc3lzdGVtLgoKPT0gUHVsbCBSZXF1ZXN0cwoKV2hlbiBwcmVwYXJpbmcgYSBwdWxsIHJlcXVlc3QsIGZvbGxvdyB0aGlzIGNoZWNrbGlzdDoKCiogSW1pdGF0ZSB0aGUgY29udmVudGlvbnMgb2Ygc3Vycm91bmRpbmcgY29kZS4KKiBGb3JtYXQgdGhlIGZpbGVzIGluIHlvdXIgUFIgd2l0aCB0aGUgSmV0QnJhaW5zIElERSBmb3JtYXR0ZXIuCiogRm9sbG93IHRoZSB7dXJpLXNldmVuLXJ1bGVzfVtzZXZlbiBydWxlc10gb2YgZ3JlYXQgR2l0IGNvbW1pdCBtZXNzYWdlczoKKiogU2VwYXJhdGUgc3ViamVjdCBmcm9tIGJvZHkgd2l0aCBhIGJsYW5rIGxpbmUuCioqIExpbWl0IHRoZSBzdWJqZWN0IGxpbmUgdG8gNTAgY2hhcmFjdGVycy4KKiogQ2FwaXRhbGl6ZSB0aGUgc3ViamVjdCBsaW5lLgoqKiBEbyBub3QgZW5kIHRoZSBzdWJqZWN0IGxpbmUgd2l0aCBhIHBlcmlvZC4KKiogVXNlIHRoZSBpbXBlcmF0aXZlIG1vb2QgaW4gdGhlIHN1YmplY3QgbGluZS4KKiogV3JhcCB0aGUgYm9keSBhdCA3MiBjaGFyYWN0ZXJzLgoqKiBVc2UgdGhlIGJvZHkgdG8gZXhwbGFpbiB3aGF0IGFuZCB3aHkgdnMuIGhvdy4KCj09IE1haW50YWluZXJzCgpUaGUgcHJvamVjdOKAmXMgbWFpbnRhaW5lcnMgKHRob3NlIHdpdGggd3JpdGUgYWNjZXNzIHRvIHRoZSB1cHN0cmVhbSByZXBvc2l0b3J5KSBhcmUgbGlzdGVkIGluIGxpbms6TUFJTlRBSU5FUlMuYWRvY1tdLgo="
+          }
+        }
+      }
+    }
+  }
+}

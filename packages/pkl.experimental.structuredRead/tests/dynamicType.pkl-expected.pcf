@@ -1,0 +1,26 @@
+examples {
+  ["dynamic types"] {
+    new {
+      TestInput {
+        Nested = "A new string"
+      }
+    }
+  }
+  ["nested dynamic types"] {
+    new {
+      Layer1 {
+        Layer2 {
+          Layer3 {
+            TestValue = 999
+            DefaultString = "Still here"
+          }
+          TestIntType = 32
+        }
+        DefaultInt = 42
+      }
+    }
+  }
+  ["incorrect dynamic value"] {
+    "Error processing property in pkl.experimental.structuredRead.tests.dynamicType#NestedDynamic:  \t'Layer1.Layer2.TestIntType': Unable to coerce 'String' into type Int"
+  }
+}

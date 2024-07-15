@@ -13,9 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// An experimental module that does a deep-conversion of [Dynamic] into [Typed].
-amends "../basePklProject.pkl"
+amends ".../basePklProject.pkl"
+
 
 package {
-  version = "1.0.3"
+  version = "1.0.0"
+}
+
+dependencies {
+    ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
 }
