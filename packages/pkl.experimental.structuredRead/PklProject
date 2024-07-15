@@ -17,7 +17,7 @@ amends ".../basePklProject.pkl"
 
 
 package {
-  version = "1.0.1"
+  version = "1.0.2"
 }
 
 dependencies {
