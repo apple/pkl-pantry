@@ -40,7 +40,7 @@ function attemptApply(type: Class|TypeAlias, value: Any): Any|ConversionFailure 
     applyType(reflect.TypeAlias(type).referent, value)
 
 
-local class ConversionFailure {
+class ConversionFailure {
   message: String
 
   function toMapping(): ConversionFailure = this
