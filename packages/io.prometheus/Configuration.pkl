@@ -94,7 +94,7 @@ class GlobalConfig {
 /// Additionally, [relabel_configs] allow advanced modifications to any target and its labels before scraping.
 ///
 /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config>
-open class ScrapeConfig {
+open class ScrapeConfig extends HttpClientConfig {
   /// The job name assigned to scraped metrics by default.
   job_name: String
 
@@ -152,26 +152,8 @@ open class ScrapeConfig {
   /// Optional HTTP URL parameters.
   params: Mapping<String, Listing<String>>?
 
-  /// Sets the `Authorization` header on every scrape request
-  /// with the configured username and password.
-  basic_auth: BasicAuth?
-
-  /// Sets the `Authorization` header on every scrape request with the configured bearer token.
-  ///
-  /// Mutually exclusive with [bearer_token_file].
-  bearer_token: String(bearer_token_file == null)?
-
-  /// Sets the `Authorization` header on every scrape request
-  /// with the bearer token read from the configured file.
-  ///
-  /// Mutually exclusive with [bearer_token].
-  bearer_token_file: String?
-
-  /// Configures the scrape request's TLS settings.
-  tls_config: TLSConfig?
-
-  /// Optional proxy URL.
-  proxy_url: String?
+  /// List of HTTP service discovery configurations.
+  http_sd_configs: Listing<HttpSdConfig>?
 
   /// List of Kubernetes service discovery configurations.
   kubernetes_sd_configs: Listing<KubernetesSdConfig>?
@@ -218,9 +200,9 @@ open class ScrapeConfig {
 /// One of the following role types can be configured to discover targets:
 ///
 /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config>
-class KubernetesSdConfig {
+class KubernetesSdConfig extends HttpClientConfig {
   /// The Kubernetes role of entities that should be discovered.
-  role: *"pod"|"service"|"node"|"endpoints"|"ingress"
+  role: KubernetesSdConfigRole
 
   /// Optional namespace discovery.
   ///
@@ -252,10 +234,19 @@ class KubernetesSdConfig {
   /// it's recommended to use selectors.
   /// If selectors should be used or not depends on the particular situation.
   selectors: Listing<KubernetesSdConfigSelector>?
+
+  /// Optional metadata to attach to discovered targets.
+  /// If omitted, no additional metadata is attached.
+  attach_metadata: KubernetesSdConfigAttachMetadata(node?.implies(role is KubernetesSdConfigRoleWithNodeMetadata) || true)?
 }
 
+typealias KubernetesSdConfigRole = *"pod"|"service"|"node"|"endpoints"|"endpointslice"|"ingress"
+
+/// [KubernetesSdConfig.role] values that [KubernetesSdConfigAttachMetadata.node] may be enabled with
+typealias KubernetesSdConfigRoleWithNodeMetadata = "pod"|"endpoints"|"endpointslice"
+
 class KubernetesSdConfigSelector {
-  role: *"pod"|"service"|"node"|"endpoints"|"ingress"
+  role: KubernetesSdConfigRole
 
   /// A `key=value` pair describing a Kubernetes resource label.
   ///.
@@ -266,6 +257,15 @@ class KubernetesSdConfigSelector {
   ///
   /// See <https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/>.
   field: String?
+}
+
+class KubernetesSdConfigAttachMetadata {
+  /// Attaches node metadata to discovered targets.
+  /// Valid for roles: pod, endpoints, endpointslice.
+  /// When set to true, Prometheus must have permissions to get Nodes.
+  ///
+  /// Defaults to [false]
+  node: Boolean?
 }
 
 /// File-based service discovery provides a more generic way to configure static targets and
@@ -311,6 +311,24 @@ class DnsSdConfig {
 
 class NamespaceSpec {
   names: Listing<String>
+}
+
+/// HTTP-based service discovery provides a more generic way to configure static targets
+/// and serves as an interface to plug in custom service discovery mechanisms.
+///
+/// It fetches targets from an HTTP endpoint containing a list of zero or more <static_config>s.
+/// The target must reply with an HTTP 200 response. The HTTP header Content-Type must be application/json,
+/// and the body must be valid JSON.
+///
+/// <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config>
+class HttpSdConfig extends HttpClientConfig {
+  /// URL from which the targets are fetched.
+  url: String
+
+  /// Refresh interval to re-query the endpoint.
+  ///
+  /// Defaults to `60.s`
+  refresh_interval: Duration?
 }
 
 /// Relabeling is a powerful tool to dynamically rewrite the label set of a target before it gets scraped.
@@ -384,7 +402,7 @@ class RelabelConfig {
 /// * `"labeldrop"`: Match `regex` against all label names.
 ///   Any label that matches will be removed from the set of labels.
 /// * `"labelkeep"`: Match `regex` against all label names.
-typealias RelabelAction = *"replace"|"keep"|"drop"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
+typealias RelabelAction = "replace"|"keep"|"drop"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
 
 /// Allows specifying a list of targets and a common label set for them.
 ///
@@ -408,7 +426,7 @@ class StaticConfig {
 /// There is a small demo (/documentation/examples/remote_storage) of how to use this functionality.
 ///
 /// More detail: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write>
-class RemoteWriteConfig {
+class RemoteWriteConfig extends HttpClientConfig {
   /// The URL of the endpoint to send samples to.
   url: String
 
@@ -431,26 +449,11 @@ class RemoteWriteConfig {
   /// to help users distinguish between remote write configs.
   name: String?
 
-  /// Sets the `Authorization` header on every remote write request
-  /// with the configured username and password.
-  basic_auth: BasicAuth?
+  send_exemplars: Boolean?
 
-  /// Sets the `Authorization` header on every remote write request with the configured bearer token.
-  ///
-  /// Mutually exclusive with [bearer_token_file].
-  bearer_token: String(bearer_token_file == null)?
+  send_native_histograms: Boolean?
 
-  /// Sets the `Authorization` header on every remote write request
-  /// with the bearer token read from the configured file.
-  ///
-  /// Mutually exclusive with [bearer_token].
-  bearer_token_file: String?
-
-  /// Configures the remote write request's TLS settings.
-  tls_config: TLSConfig?
-
-  /// Optional proxy URL.
-  proxy_url: String?
+  protobuf_message: ("prometheus.WriteRequest"|"io.prometheus.write.v2.Request")?
 
   /// Configures the queue used to write to remote storage.
   queue_config: QueueConfig?
@@ -460,11 +463,13 @@ class RemoteWriteConfig {
   /// Metadata configuration is subject to change at any point or be removed in future releases.
   metadata_config: MetadataConfig?
 
+  local _self = this
+
   /// Configures AWS's Signature Verification 4 signing process.
   ///
   /// Signature Verification signs requests.
   /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
-  sigv4: Sigv4Config((basic_auth ?? bearer_token) == null)?
+  sigv4: Sigv4Config?(atMostOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
 }
 
 class MetadataConfig {
@@ -477,6 +482,11 @@ class MetadataConfig {
   ///
   /// Default if omitted: `1.min`
   send_interval: Duration?
+
+  /// Maximum number of samples per send.
+  ///
+  /// Default if omitted: `2000`
+  max_samples_per_send: Int?
 }
 
 class QueueConfig {
@@ -517,6 +527,16 @@ class QueueConfig {
   ///
   /// Default if omitted: `100.ms`
   max_backoff: Duration?
+
+  /// Consider HTTP 429 responses retry-able.
+  ///
+  /// Default if omitted: [false]
+  retry_on_http_429: Boolean?
+
+  /// Samples older than the limit will be dropped.
+  ///
+  /// Default if omitted: do not drop old samples
+  sample_age_limit: Duration?
 }
 
 class AlertingConfig {
@@ -535,7 +555,7 @@ class AlertingConfig {
 /// which is exposed through the `__alerts_path__` label.
 ///
 /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alertmanager_config>
-class AlertManagerConfig {
+class AlertManagerConfig extends HttpClientConfig {
   /// The api version of Alertmanager.
   ///
   /// Default if omitted: `"v1"`
@@ -552,56 +572,37 @@ class AlertManagerConfig {
   /// Default if omitted: `10.s`
   timeout: Duration?
 
-  /// Sets the `Authorization` header on every request with the configured username and password.
-  basic_auth: BasicAuth?
-
-  /// Sets the `Authorization` header on every request with the configured bearer token.
-  ///
-  /// Mutually exclusive with [bearer_token_file].
-  bearer_token: String(bearer_token_file == null)?
-
-  /// Sets the `Authorization` header on every request with the bearer token read from the configured file.
-  ///
-  /// Mutually exclusive with [bearer_token].
-  bearer_token_file: String?
-
-  /// Configures the scrape request's TLS settings.
-  tls_config: TLSConfig?
-
-  /// Optional proxy URL.
-  proxy_url: String?
+  /// List of HTTP service discovery configurations.
+  http_sd_configs: Listing<HttpSdConfig>?
 
   /// List of Kubernetes service discovery configurations.
   kubernetes_sd_configs: Listing<KubernetesSdConfig>?
+
+  /// List of file service discovery configurations.
+  file_sd_configs: Listing<FileSdConfig>?
+
+  /// List of DNS-based service discovery configurations.
+  dns_sd_configs: Listing<DnsSdConfig>?
 
   /// List of labeled statically configured Alertmanagers.
   static_configs: Listing<StaticConfig>?
 
   /// List of Alertmanager relabel configurations.
   relabel_configs: Listing<RelabelConfig>?
-}
 
-/// Allows configuring TLS connections.
-class TLSConfig {
-  /// CA certificate to validate API server certificate with.
-  ca_file: String?
+  /// List of alert relabel configurations.
+  alert_relabel_configs: Listing<RelabelConfig>?
 
-  /// Certificate file for client cert authentication to the server.
-  cert_file: String?
+  local _self = this
 
-  /// Key file for client cert authentication to the server.
-  key_file: String?
-
-  /// ServerName extension to indicate the name of the server.
+  /// Configures AWS's Signature Verification 4 signing process.
   ///
-  /// <https://tools.ietf.org/html/rfc4366#section-3.1>
-  server_name: String?
-
-  /// Disable validation of the server certificate.
-  insecure_skip_verify: Boolean?
+  /// Signature Verification signs requests.
+  /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
+  sigv4: Sigv4Config?(atMostOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
 }
 
-class RemoteReadConfig {
+class RemoteReadConfig extends HttpClientConfig {
   /// The URL of the endpoint to query from.
   url: String
 
@@ -623,46 +624,16 @@ class RemoteReadConfig {
   /// Whether reads should be made for queries for time ranges
   /// that the local storage should have complete data for.
   read_recent: Boolean?
-
-  /// Sets the `Authorization` header on every remote read request
-  /// with the configured username and password.
-  basic_auth: BasicAuth?
-
-  /// Sets the `Authorization` header on every remote read request
-  /// witb the configured bearer token.
-  ///
-  /// Mutually exclusive with [bearer_token_file].
-  bearer_token: String(bearer_token_file == null)?
-
-  /// Sets the `Authorization` header on every remote read request
-  /// with the bearer token read from the configured file.
-  ///
-  /// Mutually exclusive with [bearer_token].
-  bearer_token_file: String?
-
-  /// Configures the remote read request's TLS settings.
-  tls_config: TLSConfig?
-
-  /// Optional proxy URL.
-  proxy_url: String?
-}
-
-class BasicAuth {
-  username: String?
-
-  /// Mutually exclusive with [password_file].
-  password: String(password_file == null)?
-
-  /// Mutually exclusive with [password].
-  password_file: String?
 }
 
 class Sigv4Config {
   /// The AWS region (if blank, the region from the default credentials chain is used).
   region: String?
 
-  /// The AWS API keys.
+  /// The AWS API access key.
   access_key: String?
+
+  /// The AWS API secret key.
   secret_key: String?
 
   /// AWS profile used to authenticate.
@@ -671,3 +642,154 @@ class Sigv4Config {
   /// AWS Role ARN, an alternative to using AWS API Keys.
   role_arn: String?
 }
+
+abstract class ProxyConfig {
+  /// Optional proxy URL.
+  proxy_url: String?
+
+  /// Comma-separated string that can contain IPs, CIDR notation, domain names
+  /// that should be excluded from proxying. IP and domain names can
+  /// contain port numbers.
+  no_proxy: String?
+
+  /// Use proxy URL indicated by environment variables
+  /// (HTTP_PROXY, https_proxy, HTTPs_PROXY, https_proxy, and no_proxy)
+  proxy_from_environment: Boolean?
+
+  /// Specifies headers to send to proxies during CONNECT requests.
+  proxy_connect_haeder: Mapping<String, Listing<String>>?
+}
+
+abstract class HttpClientConfig extends ProxyConfig {
+  /// Sets the `Authorization` header on every request
+  /// with the configured username and password.
+  basic_auth: BasicAuth?(atMostOneSet(List(this, authorization, oauth2, bearer_token, bearer_token_file)))
+
+  /// Sets the `Authorization` header on every scrape request with the configured bearer token.
+  ///
+  /// Mutually exclusive with [bearer_token_file].
+  @Deprecated { message = "Deprecated in favor of [Authorization.credentials]" }
+  bearer_token: String?
+
+  /// Sets the `Authorization` header on every scrape request
+  /// with the bearer token read from the configured file.
+  ///
+  /// Mutually exclusive with [bearer_token].
+  @Deprecated { message = "Deprecated in favor of [Authorization.credentials_file]" }
+  bearer_token_file: String?
+
+  /// Sets the `Authorization` header on every request with the configured credentials.
+  authorization: Authorization?
+
+  /// Optional OAuth 2.0 configuration.
+  /// Cannot be used at the same time as basic_auth or authorization.
+  oauth2: OAuth2?
+
+  /// Configures the remote read request's TLS settings.
+  tls_config: TLSConfig?
+
+  /// Configure whether scrape requests follow HTTP 3xx redirects.
+  ///
+  /// Defaults to [true]
+  follow_redirects: Boolean?
+
+  /// Whether to enable HTTP2.
+  ///
+  /// Defaults to [true]
+  enable_http2: Boolean?
+}
+
+class BasicAuth {
+  username: String(username_file == null)?
+
+  username_file: String?
+
+  /// Mutually exclusive with [password_file].
+  password: String(password_file == null)?
+
+  /// Mutually exclusive with [password].
+  password_file: String?
+}
+
+class Authorization {
+  /// Sets the authentication type.
+  ///
+  /// Defaults to `"Bearer"`
+  type: String?
+
+  /// Sets the credentals.
+  credentials: String(credentials_file == null)?
+
+  /// Sets the credentals to read from the configured file.
+  credentials_file: String?
+}
+
+class OAuth2 extends ProxyConfig {
+  /// Sets the OAuth2 client ID.
+  client_id: String
+
+  /// Sets the OAuth2 client secret.
+  client_secret: String(client_secret_file == null)?
+
+  /// Read the OAuth2 client secret from a file.
+  client_secret_file: String?
+
+  /// Scopes for the token request.
+  scopes: Listing<String>?
+
+  /// The URL to fetch the token from
+  token_url: String
+
+  /// Optional parameters to append to the token URL.
+  endpoint_params: Mapping<String, String>
+
+  /// Configures the token request's TLS settings
+  tls_config: TLSConfig?
+}
+
+/// Allows configuring TLS connections.
+class TLSConfig {
+  /// CA certificate to validate API server certificate with.
+  ca: String(ca_file == null)?
+
+  /// Certificate for client cert authentication to the server.
+  cert: String(cert_file == null)?
+
+  /// Key for client cert authentication to the server.
+  key: String(key_file == null)?
+
+  /// CA certificate file to validate API server certificate with.
+  ca_file: String?
+
+  /// Certificate file for client cert authentication to the server.
+  cert_file: String?
+
+  /// Key file for client cert authentication to the server.
+  key_file: String?
+
+  /// ServerName extension to indicate the name of the server.
+  ///
+  /// <https://tools.ietf.org/html/rfc4366#section-3.1>
+  server_name: String?
+
+  /// Disable validation of the server certificate.
+  insecure_skip_verify: Boolean?
+
+  /// Minimum acceptable TLS version
+  ///
+  /// If unset, Prometheus will use Go default minimum version, which is TLS 1.2.
+  /// See MinVersion in <https://pkg.go.dev/crypto/tls#Config>.
+  min_version: TLSVersion?
+
+  /// Maximum acceptable TLS version.
+  ///
+  /// If unset, Prometheus will use Go default maximum version, which is TLS 1.3.
+  /// See MaxVersion in <https://pkg.go.dev/crypto/tls#Config>.
+  max_version: TLSVersion?
+}
+
+typealias TLSVersion = "TLS10"|"TLS11"|"TLS12"|"TLS13"
+
+/// Tells if only one of the values is not null.
+local const function atMostOneSet(values: List<Any>): Boolean =
+  values.filterNonNull().length <= 1
