@@ -28,12 +28,17 @@ import "pkl:reflect"
 /// ```
 function apply(type: Class|TypeAlias, value: Any) =
   let (result =
-    if (type is Class)
-      applyClass(reflect.Class(type), List(), value)
-    else
-      applyType(reflect.TypeAlias(type).referent, value)
+    attemptApply(type, value)
   )
     if (result is ConversionFailure) throw(result.message) else result
+
+/// Same as [apply], but returns [ConversionFailure] rather than throwing.
+function attemptApply(type: Class|TypeAlias, value: Any) =
+  if (type is Class)
+    applyClass(reflect.Class(type), List(), value)
+  else
+    applyType(reflect.TypeAlias(type).referent, value)
+
 
 local class ConversionFailure {
   message: String
