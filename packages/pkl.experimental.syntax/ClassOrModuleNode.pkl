@@ -45,7 +45,7 @@ class PropertyDefinitionNode extends Node {
   /// The object body for a property definition.
   ///
   /// * `foo: Bar { ... }` is invalid syntax.
-  /// * `foo = myBar { ... }` is technically valid syntax but should be acheived using an amends expression node.
+  /// * `foo = myBar { ... }` is technically valid syntax but should be achieved using an amends expression node.
   objectBody: ObjectBodyNode(typeAnnotation == null && defaultValue == null)?
 
   local function renderPropertyLine(currentIndent: String) = currentIndent + List(
