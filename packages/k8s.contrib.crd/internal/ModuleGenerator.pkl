@@ -304,7 +304,7 @@ local classSchemas: Type.TypeNames =
     .fold(Map(), (accumulator: Type.TypeNames, pair) ->
       let (path = pair.first)
       let (schema = pair.second)
-      let (typeName = determineTypeName(path, path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
+        let (typeName = determineTypeName(path, path.fold(List(), (res: List<String>, el: String) -> res.add(el.capitalize())).join(""), accumulator.values.toSet(), 0))
         accumulator.put(schema, typeName)
     )
 

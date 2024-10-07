@@ -1,461 +1,461 @@
 examples {
   ["RestateCluster.pkl"] {
-    """
-    /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
-    ///
-    /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module dev.restate.v1.RestateCluster
-    
-    extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
-    
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/EnvVar.pkl"
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/networking/v1/NetworkPolicy.pkl"
-    
-    fixed apiVersion: "restate.dev/v1"
-    
-    fixed kind: "RestateCluster"
-    
-    /// Standard object's metadata.
-    ///
-    /// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
-    metadata: ObjectMeta?
-    
-    /// Represents the configuration of a Restate Cluster
-    spec: Spec
-    
-    status: Dynamic?
-    
-    /// Represents the configuration of a Restate Cluster
-    class Spec {
+      """
+      /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
+      ///
+      /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
+      module dev.restate.v1.RestateCluster
+
+      extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/EnvVar.pkl"
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/networking/v1/NetworkPolicy.pkl"
+
+      fixed apiVersion: "restate.dev/v1"
+
+      fixed kind: "RestateCluster"
+
+      /// Standard object's metadata.
+      ///
+      /// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+      metadata: ObjectMeta?
+
+      /// Represents the configuration of a Restate Cluster
+      spec: Spec
+
+      status: Dynamic?
+
+      /// Represents the configuration of a Restate Cluster
+      class Spec {
+        /// Compute configuration
+        compute: SpecCompute
+
+        /// Security configuration
+        security: SpecSecurity?
+
+        /// Storage configuration
+        storage: SpecStorage
+      }
+
       /// Compute configuration
-      compute: Compute
-    
+      class SpecCompute {
+        /// List of environment variables to set in the container; these may override defaults
+        env: Listing<EnvVar>?
+
+        /// Container image name. More info: https://kubernetes.io/docs/concepts/containers/images.
+        image: String
+
+        /// Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
+        /// specified, or IfNotPresent otherwise. More info:
+        /// https://kubernetes.io/docs/concepts/containers/images#updating-images
+        imagePullPolicy: String?
+
+        /// replicas is the desired number of Restate nodes. If unspecified, defaults to 1.
+        replicas: Int?
+
+        /// Compute Resources for the Restate container. More info:
+        /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        resources: ResourceRequirements?
+
+        /// Test nested objects field collision.
+        redObject: SpecComputeRedObject?
+
+        /// Test nested objects field collision.
+        blueObject: SpecComputeBlueObject?
+      }
+
+      /// Test nested objects field collision.
+      class SpecComputeRedObject {
+        /// Nested field.
+        nestedField: String
+
+        /// Nested child object.
+        nestedObject: SpecComputeRedObjectNestedObject?
+
+        /// Nested list object red.
+        nestedList: Listing<SpecComputeRedObjectNestedListNestedList>?
+      }
+
+      /// Nested child object.
+      class SpecComputeRedObjectNestedObject {
+        /// Nested field.
+        nestedRed: String?
+      }
+
+      /// Red nested object test items.
+      class SpecComputeRedObjectNestedListNestedList {
+        /// Red nested list field.
+        nestedListItemField: String?
+      }
+
+      /// Test nested objects field collision.
+      class SpecComputeBlueObject {
+        /// Nested field.
+        nestedField: String
+
+        /// Nested child object.
+        nestedObject: SpecComputeBlueObjectNestedObject?
+
+        /// Nested list object blue.
+        nestedList: Listing<SpecComputeBlueObjectNestedListNestedList>?
+      }
+
+      /// Nested child object.
+      class SpecComputeBlueObjectNestedObject {
+        /// Nested field.
+        nestedBlue: String?
+      }
+
+      /// Blue nested object test items.
+      class SpecComputeBlueObjectNestedListNestedList {
+        /// Blue nested list field.
+        nestedListItemField: String?
+      }
+
       /// Security configuration
-      security: Security?
-    
-      /// Storage configuration
-      storage: Storage
-    }
-    
-    /// Compute configuration
-    class Compute {
-      /// List of environment variables to set in the container; these may override defaults
-      env: Listing<EnvVar>?
-    
-      /// Container image name. More info: https://kubernetes.io/docs/concepts/containers/images.
-      image: String
-    
-      /// Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
-      /// specified, or IfNotPresent otherwise. More info:
-      /// https://kubernetes.io/docs/concepts/containers/images#updating-images
-      imagePullPolicy: String?
-    
-      /// replicas is the desired number of Restate nodes. If unspecified, defaults to 1.
-      replicas: Int?
-    
-      /// Compute Resources for the Restate container. More info:
-      /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-      resources: ResourceRequirements?
-    
-      /// Test nested objects field collision.
-      redObject: RedObject?
+      class SpecSecurity {
+        /// if set, create a AWS PodIdentityAssociation using the ACK CRD in order to give the Restate pod
+        /// access to this role
+        awsPodIdentityAssociationRoleArn: String?
 
-      /// Test nested objects field collision.
-      blueObject: BlueObject?
-    }
+        /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
+        /// these to [] to allow all traffic - not recommended.
+        networkPeers: SpecSecurityNetworkPeers?
 
-    /// Test nested objects field collision.
-    class RedObject {
-      /// Nested field.
-      nestedField: String
+        serviceAccountAnnotations: Mapping<String, String>?
 
-      /// Nested child object.
-      nestedObject: NestedObject?
+        serviceAnnotations: Mapping<String, String>?
+      }
 
-      /// Nested list object red.
-      nestedList: Listing<NestedList>?
-    }
-
-    /// Nested child object.
-    class NestedObject {
-      /// Nested field.
-      nestedRed: String?
-    }
-
-    /// Red nested object test items.
-    class NestedList {
-      /// Red nested list field.
-      nestedListItemField: String?
-    }
-
-    /// Test nested objects field collision.
-    class BlueObject {
-      /// Nested field.
-      nestedField: String
-
-      /// Nested child object.
-      nestedObject: NestedObject?
-
-      /// Nested list object blue.
-      nestedList: Listing<NestedList>?
-    }
-
-    /// Nested child object.
-    class NestedObject {
-      /// Nested field.
-      nestedBlue: String?
-    }
-
-    /// Blue nested object test items.
-    class NestedList {
-      /// Blue nested list field.
-      nestedListItemField: String?
-    }
-    
-    /// Security configuration
-    class Security {
-      /// if set, create a AWS PodIdentityAssociation using the ACK CRD in order to give the Restate pod
-      /// access to this role
-      awsPodIdentityAssociationRoleArn: String?
-    
       /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
       /// these to [] to allow all traffic - not recommended.
-      networkPeers: NetworkPeers?
-    
-      serviceAccountAnnotations: Mapping<String, String>?
-    
-      serviceAnnotations: Mapping<String, String>?
-    }
-    
-    /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
-    /// these to [] to allow all traffic - not recommended.
-    class NetworkPeers {
-      admin: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    
-      ingress: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    
-      metrics: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    }
-    
-    /// Storage configuration
-    class Storage {
-      /// storageClassName is the name of the StorageClass required by the claim. More info:
-      /// https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1 this field is immutable
-      storageClassName: String?
-    
-      /// storageRequestBytes is the amount of storage to request in volume claims. It is allowed to increase
-      /// but not decrease.
-      storageRequestBytes: Int(this >= 1.0)
-    }
-    
-    """
+      class SpecSecurityNetworkPeers {
+        admin: Listing<NetworkPolicy.NetworkPolicyPeer>?
+
+        ingress: Listing<NetworkPolicy.NetworkPolicyPeer>?
+
+        metrics: Listing<NetworkPolicy.NetworkPolicyPeer>?
+      }
+
+      /// Storage configuration
+      class SpecStorage {
+        /// storageClassName is the name of the StorageClass required by the claim. More info:
+        /// https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1 this field is immutable
+        storageClassName: String?
+
+        /// storageRequestBytes is the amount of storage to request in volume claims. It is allowed to increase
+        /// but not decrease.
+        storageRequestBytes: Int(this >= 1.0)
+      }
+
+      """
   }
   ["RestateCluster.pkl -- dependency notation for k8s"] {
-    """
-    /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
-    ///
-    /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module dev.restate.v1.RestateCluster
-    
-    extends "@k8s/K8sResource.pkl"
-    
-    import "@k8s/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
-    import "@k8s/api/core/v1/EnvVar.pkl"
-    import "@k8s/api/core/v1/ResourceRequirements.pkl"
-    import "@k8s/api/networking/v1/NetworkPolicy.pkl"
-    
-    fixed apiVersion: "restate.dev/v1"
-    
-    fixed kind: "RestateCluster"
-    
-    /// Standard object's metadata.
-    ///
-    /// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
-    metadata: ObjectMeta?
-    
-    /// Represents the configuration of a Restate Cluster
-    spec: Spec
-    
-    status: Dynamic?
-    
-    /// Represents the configuration of a Restate Cluster
-    class Spec {
+      """
+      /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
+      ///
+      /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
+      module dev.restate.v1.RestateCluster
+
+      extends "@k8s/K8sResource.pkl"
+
+      import "@k8s/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+      import "@k8s/api/core/v1/EnvVar.pkl"
+      import "@k8s/api/core/v1/ResourceRequirements.pkl"
+      import "@k8s/api/networking/v1/NetworkPolicy.pkl"
+
+      fixed apiVersion: "restate.dev/v1"
+
+      fixed kind: "RestateCluster"
+
+      /// Standard object's metadata.
+      ///
+      /// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+      metadata: ObjectMeta?
+
+      /// Represents the configuration of a Restate Cluster
+      spec: Spec
+
+      status: Dynamic?
+
+      /// Represents the configuration of a Restate Cluster
+      class Spec {
+        /// Compute configuration
+        compute: SpecCompute
+
+        /// Security configuration
+        security: SpecSecurity?
+
+        /// Storage configuration
+        storage: SpecStorage
+      }
+
       /// Compute configuration
-      compute: Compute
-    
+      class SpecCompute {
+        /// List of environment variables to set in the container; these may override defaults
+        env: Listing<EnvVar>?
+
+        /// Container image name. More info: https://kubernetes.io/docs/concepts/containers/images.
+        image: String
+
+        /// Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
+        /// specified, or IfNotPresent otherwise. More info:
+        /// https://kubernetes.io/docs/concepts/containers/images#updating-images
+        imagePullPolicy: String?
+
+        /// replicas is the desired number of Restate nodes. If unspecified, defaults to 1.
+        replicas: Int?
+
+        /// Compute Resources for the Restate container. More info:
+        /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        resources: ResourceRequirements?
+
+        /// Test nested objects field collision.
+        redObject: SpecComputeRedObject?
+
+        /// Test nested objects field collision.
+        blueObject: SpecComputeBlueObject?
+      }
+
+      /// Test nested objects field collision.
+      class SpecComputeRedObject {
+        /// Nested field.
+        nestedField: String
+
+        /// Nested child object.
+        nestedObject: SpecComputeRedObjectNestedObject?
+
+        /// Nested list object red.
+        nestedList: Listing<SpecComputeRedObjectNestedListNestedList>?
+      }
+
+      /// Nested child object.
+      class SpecComputeRedObjectNestedObject {
+        /// Nested field.
+        nestedRed: String?
+      }
+
+      /// Red nested object test items.
+      class SpecComputeRedObjectNestedListNestedList {
+        /// Red nested list field.
+        nestedListItemField: String?
+      }
+
+      /// Test nested objects field collision.
+      class SpecComputeBlueObject {
+        /// Nested field.
+        nestedField: String
+
+        /// Nested child object.
+        nestedObject: SpecComputeBlueObjectNestedObject?
+
+        /// Nested list object blue.
+        nestedList: Listing<SpecComputeBlueObjectNestedListNestedList>?
+      }
+
+      /// Nested child object.
+      class SpecComputeBlueObjectNestedObject {
+        /// Nested field.
+        nestedBlue: String?
+      }
+
+      /// Blue nested object test items.
+      class SpecComputeBlueObjectNestedListNestedList {
+        /// Blue nested list field.
+        nestedListItemField: String?
+      }
+
       /// Security configuration
-      security: Security?
-    
-      /// Storage configuration
-      storage: Storage
-    }
-    
-    /// Compute configuration
-    class Compute {
-      /// List of environment variables to set in the container; these may override defaults
-      env: Listing<EnvVar>?
-    
-      /// Container image name. More info: https://kubernetes.io/docs/concepts/containers/images.
-      image: String
-    
-      /// Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
-      /// specified, or IfNotPresent otherwise. More info:
-      /// https://kubernetes.io/docs/concepts/containers/images#updating-images
-      imagePullPolicy: String?
-    
-      /// replicas is the desired number of Restate nodes. If unspecified, defaults to 1.
-      replicas: Int?
-    
-      /// Compute Resources for the Restate container. More info:
-      /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-      resources: ResourceRequirements?
+      class SpecSecurity {
+        /// if set, create a AWS PodIdentityAssociation using the ACK CRD in order to give the Restate pod
+        /// access to this role
+        awsPodIdentityAssociationRoleArn: String?
 
-      /// Test nested objects field collision.
-      redObject: RedObject?
+        /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
+        /// these to [] to allow all traffic - not recommended.
+        networkPeers: SpecSecurityNetworkPeers?
 
-      /// Test nested objects field collision.
-      blueObject: BlueObject?
-    }
+        serviceAccountAnnotations: Mapping<String, String>?
 
-    /// Test nested objects field collision.
-    class RedObject {
-      /// Nested field.
-      nestedField: String
+        serviceAnnotations: Mapping<String, String>?
+      }
 
-      /// Nested child object.
-      nestedObject: NestedObject?
-
-      /// Nested list object red.
-      nestedList: Listing<NestedList>?
-    }
-
-    /// Nested child object.
-    class NestedObject {
-      /// Nested field.
-      nestedRed: String?
-    }
-
-    /// Red nested object test items.
-    class NestedList {
-      /// Red nested list field.
-      nestedListItemField: String?
-    }
-
-    /// Test nested objects field collision.
-    class BlueObject {
-      /// Nested field.
-      nestedField: String
-
-      /// Nested child object.
-      nestedObject: NestedObject?
-
-      /// Nested list object blue.
-      nestedList: Listing<NestedList>?
-    }
-
-    /// Nested child object.
-    class NestedObject {
-      /// Nested field.
-      nestedBlue: String?
-    }
-
-    /// Blue nested object test items.
-    class NestedList {
-      /// Blue nested list field.
-      nestedListItemField: String?
-    }
-    
-    /// Security configuration
-    class Security {
-      /// if set, create a AWS PodIdentityAssociation using the ACK CRD in order to give the Restate pod
-      /// access to this role
-      awsPodIdentityAssociationRoleArn: String?
-    
       /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
       /// these to [] to allow all traffic - not recommended.
-      networkPeers: NetworkPeers?
-    
-      serviceAccountAnnotations: Mapping<String, String>?
-    
-      serviceAnnotations: Mapping<String, String>?
-    }
-    
-    /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
-    /// these to [] to allow all traffic - not recommended.
-    class NetworkPeers {
-      admin: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    
-      ingress: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    
-      metrics: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    }
-    
-    /// Storage configuration
-    class Storage {
-      /// storageClassName is the name of the StorageClass required by the claim. More info:
-      /// https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1 this field is immutable
-      storageClassName: String?
-    
-      /// storageRequestBytes is the amount of storage to request in volume claims. It is allowed to increase
-      /// but not decrease.
-      storageRequestBytes: Int(this >= 1.0)
-    }
-    
-    """
+      class SpecSecurityNetworkPeers {
+        admin: Listing<NetworkPolicy.NetworkPolicyPeer>?
+
+        ingress: Listing<NetworkPolicy.NetworkPolicyPeer>?
+
+        metrics: Listing<NetworkPolicy.NetworkPolicyPeer>?
+      }
+
+      /// Storage configuration
+      class SpecStorage {
+        /// storageClassName is the name of the StorageClass required by the claim. More info:
+        /// https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1 this field is immutable
+        storageClassName: String?
+
+        /// storageRequestBytes is the amount of storage to request in volume claims. It is allowed to increase
+        /// but not decrease.
+        storageRequestBytes: Int(this >= 1.0)
+      }
+
+      """
   }
   ["RestateCluster.pkl.pkl -- different version of k8s"] {
-    """
-    /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
-    ///
-    /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module dev.restate.v1.RestateCluster
-    
-    extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/K8sResource.pkl"
-    
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/api/core/v1/EnvVar.pkl"
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/api/core/v1/ResourceRequirements.pkl"
-    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/api/networking/v1/NetworkPolicy.pkl"
-    
-    fixed apiVersion: "restate.dev/v1"
-    
-    fixed kind: "RestateCluster"
-    
-    /// Standard object's metadata.
-    ///
-    /// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
-    metadata: ObjectMeta?
-    
-    /// Represents the configuration of a Restate Cluster
-    spec: Spec
-    
-    status: Dynamic?
-    
-    /// Represents the configuration of a Restate Cluster
-    class Spec {
+      """
+      /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
+      ///
+      /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
+      module dev.restate.v1.RestateCluster
+
+      extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/K8sResource.pkl"
+
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/api/core/v1/EnvVar.pkl"
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/api/core/v1/ResourceRequirements.pkl"
+      import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0/api/networking/v1/NetworkPolicy.pkl"
+
+      fixed apiVersion: "restate.dev/v1"
+
+      fixed kind: "RestateCluster"
+
+      /// Standard object's metadata.
+      ///
+      /// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+      metadata: ObjectMeta?
+
+      /// Represents the configuration of a Restate Cluster
+      spec: Spec
+
+      status: Dynamic?
+
+      /// Represents the configuration of a Restate Cluster
+      class Spec {
+        /// Compute configuration
+        compute: SpecCompute
+
+        /// Security configuration
+        security: SpecSecurity?
+
+        /// Storage configuration
+        storage: SpecStorage
+      }
+
       /// Compute configuration
-      compute: Compute
-    
+      class SpecCompute {
+        /// List of environment variables to set in the container; these may override defaults
+        env: Listing<EnvVar>?
+
+        /// Container image name. More info: https://kubernetes.io/docs/concepts/containers/images.
+        image: String
+
+        /// Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
+        /// specified, or IfNotPresent otherwise. More info:
+        /// https://kubernetes.io/docs/concepts/containers/images#updating-images
+        imagePullPolicy: String?
+
+        /// replicas is the desired number of Restate nodes. If unspecified, defaults to 1.
+        replicas: Int?
+
+        /// Compute Resources for the Restate container. More info:
+        /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        resources: ResourceRequirements?
+
+        /// Test nested objects field collision.
+        redObject: SpecComputeRedObject?
+
+        /// Test nested objects field collision.
+        blueObject: SpecComputeBlueObject?
+      }
+
+      /// Test nested objects field collision.
+      class SpecComputeRedObject {
+        /// Nested field.
+        nestedField: String
+
+        /// Nested child object.
+        nestedObject: SpecComputeRedObjectNestedObject?
+
+        /// Nested list object red.
+        nestedList: Listing<SpecComputeRedObjectNestedListNestedList>?
+      }
+
+      /// Nested child object.
+      class SpecComputeRedObjectNestedObject {
+        /// Nested field.
+        nestedRed: String?
+      }
+
+      /// Red nested object test items.
+      class SpecComputeRedObjectNestedListNestedList {
+        /// Red nested list field.
+        nestedListItemField: String?
+      }
+
+      /// Test nested objects field collision.
+      class SpecComputeBlueObject {
+        /// Nested field.
+        nestedField: String
+
+        /// Nested child object.
+        nestedObject: SpecComputeBlueObjectNestedObject?
+
+        /// Nested list object blue.
+        nestedList: Listing<SpecComputeBlueObjectNestedListNestedList>?
+      }
+
+      /// Nested child object.
+      class SpecComputeBlueObjectNestedObject {
+        /// Nested field.
+        nestedBlue: String?
+      }
+
+      /// Blue nested object test items.
+      class SpecComputeBlueObjectNestedListNestedList {
+        /// Blue nested list field.
+        nestedListItemField: String?
+      }
+
       /// Security configuration
-      security: Security?
-    
-      /// Storage configuration
-      storage: Storage
-    }
-    
-    /// Compute configuration
-    class Compute {
-      /// List of environment variables to set in the container; these may override defaults
-      env: Listing<EnvVar>?
-    
-      /// Container image name. More info: https://kubernetes.io/docs/concepts/containers/images.
-      image: String
-    
-      /// Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
-      /// specified, or IfNotPresent otherwise. More info:
-      /// https://kubernetes.io/docs/concepts/containers/images#updating-images
-      imagePullPolicy: String?
-    
-      /// replicas is the desired number of Restate nodes. If unspecified, defaults to 1.
-      replicas: Int?
-    
-      /// Compute Resources for the Restate container. More info:
-      /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-      resources: ResourceRequirements?
+      class SpecSecurity {
+        /// if set, create a AWS PodIdentityAssociation using the ACK CRD in order to give the Restate pod
+        /// access to this role
+        awsPodIdentityAssociationRoleArn: String?
 
-      /// Test nested objects field collision.
-      redObject: RedObject?
+        /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
+        /// these to [] to allow all traffic - not recommended.
+        networkPeers: SpecSecurityNetworkPeers?
 
-      /// Test nested objects field collision.
-      blueObject: BlueObject?
-    }
+        serviceAccountAnnotations: Mapping<String, String>?
 
-    /// Test nested objects field collision.
-    class RedObject {
-      /// Nested field.
-      nestedField: String
+        serviceAnnotations: Mapping<String, String>?
+      }
 
-      /// Nested child object.
-      nestedObject: NestedObject?
-
-      /// Nested list object red.
-      nestedList: Listing<NestedList>?
-    }
-
-    /// Nested child object.
-    class NestedObject {
-      /// Nested field.
-      nestedRed: String?
-    }
-
-    /// Red nested object test items.
-    class NestedList {
-      /// Red nested list field.
-      nestedListItemField: String?
-    }
-
-    /// Test nested objects field collision.
-    class BlueObject {
-      /// Nested field.
-      nestedField: String
-
-      /// Nested child object.
-      nestedObject: NestedObject?
-
-      /// Nested list object blue.
-      nestedList: Listing<NestedList>?
-    }
-
-    /// Nested child object.
-    class NestedObject {
-      /// Nested field.
-      nestedBlue: String?
-    }
-
-    /// Blue nested object test items.
-    class NestedList {
-      /// Blue nested list field.
-      nestedListItemField: String?
-    }
-    
-    /// Security configuration
-    class Security {
-      /// if set, create a AWS PodIdentityAssociation using the ACK CRD in order to give the Restate pod
-      /// access to this role
-      awsPodIdentityAssociationRoleArn: String?
-    
       /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
       /// these to [] to allow all traffic - not recommended.
-      networkPeers: NetworkPeers?
-    
-      serviceAccountAnnotations: Mapping<String, String>?
-    
-      serviceAnnotations: Mapping<String, String>?
-    }
-    
-    /// Network peers to allow access to restate ports If unset, will not allow any new traffic. Set any of
-    /// these to [] to allow all traffic - not recommended.
-    class NetworkPeers {
-      admin: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    
-      ingress: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    
-      metrics: Listing<NetworkPolicy.NetworkPolicyPeer>?
-    }
-    
-    /// Storage configuration
-    class Storage {
-      /// storageClassName is the name of the StorageClass required by the claim. More info:
-      /// https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1 this field is immutable
-      storageClassName: String?
-    
-      /// storageRequestBytes is the amount of storage to request in volume claims. It is allowed to increase
-      /// but not decrease.
-      storageRequestBytes: Int(this >= 1.0)
-    }
-    
-    """
+      class SpecSecurityNetworkPeers {
+        admin: Listing<NetworkPolicy.NetworkPolicyPeer>?
+
+        ingress: Listing<NetworkPolicy.NetworkPolicyPeer>?
+
+        metrics: Listing<NetworkPolicy.NetworkPolicyPeer>?
+      }
+
+      /// Storage configuration
+      class SpecStorage {
+        /// storageClassName is the name of the StorageClass required by the claim. More info:
+        /// https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1 this field is immutable
+        storageClassName: String?
+
+        /// storageRequestBytes is the amount of storage to request in volume claims. It is allowed to increase
+        /// but not decrease.
+        storageRequestBytes: Int(this >= 1.0)
+      }
+
+      """
   }
 }
