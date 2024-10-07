@@ -151,6 +151,60 @@ spec:
                           description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
+                    redObject:
+                      description: Test nested objects field collision.
+                      properties:
+                        nestedField:
+                          description: Nested field.
+                          type: string
+                        nestedObject:
+                          description: Nested child object.
+                          properties:
+                            nestedRed:
+                              description: Nested field.
+                              type: string
+                          type: object
+                        nestedList:
+                          description: Nested list object red.
+                          items:
+                            description: Red nested object test items.
+                            properties:
+                              nestedListItemField:
+                                description: Red nested list field.
+                                type: string
+                            type: object
+                          nullable: true
+                          type: array
+                      required:
+                        - nestedField
+                      type: object
+                    blueObject:
+                      description: Test nested objects field collision.
+                      properties:
+                        nestedField:
+                          description: Nested field.
+                          type: string
+                        nestedObject:
+                          description: Nested child object.
+                          properties:
+                            nestedBlue:
+                              description: Nested field.
+                              type: string
+                          type: object
+                        nestedList:
+                          description: Nested list object blue.
+                          items:
+                            description: Blue nested object test items.
+                            properties:
+                              nestedListItemField:
+                                description: Blue nested list field.
+                                type: string
+                            type: object
+                          nullable: true
+                          type: array
+                      required:
+                        - nestedField
+                      type: object
                   required:
                     - image
                   type: object

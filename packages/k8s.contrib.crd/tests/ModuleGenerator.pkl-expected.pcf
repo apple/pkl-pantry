@@ -58,6 +58,60 @@ examples {
       /// Compute Resources for the Restate container. More info:
       /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       resources: ResourceRequirements?
+    
+      /// Test nested objects field collision.
+      redObject: RedObject?
+
+      /// Test nested objects field collision.
+      blueObject: BlueObject?
+    }
+
+    /// Test nested objects field collision.
+    class RedObject {
+      /// Nested field.
+      nestedField: String
+
+      /// Nested child object.
+      nestedObject: NestedObject?
+
+      /// Nested list object red.
+      nestedList: Listing<NestedList>?
+    }
+
+    /// Nested child object.
+    class NestedObject {
+      /// Nested field.
+      nestedRed: String?
+    }
+
+    /// Red nested object test items.
+    class NestedList {
+      /// Red nested list field.
+      nestedListItemField: String?
+    }
+
+    /// Test nested objects field collision.
+    class BlueObject {
+      /// Nested field.
+      nestedField: String
+
+      /// Nested child object.
+      nestedObject: NestedObject?
+
+      /// Nested list object blue.
+      nestedList: Listing<NestedList>?
+    }
+
+    /// Nested child object.
+    class NestedObject {
+      /// Nested field.
+      nestedBlue: String?
+    }
+
+    /// Blue nested object test items.
+    class NestedList {
+      /// Blue nested list field.
+      nestedListItemField: String?
     }
     
     /// Security configuration
@@ -157,6 +211,60 @@ examples {
       /// Compute Resources for the Restate container. More info:
       /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       resources: ResourceRequirements?
+
+      /// Test nested objects field collision.
+      redObject: RedObject?
+
+      /// Test nested objects field collision.
+      blueObject: BlueObject?
+    }
+
+    /// Test nested objects field collision.
+    class RedObject {
+      /// Nested field.
+      nestedField: String
+
+      /// Nested child object.
+      nestedObject: NestedObject?
+
+      /// Nested list object red.
+      nestedList: Listing<NestedList>?
+    }
+
+    /// Nested child object.
+    class NestedObject {
+      /// Nested field.
+      nestedRed: String?
+    }
+
+    /// Red nested object test items.
+    class NestedList {
+      /// Red nested list field.
+      nestedListItemField: String?
+    }
+
+    /// Test nested objects field collision.
+    class BlueObject {
+      /// Nested field.
+      nestedField: String
+
+      /// Nested child object.
+      nestedObject: NestedObject?
+
+      /// Nested list object blue.
+      nestedList: Listing<NestedList>?
+    }
+
+    /// Nested child object.
+    class NestedObject {
+      /// Nested field.
+      nestedBlue: String?
+    }
+
+    /// Blue nested object test items.
+    class NestedList {
+      /// Blue nested list field.
+      nestedListItemField: String?
     }
     
     /// Security configuration
@@ -256,6 +364,60 @@ examples {
       /// Compute Resources for the Restate container. More info:
       /// https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       resources: ResourceRequirements?
+
+      /// Test nested objects field collision.
+      redObject: RedObject?
+
+      /// Test nested objects field collision.
+      blueObject: BlueObject?
+    }
+
+    /// Test nested objects field collision.
+    class RedObject {
+      /// Nested field.
+      nestedField: String
+
+      /// Nested child object.
+      nestedObject: NestedObject?
+
+      /// Nested list object red.
+      nestedList: Listing<NestedList>?
+    }
+
+    /// Nested child object.
+    class NestedObject {
+      /// Nested field.
+      nestedRed: String?
+    }
+
+    /// Red nested object test items.
+    class NestedList {
+      /// Red nested list field.
+      nestedListItemField: String?
+    }
+
+    /// Test nested objects field collision.
+    class BlueObject {
+      /// Nested field.
+      nestedField: String
+
+      /// Nested child object.
+      nestedObject: NestedObject?
+
+      /// Nested list object blue.
+      nestedList: Listing<NestedList>?
+    }
+
+    /// Nested child object.
+    class NestedObject {
+      /// Nested field.
+      nestedBlue: String?
+    }
+
+    /// Blue nested object test items.
+    class NestedList {
+      /// Blue nested list field.
+      nestedListItemField: String?
     }
     
     /// Security configuration
