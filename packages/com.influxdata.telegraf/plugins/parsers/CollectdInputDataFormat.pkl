@@ -1,0 +1,42 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The Collectd data format parses Collectd data into metric fields.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.parsers.CollectdInputDataFormat
+
+extends "InputDataFormat.pkl"
+
+data_format: "collectd"
+
+/// Authentication file for cryptographic security levels.
+collectd_auth_file: String?
+
+/// Collectd security level to enfore.
+///
+/// Default: `"none"`
+collectd_security_level: ("none"|"sign"|"encrypt")?
+
+/// Paths of to TypesDB specifications.
+collectd_typesdb: Listing<String>?
+
+/// The method for handling multi-value plugins.
+///
+/// Multi-value plugins can be handled two ways:
+/// * "split" will parse and store the multi-value plugin data into separate measurements.
+/// * "join" will parse and store the multi-value plugin as a single multi-value measurement.
+///
+/// Default: `"split"`, for backward compatibility with previous versions of influxdb.
+collectd_parse_multivalue: ("split"|"join")?
