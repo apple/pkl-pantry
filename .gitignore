@@ -9,3 +9,6 @@ build
 .DS_Store
 
 .out/
+
+.vscode/
+.pkl-lsp/
