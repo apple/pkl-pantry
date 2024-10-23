@@ -13,16 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Modules for [JSON Schema](https://json-schema.org).
-///
-/// This package includes utilities for resolving JSON Schema references, as well as generating Pkl modules from a
-/// JSON Schema document.
-amends "../basePklProject.pkl"
+module org.json_schema.tests.JsonSchema
 
-dependencies {
-  ["uri"] = import("../pkl.experimental.uri/PklProject")
-}
+amends "pkl:test"
 
-package {
-  version = "1.0.5"
+local allExamples = import*("../examples/*.pkl")
+
+examples {
+  for (example in allExamples.keys) {
+    [example.drop(12).replaceLast("pkl", "json")] {
+      allExamples[example].output.text
+    }
+  }
 }

@@ -463,7 +463,7 @@ _inline_: Mapping<String, Schema>?
 output {
   renderer = new JsonRenderer {
     converters {
-      [module.getClass()] = (s: JsonSchema) -> s.toMap().remove("_inline_") + s._inline_.toMap()
+      [module.getClass()] = (s: JsonSchema) -> s.toMap().remove("_inline_") + (s._inline_?.toMap() ?? Map())
     }
   }
 }

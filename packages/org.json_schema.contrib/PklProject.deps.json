@@ -13,7 +13,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/org.json_schema@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema@1.0.4",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema@1.0.5",
       "path": "../org.json_schema"
     }
   }
