@@ -1,0 +1,28 @@
+examples {
+  ["basic.json"] {
+    """
+    {
+      "$id": "https://example.com/person.schema.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Person",
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "description": "The person's first name",
+          "type": "string"
+        },
+        "lastName": {
+          "description": "The person's last name",
+          "type": "string"
+        },
+        "age": {
+          "description": "Age in years which must be equal to or greater than zero.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+    
+    """
+  }
+}
