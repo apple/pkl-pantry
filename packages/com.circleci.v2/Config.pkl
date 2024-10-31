@@ -519,7 +519,7 @@ class SetupRemoteDockerStep extends AbstractStep {
 
   /// Set this to true to enable [Docker Layer Caching](https://circleci.com/docs/docker-layer-caching/)
   /// in the Remote Docker Environment (default: false)
-  docker_layer_cacheing: Boolean
+  docker_layer_caching: Boolean
 }
 
 /// Special step used to persist a temporary file to be used by another job in the workflow.
