@@ -152,6 +152,9 @@ class Job {
   /// Number of parallel instances of this job to run (default: 1)
   parallelism: Int?
 
+  /// Job-level parameters can be used when calling a job in a workflow
+  parameters: Mapping<String, Parameter>?
+
   /// A map of environment variable names and values.
   environment: Mapping<String, String>?
 
