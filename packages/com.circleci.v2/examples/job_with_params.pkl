@@ -108,7 +108,7 @@ local apply = "apply"
 local contextValue = "infra_context"
 local bucket = "infra_s3_bucket"
 local workspaceAProjectDir = "./infra/workspace-a"
-local workspaceBProjectDir = "./infra/workspace-a"
+local workspaceBProjectDir = "./infra/workspace-b"
 
 local function getWorkflowJobName(jobName: String): String = "wf-job-" + jobName
 
