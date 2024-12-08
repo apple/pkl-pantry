@@ -239,7 +239,7 @@ examples {
         - init-validate:
             name: wf-job-init-validate
             context: infra_context
-            project_dir: ./infra/workspace-a
+            project_dir: ./infra/workspace-b
             bucket: infra_s3_bucket
             key: workspace-b/terraform.tfstate
         - plan:
@@ -247,14 +247,14 @@ examples {
             requires:
             - wf-job-init-validate
             context: infra_context
-            project_dir: ./infra/workspace-a
+            project_dir: ./infra/workspace-b
         - apply:
             name: wf-job-apply
             requires:
             - wf-job-plan
             context: infra_context
             type: approval
-            project_dir: ./infra/workspace-a
+            project_dir: ./infra/workspace-b
     
     """#
   }
