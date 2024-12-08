@@ -150,6 +150,114 @@ examples {
     
     """
   }
+  ["job_with_params.yaml"] {
+    #"""
+    # Generated from CircleCI.pkl. DO NOT EDIT.
+    version: '2.1'
+    executors:
+      tofu-executor:
+        resource_class: small
+        docker:
+        - image: ghcr.io/opentofu/opentofu:latest
+    jobs:
+      init-validate:
+        steps:
+        - checkout
+        - run:
+            command: |2-
+                cd << parameters.project_dir >>
+                tofu init \
+                  -backend-config="bucket=<< parameters.bucket >>" \
+                  -backend-config="key=<< parameters.key >>"
+                tofu validate
+            name: OpenTofu Init and Validate
+        - persist_to_workspace:
+            root: '.'
+            paths:
+            - << parameters.project_dir >>/.terraform
+            - << parameters.project_dir >>/.terraform.lock.hcl
+        executor: tofu-executor
+        parameters:
+          project_dir:
+            type: string
+          bucket:
+            type: string
+          key:
+            type: string
+      plan:
+        steps:
+        - checkout
+        - attach_workspace:
+            at: '.'
+        - run:
+            command: |2-
+                cd << parameters.project_dir >>
+                tofu plan
+            name: OpenTofu Plan
+        executor: tofu-executor
+        parameters:
+          project_dir:
+            type: string
+      apply:
+        steps:
+        - checkout
+        - attach_workspace:
+            at: '.'
+        - run:
+            command: |2-
+                cd << parameters.project_dir >>
+                tofu apply -auto-approve tfplan
+            name: OpenTofu Apply
+        executor: tofu-executor
+        parameters:
+          project_dir:
+            type: string
+    workflows:
+      wf-tf-workspace-a:
+        jobs:
+        - init-validate:
+            name: wf-job-init-validate
+            context: infra_context
+            project_dir: ./infra/workspace-a
+            bucket: infra_s3_bucket
+            key: workspace-a/terraform.tfstate
+        - plan:
+            name: wf-job-plan
+            requires:
+            - wf-job-init-validate
+            context: infra_context
+            project_dir: ./infra/workspace-a
+        - apply:
+            name: wf-job-apply
+            requires:
+            - wf-job-plan
+            context: infra_context
+            type: approval
+            project_dir: ./infra/workspace-a
+      wf-tf-workspace-b:
+        jobs:
+        - init-validate:
+            name: wf-job-init-validate
+            context: infra_context
+            project_dir: ./infra/workspace-a
+            bucket: infra_s3_bucket
+            key: workspace-b/terraform.tfstate
+        - plan:
+            name: wf-job-plan
+            requires:
+            - wf-job-init-validate
+            context: infra_context
+            project_dir: ./infra/workspace-a
+        - apply:
+            name: wf-job-apply
+            requires:
+            - wf-job-plan
+            context: infra_context
+            type: approval
+            project_dir: ./infra/workspace-a
+    
+    """#
+  }
   ["typed_orb_steps.yaml"] {
     """
     # Generated from CircleCI.pkl. DO NOT EDIT.

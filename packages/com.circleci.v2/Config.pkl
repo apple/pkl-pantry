@@ -366,6 +366,11 @@ class WorkflowJob {
 
   /// Job Filters can have the key branches or tags
   filters: JobFilters?
+
+  /// A job may have input parameters in their defintion.
+  ///
+  /// A mapping of the parameter name and value must be passed when instatiation the job.
+  parameters: Mapping<String, String|Boolean|Number>?
 }
 
 class JobFilters {
@@ -782,6 +787,13 @@ output {
   renderer = new YamlRenderer {
     converters {
       [AbstractStep] = (it) -> Map(it.__name__, it.toMap())
+      [WorkflowJob] = (it) ->
+        if (it.parameters != null)
+          new Dynamic {
+            ...it.toMap().remove("parameters")
+            ...it.parameters.toMap()
+          }
+        else it
       [Dynamic] = (it) ->
         if (it.hasProperty("__name__"))
           Map(it.__name__, it.toMap().remove("__name__"))

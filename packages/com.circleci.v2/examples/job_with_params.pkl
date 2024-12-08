@@ -1,0 +1,188 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// This example uses steps from the [circleci/node](https://circleci.com/developer/orbs/orb/circleci/node) orb.
+///
+/// It defins local classes that extend [AbstractStep], so that step definitions are type safe.
+amends "../Config.pkl"
+
+local tofuExecutor = "tofu-executor"
+local executorImage = "ghcr.io/opentofu/opentofu:latest"
+local executorResourceClass = "small"
+
+executors = new {
+  [tofuExecutor] = new Executor {
+    docker {
+      new DockerImage { image = executorImage }
+    }
+    resource_class = executorResourceClass
+  }
+}
+
+jobs {
+  [init] = new Job {
+    parameters {
+      ["project_dir"] = new Parameter { type = "string" }
+      ["bucket"] = new Parameter { type = "string" }
+      ["key"] = new Parameter { type = "string" }
+    }
+    steps {
+      "checkout"
+      new RunStep {
+        name = "OpenTofu Init and Validate"
+        command = """
+            cd << parameters.project_dir >>
+            tofu init \\
+              -backend-config="bucket=<< parameters.bucket >>" \\
+              -backend-config="key=<< parameters.key >>"
+            tofu validate
+          """
+      }
+      new PersistToWorkspaceStep {
+        root = "."
+        paths = new Listing {
+          "<< parameters.project_dir >>/.terraform"
+          "<< parameters.project_dir >>/.terraform.lock.hcl"
+        }
+      }
+    }
+    executor = tofuExecutor
+  }
+
+  [plan] = new Job {
+    parameters {
+      ["project_dir"] = new Parameter { type = "string" }
+    }
+    steps {
+      "checkout"
+      new AttachWorkspaceStep {
+        at = "."
+      }
+      new RunStep {
+        name = "OpenTofu Plan"
+        command = """
+            cd << parameters.project_dir >>
+            tofu plan
+          """
+      }
+    }
+    executor = tofuExecutor
+  }
+
+  [apply] = new Job {
+    parameters {
+      ["project_dir"] = new Parameter { type = "string" }
+    }
+    steps {
+      "checkout"
+      new AttachWorkspaceStep {
+        at = "."
+      }
+      new RunStep {
+        name = "OpenTofu Apply"
+        command = """
+            cd << parameters.project_dir >>
+            tofu apply -auto-approve tfplan
+          """
+      }
+    }
+    executor = tofuExecutor
+  }
+}
+
+local init = "init-validate"
+local plan = "plan"
+local apply = "apply"
+local contextValue = "infra_context"
+local bucket = "infra_s3_bucket"
+local workspaceAProjectDir = "./infra/workspace-a"
+local workspaceBProjectDir = "./infra/workspace-a"
+
+local function getWorkflowJobName(jobName: String): String = "wf-job-" + jobName
+
+workflows {
+  ["wf-tf-workspace-a"] {
+    jobs = new Listing {
+      new Mapping {
+        [init] = new WorkflowJob {
+          name = getWorkflowJobName(init)
+          context = contextValue
+          parameters = new Mapping {
+            ["project_dir"] = workspaceAProjectDir
+            ["bucket"] = bucket
+            ["key"] = "workspace-a/terraform.tfstate"
+          }
+        }
+      }
+      new Mapping {
+        [plan] = new WorkflowJob {
+          name = getWorkflowJobName(plan)
+          requires = new Listing { getWorkflowJobName(init) }
+          context = contextValue
+          parameters = new Mapping {
+            ["project_dir"] = workspaceAProjectDir
+          }
+        }
+      }
+      new Mapping {
+        [apply] = new WorkflowJob {
+          name = getWorkflowJobName(apply)
+          type = "approval"
+          requires = new Listing {getWorkflowJobName(plan)}
+          context = contextValue
+          parameters = new Mapping {
+            ["project_dir"] = workspaceAProjectDir
+          }
+        }
+      }
+    }
+  }
+  ["wf-tf-workspace-b"] {
+    jobs = new Listing {
+      new Mapping {
+        [init] = new WorkflowJob {
+          name = getWorkflowJobName(init)
+          context = contextValue
+          parameters = new Mapping {
+            ["project_dir"] = workspaceBProjectDir
+            ["bucket"] = bucket
+            ["key"] = "workspace-b/terraform.tfstate"
+          }
+        }
+      }
+      new Mapping {
+        [plan] = new WorkflowJob {
+          name = getWorkflowJobName(plan)
+          requires = new Listing { getWorkflowJobName(init) }
+          context = contextValue
+          parameters = new Mapping {
+            ["project_dir"] = workspaceBProjectDir
+          }
+        }
+      }
+      new Mapping {
+        [apply] = new WorkflowJob {
+          name = getWorkflowJobName(apply)
+          type = "approval"
+          requires = new Listing {getWorkflowJobName(plan)}
+          context = contextValue
+          parameters = new Mapping {
+            ["project_dir"] = workspaceBProjectDir
+          }
+        }
+      }
+    }
+  }
+}
