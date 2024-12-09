@@ -366,6 +366,15 @@ class WorkflowJob {
 
   /// Job Filters can have the key branches or tags
   filters: JobFilters?
+
+  /// Supplemental job-level parameters to be specified when
+  /// [calling a `job` in `workflow`](https://circleci.com/docs/configuration-reference/#jobs-in-workflow).
+  ///
+  /// There are several reserved parameter names that cannot be used from CircleCI users.
+  hidden parameters: Mapping<
+    String(!(this is "name"|"context"|"filters"|"matrix"|"requires"|"type")),
+    *Listing<Step>|String|Number|Boolean
+  >?
 }
 
 class JobFilters {
@@ -786,6 +795,8 @@ output {
         if (it.hasProperty("__name__"))
           Map(it.__name__, it.toMap().remove("__name__"))
         else it
+      [WorkflowJob] = (it) ->
+        it.toMap() + (it.parameters ?? Map()).toMap()
     }
   }
 }
