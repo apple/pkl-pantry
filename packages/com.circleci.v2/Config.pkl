@@ -371,8 +371,6 @@ class WorkflowJob {
   /// [calling a `job` in `workflow`](https://circleci.com/docs/configuration-reference/#jobs-in-workflow).
   ///
   /// There are several reserved parameter names that cannot be used from CircleCI users.
-  ///
-  /// For more information, see <https://circleci.com/docs/configuration-reference/#parameters-job>.
   hidden parameters: Mapping<
     String(!(this is "name"|"context"|"filters"|"matrix"|"requires"|"type")),
     *Listing<Step>|String|Number|Boolean
