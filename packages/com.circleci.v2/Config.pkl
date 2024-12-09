@@ -364,6 +364,8 @@ class WorkflowJob {
   /// For more information see the Using Workflows to Orchestrate Jobs page.
   type: "approval"?
 
+  matrix: JobMatrix?
+
   /// Job Filters can have the key branches or tags
   filters: JobFilters?
 }
@@ -403,6 +405,12 @@ class FilterSpec {
 
   /// Either a single branch specifier, or a list of branch specifiers
   ignore: (String|Listing<String>)?
+}
+
+class JobMatrix {
+  parameters: Mapping<String, Listing<(String|Number|Boolean)>>
+  exclude: Listing<Mapping<String, String>>?
+  alias: String?
 }
 
 typealias Step = AbstractStep|SimpleStepName|OrbStep
