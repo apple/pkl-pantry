@@ -1,0 +1,53 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+amends ".../Config.pkl"
+// Adaptation of https://github.com/CircleCI-Public/aws-ecr-orb/blob/v9.3.7/src/examples/build_and_push_image_w_registry_login.yml#L21-L36
+
+version = "2.1"
+
+orbs {
+  ["aws-ecr"] = "circleci/aws-ecr@9.0"
+  ["aws-cli"] = "circleci/aws-cli@5.1"
+}
+
+workflows {
+  ["build-and-push-image-with-container-registry-login"] {
+    jobs {
+      new {
+        ["aws-ecr/build_and_push_image"] {
+          parameters {
+            ["container_registry_login"] = true
+            ["registry_login"] {
+              module.run("docker login -u ${HEROKU_USERNAME} -p ${HEROKU_API_KEY}")
+              module.run("docker login -u ${GITHUB_USERNAME} -p ${GITHUB_TOKEN}")
+              module.run("docker login -u ${DOCKERHUB_ID} -p ${DOCKERHUB_PASSWORD}")
+            }
+            ["auth"] {
+              (module.OrbStep("aws-cli/setup")) {
+                role_arn = "arn:aws:iam::123456789012"
+              }
+            }
+            ["repo"] = "my-sample-repo"
+            ["tag"] = "sampleTag"
+            ["dockerfile"] = "Dockerfile"
+            ["path"] = "."
+            ["region"] = "us-west-2"
+          }
+        }
+      }
+    }
+  }
+}
