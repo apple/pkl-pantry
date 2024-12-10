@@ -17,5 +17,5 @@
 amends "../basePklProject.pkl"
 
 package {
-  version = "1.2.0"
+  version = "1.4.0"
 }

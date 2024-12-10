@@ -364,6 +364,11 @@ class WorkflowJob {
   /// For more information see the Using Workflows to Orchestrate Jobs page.
   type: "approval"?
 
+  /// Run a parameterized job multiple times with different arguments.
+  ///
+  /// For more information see the how-to guide on [Using Matrix Jobs](https://circleci.com/docs/using-matrix-jobs/).
+  ///
+  /// In order to use the matrix stanza, you must use parameterized jobs.
   matrix: JobMatrix?
 
   /// Job Filters can have the key branches or tags
@@ -408,8 +413,15 @@ class FilterSpec {
 }
 
 class JobMatrix {
-  parameters: Mapping<String, Listing<(String|Number|Boolean)>>
+  /// A map of parameter names to every value the job should be called with
+  parameters: Mapping<String, Listing<String|Number|Boolean>>
+
+  /// Argument maps that should be excluded from the matrix
   exclude: Listing<Mapping<String, String>>?
+
+  /// An alias for the matrix, usable from another job’s requires stanza.
+  ///
+  /// Defaults to the name of the job being executed
   alias: String?
 }
 
