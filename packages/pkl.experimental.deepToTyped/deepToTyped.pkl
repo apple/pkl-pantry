@@ -126,10 +126,13 @@ local function getAllProperties(clazz: reflect.Class?): Map<String, reflect.Prop
   else if (doesNotInherit(clazz)) clazz.properties
   else getAllProperties(clazz.superclass!!) + clazz.properties
 
+hidden keyTransform: Function1<reflect.Property, String>?
+
 local function applyProperty(valueAsMap: Map, prop: reflect.Property) =
-  if (valueAsMap.containsKey(prop.name)) applyType(prop.type, valueAsMap[prop.name])
-  else if (!(prop.type is reflect.NullableType) && prop.defaultValue != null) prop.defaultValue
-  else null
+  let (propName = keyTransform?.ifNonNull((it) -> (it as Function1<reflect.Property, String>).apply(prop)) ?? prop.name)
+    if (valueAsMap.containsKey(propName)) applyType(prop.type, valueAsMap[propName])
+    else if (!(prop.type is reflect.NullableType) && prop.defaultValue != null) prop.defaultValue
+    else null
 
 local function applyDynamicOrMapping(type: reflect.Class, value: Dynamic|Mapping): Typed|ConversionFailure =
   let (valueAsMap = value.toMap())

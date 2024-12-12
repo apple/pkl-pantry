@@ -147,6 +147,21 @@ local class LooselyTyped {
   anything: Any
 }
 
+local class KeyTransform extends Annotation {
+  name: String
+}
+
+local class ClassWithKeyTranform {
+  @KeyTransform { name = "my_field" }
+  myField: String
+  inner: InnerClassWithKeyTranform
+}
+
+local class InnerClassWithKeyTranform {
+  @KeyTransform { name = "my_nested_field" }
+  myNestedField: String
+}
+
 facts {
   ["Basic types"] {
     t.apply(Int, 1) == 1
@@ -317,5 +332,25 @@ facts {
       anything = "anything"
     }
     t.apply(LooselyTyped, looselyTypedString) == looselyTypedStringExpected
+  }
+
+  ["Supports key transformations, eg. via annotation"] {
+    local input = new Dynamic {
+      my_field = "hello"
+      inner {
+        my_nested_field = "world"
+      }
+    }
+
+    local expectedClassWithKeyTranform = new ClassWithKeyTranform {
+      myField = "hello"
+      inner {
+        myNestedField = "world"
+      }
+    }
+
+    new t {
+      keyTransform = (prop) -> prop.annotations.findOrNull((it) -> it is KeyTransform)?.name
+    }.apply(ClassWithKeyTranform, input) == expectedClassWithKeyTranform
   }
 }
