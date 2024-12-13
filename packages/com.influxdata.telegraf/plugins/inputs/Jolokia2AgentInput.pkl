@@ -17,7 +17,6 @@
 ///
 /// Reads JMX metrics from one or more Jolokia agent REST endpoints.
 /// See [docs](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/jolokia2_agent/README.md) for examples.
-@ModuleInfo { minPklVersion = "0.24.0" }
 module com.influxdata.telegraf.plugins.inputs.Jolokia2AgentInput
 
 extends "Input.pkl"
