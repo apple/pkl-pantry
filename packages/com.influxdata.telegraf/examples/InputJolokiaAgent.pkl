@@ -13,14 +13,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+amends "../Telegraf.pkl"
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
+agent {
+  collection_jitter = 0.s
+  debug = true
+  flush_interval = 30.s
+  flush_jitter = 0.s
+  interval = 30.s
 }
 
-package {
-  version = "1.4.0"
+inputs {
+  jolokia2_agent {
+    new {
+      urls {
+        "http://localhost:7883"
+      }
+      response_timeout = 3.s
+      tls_cert = "/var/private/client.pem"
+      tls_key  = "/var/private/client-key.pem"
+      metric {
+        new {
+          name = "java_runtime"
+          mbean = "java.lang:type=Runtime"
+          paths {
+            "Uptime"
+          }
+        }
+      }
+    }
+  }
 }

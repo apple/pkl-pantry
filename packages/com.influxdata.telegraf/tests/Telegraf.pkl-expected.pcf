@@ -1,4 +1,25 @@
 examples {
+  ["InputJolokiaAgent.toml"] {
+    """
+    [agent]
+    interval = "30s"
+    collection_jitter = "0s"
+    flush_interval = "30s"
+    flush_jitter = "0s"
+    debug = true
+    
+    [[inputs.jolokia2_agent]]
+    urls = [ "http://localhost:7883" ]
+    response_timeout = "3s"
+    tls_cert = "/var/private/client.pem"
+    tls_key = "/var/private/client-key.pem"
+    
+    [[inputs.jolokia2_agent.metric]]
+    name = "java_runtime"
+    mbean = "java.lang:type=Runtime"
+    paths = [ "Uptime" ]
+    """
+  }
   ["opentelemetry-output.toml"] {
     """
     [[outputs.opentelemetry]]
