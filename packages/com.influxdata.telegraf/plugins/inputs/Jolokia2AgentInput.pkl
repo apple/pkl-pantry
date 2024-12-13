@@ -1,0 +1,86 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// [Jolokia Agent Input Plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/jolokia2_agent)
+///
+/// Reads JMX metrics from one or more Jolokia agent REST endpoints.
+/// See [docs](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/jolokia2_agent/README.md) for examples.
+module com.influxdata.telegraf.plugins.inputs.Jolokia2AgentInput
+
+extends "Input.pkl"
+
+/// List of endpoints to read JMX metrics from a Jolokia REST agent.
+urls: Listing<String>(length > 0)
+
+username: String?
+password: String?
+
+/// Origin URL to include as a header in the request.
+origin: String?
+
+response_timeout: Duration?
+
+tls_ca: String?
+tls_cert: String?
+tls_key: String?
+insecure_skip_verify: Boolean?
+
+/// String to prepend to the field names produced by all metric declarations.
+default_field_prefix: String?
+
+/// Character to use to join Mbean attributes when creating fields.
+default_field_separator: String?
+
+/// String to prepend to the tag names produced by all metric declarations
+default_tag_prefix: String?
+
+/// Metrics to collect from the Jolokia agent.
+///
+/// Each metric declaration generates a Jolokia request to fetch telemetry from a JMX MBean.
+metric: Listing<MetricConfig>
+
+class MetricConfig {
+  /// Metric name.
+  name: String
+  
+  /// The object name of a JMX MBean.
+  ///
+  /// MBean property-key values can contain a wildcard `*`, allowing to fetch multiple MBeans with one declaration.
+  mbean: String
+  
+  /// List of MBean attributes to read.
+  paths: Listing<String>
+  
+  /// String to set as the name of the field produced by this metric.
+  ///
+  /// This can contain substitutions.
+  field_name: String?
+  
+  /// String to prepend to the field names produced by this metric declaration.
+  ///
+  /// This can contain substitutions.
+  field_prefix: String?
+
+  /// Character to use to join Mbean attributes when creating fields.
+  field_separator: String?
+  
+  /// String to prepend to the tag names produced by this metric declaration.
+  tag_prefix: String?
+
+  /// List of MBean property-key names to convert into tags.
+  ///
+  /// The property-key name becomes the tag name, while the property-key value becomes the tag value.
+  tag_keys: Listing<String>
+}

@@ -40,22 +40,22 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 open module com.influxdata.telegraf.Telegraf
 
+import "plugins/Plugin.pkl"
+import "plugins/inputs/CpuInput.pkl"
+import "plugins/inputs/DiskInput.pkl"
+import "plugins/inputs/ExecInput.pkl"
 import "plugins/inputs/FileInput.pkl"
 import "plugins/inputs/HttpInput.pkl"
-import "plugins/inputs/SocketListenerInput.pkl"
-import "plugins/inputs/PrometheusInput.pkl"
-import "plugins/inputs/DiskInput.pkl"
-import "plugins/inputs/CpuInput.pkl"
+import "plugins/inputs/Jolokia2AgentInput.pkl"
 import "plugins/inputs/NetInput.pkl"
-import "plugins/inputs/ExecInput.pkl"
+import "plugins/inputs/PrometheusInput.pkl"
+import "plugins/inputs/SocketListenerInput.pkl"
 import "plugins/inputs/SolrInput.pkl"
-import "plugins/outputs/FileOutput.pkl"
 import "plugins/outputs/DiscardOutput.pkl"
-import "plugins/outputs/PrometheusClientOutput.pkl"
+import "plugins/outputs/FileOutput.pkl"
 import "plugins/outputs/OpenTelemetryOutput.pkl"
+import "plugins/outputs/PrometheusClientOutput.pkl"
 import "plugins/processors/StarlarkProcessor.pkl"
-
-import "plugins/Plugin.pkl"
 
 /// Telegraf has a few options you can configure under the [agent] section of the config.
 agent: AgentConfig?
@@ -142,6 +142,11 @@ open class Inputs {
   /// The [Solr input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/solr/README.md)
   /// gathers metrics from one or more Solr servers
   solr: Listing<SolrInput>?
+
+  /// [Jolokia Agent Input Plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/jolokia2_agent)
+  ///
+  /// Reads JMX metrics from one or more Jolokia agent REST endpoints.
+  jolokia2_agent: Listing<Jolokia2AgentInput>?
 }
 
 open class Processors {
