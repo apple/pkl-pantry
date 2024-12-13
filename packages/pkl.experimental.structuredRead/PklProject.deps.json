@@ -3,7 +3,7 @@
   "resolvedDependencies": {
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1.0.5",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1.1.0",
       "path": "../pkl.experimental.deepToTyped"
     }
   }
