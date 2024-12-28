@@ -19,6 +19,7 @@ module org.openapis.v3.SecurityScheme
 import "OAuthFlows.pkl"
 
 typealias SecuritySchemeType = "apiKey"|"http"|"oauth2"|"openIdConnect"
+typealias SecuritySchemeIn = "query"|"header"|"cookie"
 
 /// The type of the security scheme.
 type: SecuritySchemeType
@@ -30,10 +31,10 @@ type: SecuritySchemeType
 description: String?
 
 /// The name of the header, query or cookie parameter to be used.
-name: String
+name: String?((type == "apiKey").implies(this != null))
 
 /// The location of the API key.
-`in`: "query"|"header"|"cookie"
+`in`: SecuritySchemeIn?((type == "apiKey").implies(this != null))
 
 scheme: String((this == "bearer").implies(bearerFormat != null))
 
