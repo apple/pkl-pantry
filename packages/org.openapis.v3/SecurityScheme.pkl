@@ -31,7 +31,7 @@ type: SecuritySchemeType
 description: String?
 
 /// The name of the header, query or cookie parameter to be used.
-name: String?((type == "apiKey").implies(this != null))
+name: String?((this != null).implies(type == "apiKey"))
 
 /// The location of the API key.
 `in`: SecuritySchemeIn?((type == "apiKey").implies(this != null))
