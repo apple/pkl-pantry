@@ -34,7 +34,7 @@ description: String?
 name: String?((this != null).implies(type == "apiKey"))
 
 /// The location of the API key.
-`in`: SecuritySchemeIn?((type == "apiKey").implies(this != null))
+`in`: SecuritySchemeIn?((this != null).implies(type == "apiKey"))
 
 scheme: String((this == "bearer").implies(bearerFormat != null))
 
