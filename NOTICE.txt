@@ -1,4 +1,4 @@
-Copyright © 2024 Apple Inc. and the Pkl project authors
+Copyright © 2024-2025 Apple Inc. and the Pkl project authors
 
 Portions of this software includes code from "Gradle" by Gradle, Inc.
 
