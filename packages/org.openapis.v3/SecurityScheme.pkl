@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ module org.openapis.v3.SecurityScheme
 import "OAuthFlows.pkl"
 
 typealias SecuritySchemeType = "apiKey"|"http"|"oauth2"|"openIdConnect"
+typealias SecuritySchemeIn = "query"|"header"|"cookie"
 
 /// The type of the security scheme.
 type: SecuritySchemeType
@@ -30,10 +31,10 @@ type: SecuritySchemeType
 description: String?
 
 /// The name of the header, query or cookie parameter to be used.
-name: String
+name: String?((this != null).implies(type == "apiKey"))
 
 /// The location of the API key.
-`in`: "query"|"header"|"cookie"
+`in`: SecuritySchemeIn?((this != null).implies(type == "apiKey"))
 
 scheme: String((this == "bearer").implies(bearerFormat != null))
 
