@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 import org.jetbrains.kotlin.utils.sure
 import org.pkl.core.Version
+import org.pkl.gradle.task.BasePklTask
 import org.pkl.gradle.task.ProjectPackageTask
 import java.io.OutputStream
 import java.net.URI
@@ -107,6 +108,10 @@ pkl {
             }
         }
     }
+}
+
+tasks.withType<BasePklTask> {
+    color = true
 }
 
 val resolveProjects = tasks.named("resolveProjects") {
