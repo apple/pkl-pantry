@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import "@syntax/operators.pkl"
 import "@syntax/AnnotationNode.pkl"
 import "Type.pkl"
 import "@jsonschema/JsonSchema.pkl"
-import "singularize.pkl"
 
 /// Renders the string in pascal case.
 ///
@@ -160,8 +159,7 @@ function _findMatchingSubSchemas(
     else
       Map())
   + (if (schema.items is JsonSchema)
-      // Singularize the name so that we get type names like `Listing<Rule>` instead of `Listing<Rules>`
-      _findMatchingSubSchemas(schema.items as JsonSchema, if (path.length > 0) path.add(singularize.singularize(path.last)) else path, predicate)
+      _findMatchingSubSchemas(schema.items as JsonSchema, path.add("[]"), predicate)
     else if (schema.items is Listing)
       findMatchingSchemasInListing(schema.items as Listing, path, "Item", predicate)
     else Map())

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import "pkl:reflect"
 import "@jsonschema.contrib/internal/Type.pkl"
 import "@jsonschema.contrib/internal/TypesGenerator.pkl"
 import "@jsonschema.contrib/internal/utils.pkl"
+import "@jsonschema.contrib/internal/singularize.pkl"
 import "@jsonschema/JsonSchema.pkl"
 import "@jsonschema/Parser.pkl"
 import "@k8s/apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl"
@@ -54,7 +55,7 @@ local schema: CustomResourceDefinition.CustomResourceValidation|BetaCRD.CustomRe
   (if (crd is BetaCRD) version.schema ?? crd.spec.validation else version.schema)!!
 
 /// The Schema
-rootSchema: JsonSchema((s) -> validCRDSchema(s)) = Parser.parse(new JsonRenderer {}.renderDocument(schema.openAPIV3Schema)) as JsonSchema
+rootSchema: JsonSchema(validCRDSchema(this)) = Parser.parse(new JsonRenderer {}.renderDocument(schema.openAPIV3Schema)) as JsonSchema
 
 local ignoreProperties = Set("apiVersion", "kind", "metadata")
 local filteredRootSchema = (rootSchema) {
@@ -280,31 +281,59 @@ function isClassLike(schema: JsonSchema.Schema): Boolean =
 ///
 /// Try to use the parent property's name as part of the class name in case of conflict.
 /// If already at the root, add a number at the end.
-local function determineTypeName(path: List<String>, candidateName: String, existingTypeNames: Set<Type>, index: Int): Type =
-  if (existingTypeNames.contains(utils.pascalCase(candidateName)))
-    if (path.isEmpty)
-      determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
+local function determineTypeName(
+  path: List<String>,
+  candidateName: String,
+  existingTypeNames: Set<Type>,
+  index: Int
+): Type =
+  let (candidate = utils.pascalCase(candidateName))
+    if (existingTypeNames.findOrNull((it) -> it.name == candidate) != null)
+      if (path.isEmpty)
+        determineTypeName(
+          path,
+          candidateName + index.toString(),
+          existingTypeNames,
+          index + 1
+        )
+      else
+        let (newPath = dropLast(path))
+          determineTypeName(
+            newPath,
+            getCandidateName(newPath) + candidate,
+            existingTypeNames,
+            index
+          )
     else
-      determineTypeName(
-        path.dropLast(1),
-        utils.pascalCase(path.last.capitalize()) + utils.pascalCase(candidateName),
-        existingTypeNames,
-        index
-      )
+      new { name = candidate; moduleName = module.moduleName }
+
+// noinspection TypeMismatch
+local function getCandidateName(path: List<String>) =
+  if (path.isEmpty)
+    "Item"
+  else if (path.last == "[]")
+    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it))) ?? "Item"
   else
-    new { name = utils.pascalCase(candidateName); moduleName = module.moduleName }
+    utils.pascalCase(path.last)
+
+local function dropLast(path: List<String>) =
+  if (path.last == "[]")
+    path.dropLast(2)
+  else
+    path.dropLast(1)
 
 /// The schemas that should be rendered as classes.
 ///
 /// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not show up in converters
 local classSchemas: Type.TypeNames =
   utils._findMatchingSubSchemas(filteredRootSchema, List(), (elem) -> elem != filteredRootSchema && isClassLike(elem))
-    .filter((path, _) -> !pathPrefixes(path).any((prefix) -> converters.containsKey(prefix))) // path or prefix are not explicitly in converters
+    // path or prefix are not explicitly in converters
+    .filter((path, _) -> !pathPrefixes(path).any((prefix) -> converters.containsKey(prefix)))
     .entries
     .fold(Map(), (accumulator: Type.TypeNames, pair) ->
       let (path = pair.first)
       let (schema = pair.second)
-      let (typeName = determineTypeName(path, path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
+      let (typeName = determineTypeName(path, getCandidateName(path), accumulator.values.toSet(), 0))
         accumulator.put(schema, typeName)
     )
 

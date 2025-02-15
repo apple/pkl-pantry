@@ -2,7 +2,7 @@ examples {
   ["basic"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: String?
     
@@ -13,7 +13,7 @@ examples {
   ["required properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: String
     
@@ -24,7 +24,7 @@ examples {
   ["deprecated properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     @Deprecated
     foo: String?
@@ -38,7 +38,7 @@ examples {
     /// FooBars when foo can bar
     ///
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     /// The fooiest of foos
     ///
@@ -52,7 +52,7 @@ examples {
     /// FooBar
     ///
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Foo?
     
@@ -65,7 +65,7 @@ examples {
   ["classes in nested properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Foo?
     
@@ -82,7 +82,7 @@ examples {
   ["classes in nested additionalProperties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Mapping<String, FooAlternate0|FooAlternate1>?
     
@@ -99,7 +99,7 @@ examples {
   ["classes in nested patternProperties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Mapping<String(matches(Regex("[a-z]+"))), FooAlternate0|FooAlternate1>?
     
@@ -116,7 +116,7 @@ examples {
   ["classes in listings"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foos: Listing<Foo>?
     
@@ -129,7 +129,7 @@ examples {
   ["classes in definitions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Foo?
     
@@ -142,7 +142,7 @@ examples {
   ["classes within definitions properties"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Foo?
     
@@ -169,7 +169,7 @@ examples {
   ["classes from inline positions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Myfoo?
     
@@ -185,7 +185,7 @@ examples {
   ["typealiases in definitions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Foo?
     
@@ -196,7 +196,7 @@ examples {
   ["typealiases in $defs"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Foo?
     
@@ -207,7 +207,7 @@ examples {
   ["typealiases in subschema definitions"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
     foo: Foo?
     
@@ -224,7 +224,7 @@ examples {
     /// This module was generated from JSON Schema from <>.
     ///
     /// WARN: The root schema's type is `"array"`, and cannot be correctly mapped to a Pkl module.
-    module com.apple.Example
+    module com.Example
     
     class Item {
       foo: String?
@@ -235,9 +235,9 @@ examples {
   ["allOf"] {
     """
     /// This module was generated from JSON Schema from <>.
-    module com.apple.Example
+    module com.Example
     
-    growpart: Growpart0?
+    growpart: ItemGrowpart?
     
     groups: (String(!isEmpty)|Listing<UsersGroupsGroupsByGroupname>(!isEmpty))?
     
@@ -442,7 +442,7 @@ examples {
       ignore_growroot_disabled: Boolean?
     }
     
-    class Growpart0 {
+    class ItemGrowpart {
       /// The utility to use for resizing. Default: ``auto``
       ///
       /// Possible options:
@@ -474,6 +474,70 @@ examples {
     typealias AllModules = "users_groups"
     
     typealias UsersGroupsGroupsByGroupname = Mapping<String(matches(Regex("^.+$"))), String(!isEmpty)|Listing<String>(!isEmpty)>
+    
+    """
+  }
+  ["conflicts"] {
+    """
+    /// This module was generated from JSON Schema from <>.
+    ///
+    /// WARN: The root schema describes open-ended properties, but this is not possible to describe at the
+    /// module level.
+    module com.Example
+    
+    /// Test nested objects field collision.
+    redObject: RedObject?
+    
+    /// Test nested objects field collision.
+    blueObject: BlueObject?
+    
+    /// Test nested objects field collision.
+    class RedObject {
+      /// Nested field.
+      nestedField: String
+    
+      /// Nested child object.
+      nestedObject: NestedObject?
+    
+      /// Nested list object red.
+      nestedList: Listing<NestedList>?
+    }
+    
+    /// Nested child object.
+    class NestedObject {
+      /// Nested field.
+      nestedRed: String?
+    }
+    
+    /// Red nested object test items.
+    class NestedList {
+      /// Red nested list field.
+      nestedListItemField: String?
+    }
+    
+    /// Test nested objects field collision.
+    class BlueObject {
+      /// Nested field.
+      nestedField: String
+    
+      /// Nested child object.
+      nestedObject: BlueObjectNestedObject?
+    
+      /// Nested list object blue.
+      nestedList: Listing<BlueObjectNestedList>?
+    }
+    
+    /// Nested child object.
+    class BlueObjectNestedObject {
+      /// Nested field.
+      nestedBlue: String?
+    }
+    
+    /// Blue nested object test items.
+    class BlueObjectNestedList {
+      /// Blue nested list field.
+      nestedListItemField: String?
+    }
     
     """
   }

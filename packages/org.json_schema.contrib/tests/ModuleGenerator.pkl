@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ examples {
     }
     new ModuleGenerator {
       rootSchema = schema
-      moduleName = "com.apple.Example"
+      moduleName = "com.Example"
     }.moduleNode.render("")
   }
   ["required properties"] {
@@ -57,7 +57,7 @@ examples {
         "bar"
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["deprecated properties"] {
     local schema: JsonSchema = new {
@@ -70,7 +70,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["doc comments"] {
     local schema: JsonSchema = new {
@@ -86,7 +86,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes within properties"] {
     local schema: JsonSchema = new {
@@ -102,7 +102,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes in nested properties"] {
     local schema: JsonSchema = new {
@@ -123,7 +123,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes in nested additionalProperties"] {
     local schema: JsonSchema = new {
@@ -151,7 +151,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes in nested patternProperties"] {
     local schema: JsonSchema = new {
@@ -182,7 +182,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes in listings"] {
     local schema: JsonSchema = new {
@@ -200,7 +200,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes in definitions"] {
     local schema: JsonSchema = new {
@@ -222,7 +222,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes within definitions properties"] {
     local schema: JsonSchema = new {
@@ -263,7 +263,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["classes from inline positions"] {
     local schema: JsonSchema = new {
@@ -290,7 +290,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["typealiases in definitions"] {
     local schema: JsonSchema = new {
@@ -309,7 +309,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["typealiases in $defs"] {
     local schema: JsonSchema = new {
@@ -328,7 +328,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["typealiases in subschema definitions"] {
     local schema: JsonSchema = new {
@@ -351,7 +351,7 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["root schemas that are not objects"] {
     local schema: JsonSchema = new {
@@ -365,10 +365,14 @@ examples {
         }
       }
     }
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
   ["allOf"] {
-    local schema = Parser.parse(read("./test_allOf.json")) as JsonSchema
-    new ModuleGenerator { rootSchema = schema; moduleName = "com.apple.Example" }.moduleNode.render("")
+    local schema = Parser.parse(read("fixtures/test_allOf.json")) as JsonSchema
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+  }
+  ["conflicts"] {
+    local schema = Parser.parse(read("fixtures/test_conflicts.json")) as JsonSchema
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
 }

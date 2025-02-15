@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import "utils.pkl"
 import "TypesGenerator.pkl"
 import "../ref.pkl"
 import "Type.pkl"
+import "singularize.pkl"
 
 local pcfRenderer = new PcfRenderer { useCustomStringDelimiters = true }
 local jsonRenderer = new JsonRenderer {}
@@ -215,22 +216,50 @@ local function determineTypeName(path: List<String>, candidateName: String, exis
       if (path.isEmpty)
         determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
       else
-        determineTypeName(path.dropLast(1), utils.pascalCase(path.last.capitalize()) + utils.pascalCase(candidateName), existingTypeNames, index)
+        let (newPath = dropLast(path))
+          determineTypeName(
+            newPath,
+            getCandidateName(newPath) + utils.pascalCase(candidateName),
+            existingTypeNames,
+            index
+          )
     else
       candidateType
+
+// noinspection TypeMismatch
+local function getCandidateName(path: List<String>) =
+  if (path.isEmpty)
+    "Item"
+  else if (path.last == "[]")
+    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it))) ?? "Item"
+  else
+    utils.pascalCase(path.last)
+
+local function dropLast(path: List<String>) =
+  if (path.last == "[]")
+    path.dropLast(2)
+  else
+    path.dropLast(1)
 
 /// The schemas that should be rendered as classes.
 ///
 /// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not have [JsonSchema.`$ref`] defined.
 local classSchemas: Type.TypeNames =
   let (schemas = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> elem != rootSchema && isClassLike(elem)))
-  let (collatedSchemas = if (collatedRootSchema == rootSchema) Map() else utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> elem != collatedRootSchema && isClassLike(elem)))
+  let (collatedSchemas =
+    if (collatedRootSchema == rootSchema) Map()
+    else utils._findMatchingSubSchemas(
+      collatedRootSchema,
+      List(),
+      (elem) -> elem != collatedRootSchema && isClassLike(elem)
+    )
+  )
     (schemas + collatedSchemas)
       .entries
       .fold(Map(), (accumulator: Type.TypeNames, pair) ->
         let (path = pair.first)
         let (schema = pair.second)
-        let (typeName = determineTypeName(path.dropLast(1), path.lastOrNull?.capitalize() ?? "Item", accumulator.values.toSet(), 0))
+        let (typeName = determineTypeName(path, getCandidateName(path), accumulator.values.toSet(), 0))
           accumulator.put(schema, typeName)
       )
 
