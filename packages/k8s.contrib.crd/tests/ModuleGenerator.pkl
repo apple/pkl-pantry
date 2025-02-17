@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ module k8s.contrib.crd.tests.ModuleGenerator
 
 amends "pkl:test"
 
-import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
-import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/EnvVar.pkl"
-import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/networking/v1/NetworkPolicy.pkl"
+import "@k8s/api/core/v1/ResourceRequirements.pkl"
+import "@k8s/api/core/v1/EnvVar.pkl"
+import "@k8s/api/networking/v1/NetworkPolicy.pkl"
 
 import "../generate.pkl"
 
@@ -28,11 +28,11 @@ local generator = (generate) {
   source = "dummy://test_uri"
   converters {
     ["restateclusters.restate.dev"] {
-      [List("spec", "compute", "env", "env")] = EnvVar
+      [List("spec", "compute", "env", "[]")] = EnvVar
       [List("spec", "compute", "resources")] = ResourceRequirements
-      [List("spec", "security", "networkPeers", "ingress", "ingres")] = NetworkPolicy.NetworkPolicyPeer
-      [List("spec", "security", "networkPeers", "admin", "admin")] = NetworkPolicy.NetworkPolicyPeer
-      [List("spec", "security", "networkPeers", "metrics", "metric")] = NetworkPolicy.NetworkPolicyPeer
+      [List("spec", "security", "networkPeers", "ingress", "[]")] = NetworkPolicy.NetworkPolicyPeer
+      [List("spec", "security", "networkPeers", "admin", "[]")] = NetworkPolicy.NetworkPolicyPeer
+      [List("spec", "security", "networkPeers", "metrics", "[]")] = NetworkPolicy.NetworkPolicyPeer
     }
   }
 }
@@ -59,7 +59,16 @@ examples {
   }
 
   for (filename, value in generator3.output.files!!) {
-    ["\(filename).pkl -- different version of k8s"] {
+    ["\(filename) -- different version of k8s"] {
+      value.text
+    }
+  }
+
+  ["conflicting schemas"] {
+    for (_, value in (generate) {
+      sourceContents = read("fixtures/crds_conflict.yaml")
+      source = "dummy://test_uri"
+    }.output.files!!) {
       value.text
     }
   }
