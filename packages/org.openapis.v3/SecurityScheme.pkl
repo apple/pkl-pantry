@@ -16,6 +16,7 @@
 /// Contact information for the exposed API.
 module org.openapis.v3.SecurityScheme
 
+import "Extension.pkl"
 import "OAuthFlows.pkl"
 
 typealias SecuritySchemeType = "apiKey"|"http"|"oauth2"|"openIdConnect"
@@ -51,3 +52,12 @@ flows: OAuthFlows?((type == "oauth2").implies(this != null))
 ///
 /// This MUST be in the form of a URL.
 openIdConnectUrl: Uri?((type == "openIdConnect").implies(this != null))
+
+/// Custom properties starting with x- extend OpenAPI with additional information
+/// or functionality.
+///
+/// This is a child property because Pkl modules cannot express both known names
+/// and arbitrary names.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+hidden extensions: Mapping<Extension.Key, Any>?

@@ -13,12 +13,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../basePklProject.pkl"
+amends "../Document.pkl"
 
-package {
-  version = "1.1.0"
+info {
+  title = "Extension Example"
+  version = "1.0.0"
+  extensions {
+    ["x-key"] = "info"
+  }
 }
 
-dependencies {
-  ["openapi"] = import("../org.openapis.v3/PklProject")
+components {
+  schemas {
+    ["Schema"] {
+      type = "string"
+      extensions {
+        ["x-key"] = "schema"
+      }
+    }
+  }
+  securitySchemes {
+    ["basicAuth"] {
+      type = "http"
+      scheme = "basic"
+      extensions {
+        ["x-key"] = "basicAuth"
+      }
+    }
+  }
 }

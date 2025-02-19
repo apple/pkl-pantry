@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 /// tools for convenience.
 module org.openapis.v3.Info
 
+import "Extension.pkl"
 import "Contact.pkl"
 import "License.pkl"
 
@@ -45,3 +46,12 @@ contact: Contact?
 
 /// The license information for the exposed API.
 license: License?
+
+/// Custom properties starting with x- extend OpenAPI with additional information
+/// or functionality.
+///
+/// This is a child property because Pkl modules cannot express both known names
+/// and arbitrary names.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+hidden extensions: Mapping<Extension.Key, Any>?

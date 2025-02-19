@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
 //===----------------------------------------------------------------------===//
 open module org.openapis.v3.Document
 
-import "Info.pkl"
-import "Server.pkl"
-import "PathItem.pkl"
 import "Components.pkl"
-import "Security.pkl"
-import "Tag.pkl"
+import "Extension.pkl"
 import "ExternalDocs.pkl"
+import "Info.pkl"
+import "PathItem.pkl"
 import "Reference.pkl" as _Reference
-import "HTTPResponse.pkl" as _HttpResponse
+import "Security.pkl"
+import "Server.pkl"
+import "Tag.pkl"
 
 /// This string MUST be the semantic version number of the OpenAPI Specification version that the OpenAPI document
 /// uses.
@@ -82,17 +82,16 @@ externalDocs: ExternalDocs?
 // re-export types so they are available without import
 typealias Reference = _Reference
 
-// noinspection TypeMismatch
-/// The output format to render.
-///
-/// OpenAPI documents can be defined in either JSON or YAML.
-/// This is a Pkl-only property that is excluded from OpenAPI output.
-hidden __format__: "json"|"yaml" = read?("prop:pkl.outputFormat") ?? "json"
-
 output {
-  renderer =
-    if (__format__ == "json")
-      new JsonRenderer {}
-    else
-      new YamlRenderer {}
+  // noinspection TypeMismatch
+  local const format: "json"|"yaml" = read?("prop:pkl.outputFormat") ?? "json"
+
+  local const renderers: Mapping<String, ValueRenderer> = new {
+    ["json"] = new JsonRenderer {}
+    ["yaml"] = new YamlRenderer {}
+  }
+
+  renderer = (renderers[format]) {
+    converters = Extension.converters
+  }
 }
