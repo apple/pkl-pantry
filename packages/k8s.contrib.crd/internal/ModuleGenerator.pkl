@@ -277,6 +277,31 @@ local function generatePklClass(schema: JsonSchema, className: Type, typeNames: 
 function isClassLike(schema: JsonSchema.Schema): Boolean =
   !(schema is Boolean) && schema.properties != null
 
+// only need to include stdlib names that would be used by the code generator
+const local builtInNames = Set(
+  "Mapping",
+  "Listing",
+  "Dynamic",
+  "String",
+  "Boolean",
+  "Int",
+  "Int16",
+  "Int32",
+  "UInt",
+  "UInt8",
+  "UInt16",
+  "UInt32",
+  "Float",
+  "Null",
+  "Number",
+  "Deprecated"
+)
+
+local function normalizeTypeName(name: String) =
+  let (capitalized = utils.pascalCase(name))
+    if (builtInNames.contains(capitalized)) "\(capitalized)1"
+    else capitalized
+
 /// Determines the name of a type.
 ///
 /// Try to use the parent property's name as part of the class name in case of conflict.
@@ -287,7 +312,7 @@ local function determineTypeName(
   existingTypeNames: Set<Type>,
   index: Int
 ): Type =
-  let (candidate = utils.pascalCase(candidateName))
+  let (candidate = normalizeTypeName(candidateName))
     if (existingTypeNames.findOrNull((it) -> it.name == candidate) != null)
       if (path.isEmpty)
         determineTypeName(
