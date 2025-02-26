@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import "pkl:reflect"
 local myModule = reflect.Module(module)
 
 local packageName: String =
-  findRootModule(reflect.Module(module))
+  findRootModule(myModule)
     .relativePathTo(module)
     .last
 
@@ -31,7 +31,7 @@ local function findRootModule(mod: reflect.Module): Module =
     if (supermodule == null || !supermodule.isAmend) mod.reflectee
     else findRootModule(supermodule)
 
-local allTests = import*("**/tests/**.pkl").keys.filter((it) -> !it.contains("tests/fixtures/"))
+const local allTests = import*("**/tests/**.pkl").keys.filter((it) -> !it.contains("tests/fixtures/"))
 
 package {
   name = packageName
