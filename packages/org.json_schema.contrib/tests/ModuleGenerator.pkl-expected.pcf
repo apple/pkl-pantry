@@ -541,4 +541,47 @@ examples {
     
     """
   }
+  ["name conflicts with built-in class name"] {
+    """
+    /// This module was generated from JSON Schema from <>.
+    module com.Example
+    
+    int: Int1?
+    
+    boolean: Boolean1?
+    
+    mapping: Mapping1?
+    
+    listing: Listing1?
+    
+    dynamic: Dynamic1?
+    
+    `null`: Null1?
+    
+    class Int1 {
+      res1: String?
+    }
+    
+    class Boolean1 {
+      res2: String?
+    }
+    
+    class Mapping1 {
+      res3: String?
+    }
+    
+    class Listing1 {
+      res4: String?
+    }
+    
+    class Dynamic1 {
+      res5: String?
+    }
+    
+    class Null1 {
+      res6: String?
+    }
+    
+    """
+  }
 }

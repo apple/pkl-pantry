@@ -375,4 +375,67 @@ examples {
     local schema = Parser.parse(read("fixtures/test_conflicts.json")) as JsonSchema
     new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
   }
+  ["name conflicts with built-in class name"] {
+    local schema: JsonSchema = new {
+      type = "object"
+      additionalProperties = false
+      properties {
+        ["int"] {
+          type = "object"
+          properties {
+            ["res1"] {
+              type = "string"
+            }
+          }
+          additionalProperties = false
+        }
+        ["boolean"] {
+          type = "object"
+          properties {
+            ["res2"] {
+              type = "string"
+            }
+          }
+          additionalProperties = false
+        }
+        ["mapping"] {
+          type = "object"
+          properties {
+            ["res3"] {
+              type = "string"
+            }
+          }
+          additionalProperties = false
+        }
+        ["listing"] {
+          type = "object"
+          properties {
+            ["res4"] {
+              type = "string"
+            }
+          }
+          additionalProperties = false
+        }
+        ["dynamic"] {
+          type = "object"
+          properties {
+            ["res5"] {
+              type = "string"
+            }
+          }
+          additionalProperties = false
+        }
+        ["null"] {
+          type = "object"
+          properties {
+            ["res6"] {
+              type = "string"
+            }
+          }
+          additionalProperties = false
+        }
+      }
+    }
+    new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.output.text
+  }
 }
