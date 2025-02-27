@@ -1,4 +1,33 @@
 examples {
+  ["extension-example"] {
+    """
+    {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Extension Example",
+        "version": "1.0.0",
+        "x-key": "info"
+      },
+      "paths": {},
+      "components": {
+        "schemas": {
+          "Schema": {
+            "type": "string",
+            "x-key": "schema"
+          }
+        },
+        "securitySchemes": {
+          "basicAuth": {
+            "type": "http",
+            "scheme": "basic",
+            "x-key": "basicAuth"
+          }
+        }
+      }
+    }
+
+    """
+  }
   ["link-example"] {
     """
     {
