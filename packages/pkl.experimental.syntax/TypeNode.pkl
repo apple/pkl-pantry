@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ extends "Node.pkl"
 import "QualifiedIdentifierNode.pkl"
 import "ExpressionNode.pkl"
 import "TypeNode.pkl"
+import "Node.pkl"
 
 class NullableTypeNode extends TypeNode {
   typeNode: TypeNode
@@ -65,8 +66,17 @@ class ConstrainedTypeNode extends TypeNode {
       renderedUnderlyingType + renderConstraints(currentIndent)
 }
 
+class UnionDefaultType extends Node {
+  typeNode: TypeNode
+
+  function render(currentIndent: String) = "*\(typeNode.render(currentIndent))"
+}
+
 class UnionTypeNode extends TypeNode {
-  members: Listing<TypeNode>
+  members: Listing<TypeNode|UnionDefaultType>(atMostOneUnionDefaultType)
+
+  const local atMostOneUnionDefaultType = (members: Listing<TypeNode|UnionDefaultType>) ->
+      members.fold(0, (acc, member) -> acc + if (member is UnionDefaultType) 1 else 0) <= 1
 
   function render(currentIndent: String) =
     let (childrenRendered = members.toList().map((t) -> t.render(currentIndent)))
