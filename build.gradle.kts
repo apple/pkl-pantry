@@ -1,5 +1,4 @@
 import groovy.json.JsonSlurper
-import org.jetbrains.kotlin.utils.sure
 import org.pkl.core.Version
 import org.pkl.gradle.task.BasePklTask
 import org.pkl.gradle.task.ProjectPackageTask
@@ -8,10 +7,8 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.net.ssl.HttpsURLConnection
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
-import kotlin.io.path.pathString
 import kotlin.math.ceil
 import kotlin.math.log10
 
