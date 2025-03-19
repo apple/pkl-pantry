@@ -43,13 +43,13 @@ typealias CRD = CustomResourceDefinition|BetaCRD
 /// The CRD
 crd: CRD
 
+/// The CRD version to generate
+version: CustomResourceDefinition.CustomResourceDefinitionVersion|BetaCRD.CustomResourceDefinitionVersion
+
 logPaths: Boolean = false
 
 k8sImportPath: String
 
-// noinspection Deprecated
-local version: CustomResourceDefinition.CustomResourceDefinitionVersion|BetaCRD.CustomResourceDefinitionVersion =
-  crd.spec.versions.toList().find((version) -> version.storage)
 // noinspection Deprecated
 local schema: CustomResourceDefinition.CustomResourceValidation|BetaCRD.CustomResourceValidation =
   (if (crd is BetaCRD) version.schema ?? crd.spec.validation else version.schema)!!
