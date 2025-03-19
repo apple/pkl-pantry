@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -133,12 +133,15 @@ converters: Mapping<String, Mapping<List<String>, Module|Class|TypeAlias>>?
 
 fixed modules: Listing<ModuleGenerator> = new {
   for (_crd in crds) {
-    new ModuleGenerator {
-      k8sImportPath = module.k8sImportPath
-      crd = _crd
-      baseUri = URI.parse(sourceUri)!!
-      converters = module.converters?.getOrNull(crd.metadata.name) ?? new Mapping {}
-      logPaths = module.logPaths ?? false
+    for (_version in _crd.spec.versions) {
+      new ModuleGenerator {
+        k8sImportPath = module.k8sImportPath
+        crd = _crd
+        version = _version
+        baseUri = URI.parse(sourceUri)!!
+        converters = module.converters?.getOrNull(crd.metadata.name) ?? new Mapping {}
+        logPaths = module.logPaths ?? false
+      }
     }
   }
 }
@@ -147,7 +150,7 @@ output {
   text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
   files {
     for (mod in modules) {
-      ["\(mod.moduleName.split(".").last).pkl"] = mod.moduleNode.output
+      ["\(mod.moduleName.split(".").takeLast(2).join("/")).pkl"] = mod.moduleNode.output
     }
   }
 }
