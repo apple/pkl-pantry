@@ -1,0 +1,34 @@
+examples {
+  ["with date"] {
+    """
+    DTSTART;VALUE=DATE:20000101
+    RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+    """
+    "Expected value of type `* DateTime(utc.implies(tzid == null))   |Date(tzid == null)`, but got a different `icalendar.Date`. Value: new ModuleClass { y = ?; m = ?; d = ? }"
+    "Expected value of type `* DateTime(       // if dtstart is defined and a datetime, until must also be a datetime if defined       dtstart?.ifNonNull((it) -> it is DateTime) ?? true,       dtstart?.ifNonNull((it) -> utc == (it as DateTime).utc) ?? true,       utc.implies(tzid == null)     )   |Date(     // if dtstart is defined and a date, until must also be a date if defined     dtstart?.ifNonNull((it) -> it is Date) ?? true,     tzid == null   )`, but got a different `icalendar.Date`. Value: new ModuleClass { y = ?; m = ?; d = ? }"
+    "Expected value of type `* DateTime(       // if dtstart is defined and a datetime, until must also be a datetime if defined       dtstart?.ifNonNull((it) -> it is DateTime) ?? true,       dtstart?.ifNonNull((it) -> utc == (it as DateTime).utc) ?? true,       utc.implies(tzid == null)     )   |Date(     // if dtstart is defined and a date, until must also be a date if defined     dtstart?.ifNonNull((it) -> it is Date) ?? true,     tzid == null   )`, but got a different `icalendar.DateTime`. Value: new ModuleClass { date = ?; time = ?; utc = ? }"
+    "count and until may not both be set"
+    "Type constraint `!(dtstart is Date)` violated. Value: new Listing { ? }"
+    "Type constraint `!(dtstart is Date)` violated. Value: new Listing { ? }"
+    "Type constraint `!(dtstart is Date)` violated. Value: new Listing { ? }"
+    "Type constraint `List(bysecond, byminute, byhour, byday, bymonthday, byyearday, byweekno, bymonth)       .filterNonNull().length > 0` violated. Value: new Listing { ? }"
+  }
+  ["with datetime"] {
+    """
+    DTSTART:20000101T000000Z
+    RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101T000000Z;BYSECOND=0,30;BYMINUTE=0,30;BYHOUR=0,12;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+    """
+    """
+    DTSTART:20000101T000000
+    RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101T000000;BYSECOND=0,30;BYMINUTE=0,30;BYHOUR=0,12;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+    """
+    """
+    DTSTART;TZID=America/Los_Angeles:20000101T000000
+    RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101T000000;BYSECOND=0,30;BYMINUTE=0,30;BYHOUR=0,12;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+    """
+    "Expected value of type `* DateTime(       // if dtstart is defined and a datetime, until must also be a datetime if defined       dtstart?.ifNonNull((it) -> it is DateTime) ?? true,       dtstart?.ifNonNull((it) -> utc == (it as DateTime).utc) ?? true,       utc.implies(tzid == null)     )   |Date(     // if dtstart is defined and a date, until must also be a date if defined     dtstart?.ifNonNull((it) -> it is Date) ?? true,     tzid == null   )`, but got a different `icalendar.DateTime`. Value: new ModuleClass { date = ?; time { h = ?; m = ?; s = ?; utc = true }; utc = t..."
+    "Expected value of type `* DateTime(       // if dtstart is defined and a datetime, until must also be a datetime if defined       dtstart?.ifNonNull((it) -> it is DateTime) ?? true,       dtstart?.ifNonNull((it) -> utc == (it as DateTime).utc) ?? true,       utc.implies(tzid == null)     )   |Date(     // if dtstart is defined and a date, until must also be a date if defined     dtstart?.ifNonNull((it) -> it is Date) ?? true,     tzid == null   )`, but got a different `icalendar.DateTime`. Value: new ModuleClass { date = ?; time { h = ?; m = ?; s = ?; utc = false }; utc = ..."
+    "Expected value of type `* DateTime(utc.implies(tzid == null))   |Date(tzid == null)`, but got a different `icalendar.DateTime`. Value: new ModuleClass { date = ?; time { h = ?; m = ?; s = ?; utc = true }; utc = t..."
+    "Expected value of type `* DateTime(       // if dtstart is defined and a datetime, until must also be a datetime if defined       dtstart?.ifNonNull((it) -> it is DateTime) ?? true,       dtstart?.ifNonNull((it) -> utc == (it as DateTime).utc) ?? true,       utc.implies(tzid == null)     )   |Date(     // if dtstart is defined and a date, until must also be a date if defined     dtstart?.ifNonNull((it) -> it is Date) ?? true,     tzid == null   )`, but got a different `icalendar.DateTime`. Value: new ModuleClass { date = ?; time { h = ?; m = ?; s = ?; utc = true }; utc = t..."
+  }
+}
