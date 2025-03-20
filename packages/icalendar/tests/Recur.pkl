@@ -1,0 +1,184 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module icalendar.tests.Recur
+amends "pkl:test"
+
+import "../Recur.pkl"
+import "../Date.pkl"
+import "../DateTime.pkl"
+
+examples {
+  ["with date"] {
+    new Recur {
+      dtstart = Date.Date("20000101")
+      freq = "YEARLY"
+      interval = 1
+      until = Date.Date("20250101")
+      byday {
+        "MO"
+        new { weeknum = -1; weekday = "FR" }
+      }
+      bymonthday { 15; -15 }
+      byyearday { 100; -100 }
+      bymonth { 1; 11 }
+      wkst = "MO"
+      bysetpos { -1; 1 }
+    }.toString()
+
+    // tzid not allowed for dates, only datetimes
+    module.catch(() -> new Recur {
+      dtstart = Date.Date("20000101")
+      tzid = "America/Los_Angeles"
+      freq = "YEARLY"
+    }.toString())
+    module.catch(() -> new Recur {
+      tzid = "America/Los_Angeles"
+      freq = "YEARLY"
+      until = Date.Date("20250101")
+    }.toString())
+
+    // until type must be date if dtstart is date
+    module.catch(() -> new Recur {
+      dtstart = Date.Date("20000101")
+      freq = "YEARLY"
+      until = DateTime.DateTime("20250101T000000")
+    }.toString())
+
+    // until and count forbidden together
+    module.catch(() -> new Recur {
+      dtstart = Date.Date("20000101")
+      freq = "YEARLY"
+      count = 25
+      until = Date.Date("20250101")
+    }.toString())
+
+    // bysecond cannot be used with date dtstart
+    module.catch(() -> new Recur {
+      dtstart = Date.Date("20000101")
+      freq = "YEARLY"
+      bysecond { 0 }
+    }.toString())
+
+    // byminute cannot be used with date dtstart
+    module.catch(() -> new Recur {
+      dtstart = Date.Date("20000101")
+      freq = "YEARLY"
+      byminute { 0 }
+    }.toString())
+
+    // byhour cannot be used with date dtstart
+    module.catch(() -> new Recur {
+      dtstart = Date.Date("20000101")
+      freq = "YEARLY"
+      byhour { 0 }
+    }.toString())
+
+    // bysetpos cannot be used without another by* property
+    module.catch(() -> new Recur {
+      dtstart = Date.Date("20000101")
+      freq = "YEARLY"
+      bysetpos { 1 }
+    }.toString())
+  }
+
+  ["with datetime"] {
+    // utc
+    new Recur {
+      dtstart = DateTime.DateTime("20000101T000000Z")
+      freq = "YEARLY"
+      interval = 1
+      until = DateTime.DateTime("20250101T000000Z")
+      bysecond { 0; 30 }
+      byminute { 0; 30 }
+      byhour { 0; 12 }
+      byday {
+        "MO"
+        new { weeknum = -1; weekday = "FR" }
+      }
+      bymonthday { 15; -15 }
+      byyearday { 100; -100 }
+      bymonth { 1; 11 }
+      wkst = "MO"
+      bysetpos { -1; 1 }
+    }.toString()
+
+    // floating
+    new Recur {
+      dtstart = DateTime.DateTime("20000101T000000")
+      freq = "YEARLY"
+      interval = 1
+      until = DateTime.DateTime("20250101T000000")
+      bysecond { 0; 30 }
+      byminute { 0; 30 }
+      byhour { 0; 12 }
+      byday {
+        "MO"
+        new { weeknum = -1; weekday = "FR" }
+      }
+      bymonthday { 15; -15 }
+      byyearday { 100; -100 }
+      bymonth { 1; 11 }
+      wkst = "MO"
+      bysetpos { -1; 1 }
+    }.toString()
+
+    // with timezone
+    new Recur {
+      dtstart = DateTime.DateTime("20000101T000000")
+      tzid = "America/Los_Angeles"
+      freq = "YEARLY"
+      interval = 1
+      until = DateTime.DateTime("20250101T000000")
+      bysecond { 0; 30 }
+      byminute { 0; 30 }
+      byhour { 0; 12 }
+      byday {
+        "MO"
+        new { weeknum = -1; weekday = "FR" }
+      }
+      bymonthday { 15; -15 }
+      byyearday { 100; -100 }
+      bymonth { 1; 11 }
+      wkst = "MO"
+      bysetpos { -1; 1 }
+    }.toString()
+
+    // forbid utc until with non-utc dtstart
+    module.catch(() -> new Recur {
+      dtstart = DateTime.DateTime("20000101T000000")
+      freq = "YEARLY"
+      until = DateTime.DateTime("20250101T000000Z")
+    }.toString())
+    // forbid utc dtstart with non-utc until
+    module.catch(() -> new Recur {
+      dtstart = DateTime.DateTime("20000101T000000Z")
+      freq = "YEARLY"
+      until = DateTime.DateTime("20250101T000000")
+    }.toString())
+    // forbid utc dtstart with tzid
+    module.catch(() -> new Recur {
+      dtstart = DateTime.DateTime("20000101T000000Z")
+      tzid = "America/Los_Angeles"
+      freq = "YEARLY"
+    }.toString())
+    // forbid utc until with tzid
+    module.catch(() -> new Recur {
+      tzid = "America/Los_Angeles"
+      freq = "YEARLY"
+      until = DateTime.DateTime("20250101T000000Z")
+    }.toString())
+  }
+}
