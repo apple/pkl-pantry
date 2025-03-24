@@ -1,0 +1,46 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// This value type is used to identify values that contain a calendar date.
+///
+/// https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4
+module icalendar.type.Date
+
+import "Date.pkl"
+
+// language=Regexp
+const hidden dateRegex = "([0-9]{4})(0[1-9]|1[12])(0[1-9]|[12][0-9]|3[01])"
+typealias DateString = String(matches(Regex(dateRegex)))
+
+/// Year value.
+y: Int(isBetween(0, 9999))
+
+/// Month value.
+m: Int(isBetween(1, 12))
+
+/// Day value.
+d: Int(isBetween(1, 31))
+
+function toString(): String = List(
+  y.toString().padStart(4, "0"),
+  m.toString().padStart(2, "0"),
+  d.toString().padStart(2, "0")
+).join("")
+
+const function Date(input: DateString): Date = new {
+  y = input.substring(0, 4).toInt()
+  m = input.substring(4, 6).toInt()
+  d = input.substring(6, 8).toInt()
+}
