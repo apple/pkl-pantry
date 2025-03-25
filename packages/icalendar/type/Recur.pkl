@@ -36,8 +36,6 @@ class Weekday {
   ).filterNonNull().join("")
 }
 
-typealias ByWeekday = WeekdayString|* Weekday
-
 dtstart: (
   * DateTime(utc.implies(tzid == null))
   |Date(tzid == null)
@@ -107,11 +105,15 @@ byhour: Listing<UInt(isBetween(0, 23))>(
 ///
 /// If an integer modifier is not present, it means all days of this type within the specified frequency.
 /// For example, within a MONTHLY rule, MO represents all Mondays within the month.
-byday: Listing<ByWeekday>(
-    !isEmpty,
-    freq == "MONTHLY" || freq == "YEARLY",
-    !(freq == "YEARLY" && byweekno != null)
-  )?
+byday: Listing<
+    WeekdayString
+    |* Weekday(
+        // The BYDAY rule part MUST NOT be specified with a numeric value when the FREQ rule part is not set to MONTHLY or YEARLY.
+        (weeknum != null).implies(freq == "MONTHLY" || freq == "YEARLY"),
+        // Furthermore, the BYDAY rule part MUST NOT be specified with a numeric value with the FREQ rule part set to YEARLY when the BYWEEKNO rule part is specified.
+        (weeknum != null && freq == "YEARLY").implies(byweekno == null)
+      )
+  >(!isEmpty)?
 
 /// The BYMONTHDAY rule part specifies one or more days of the month.
 ///
