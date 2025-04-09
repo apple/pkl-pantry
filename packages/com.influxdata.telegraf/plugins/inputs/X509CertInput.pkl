@@ -1,0 +1,66 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// This plugin provides information about X509 certificate accessible via local
+/// file, tcp, udp, https or smtp protocol.
+///
+/// When using a UDP address as a certificate source, the server must support
+/// [DTLS](https://en.wikipedia.org/wiki/Datagram_Transport_Layer_Security).
+@ModuleInfo { minPklVersion = "0.25.0" }
+open module com.influxdata.telegraf.plugins.inputs.X509CertInput
+
+extends "Input.pkl"
+
+/// Certificate sources, supported wildcard expands for files.
+///
+/// Prefix your entry with 'file://' if you intend to use relatiev paths.
+sources: Listing<String>?
+
+/// Timeout for SSL connection.
+///
+/// Default if unspecified: `5.s`
+timeout: Duration?
+
+/// Pass a different name into the TLS request (Server Name Indication).
+/// This is synonymous with tls_server_name, and only one of the two
+/// options may be specified at one time.
+server_name: String?
+
+/// Only output the leaf certificates and omit the root ones.
+exclude_only_roots: Boolean?
+
+/// Pad certificate serial number with zeroes to 128-bits.
+pad_serial_with_zeroes: Boolean?
+
+/// Password to be used with PKCS#12 or JKS files
+password: String?
+
+/// TLS CA certs
+tls_ca: String?
+
+/// TLS certificate
+tls_cert: String?
+
+/// TLS key
+tls_key: String?
+
+/// TLS server name
+tls_server_name: String?
+
+/// Whether to connect over a proxy
+use_proxy: Boolean?
+
+/// The proxy URL to connect to
+proxy_url: Uri?
