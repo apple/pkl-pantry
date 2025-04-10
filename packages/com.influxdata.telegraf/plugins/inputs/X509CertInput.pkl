@@ -25,7 +25,7 @@ extends "Input.pkl"
 
 /// Certificate sources, supported wildcard expands for files.
 ///
-/// Prefix your entry with 'file://' if you intend to use relatiev paths.
+/// Prefix your entry with 'file://' if you intend to use relative paths.
 sources: Listing<String>?
 
 /// Timeout for SSL connection.
