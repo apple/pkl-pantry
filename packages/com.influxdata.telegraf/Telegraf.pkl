@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import "plugins/inputs/NetInput.pkl"
 import "plugins/inputs/PrometheusInput.pkl"
 import "plugins/inputs/SocketListenerInput.pkl"
 import "plugins/inputs/SolrInput.pkl"
+import "plugins/inputs/X509CertInput.pkl"
 import "plugins/outputs/DiscardOutput.pkl"
 import "plugins/outputs/FileOutput.pkl"
 import "plugins/outputs/OpenTelemetryOutput.pkl"
@@ -147,6 +148,11 @@ open class Inputs {
   ///
   /// Reads JMX metrics from one or more Jolokia agent REST endpoints.
   jolokia2_agent: Listing<Jolokia2AgentInput>?
+
+  /// The [X509 Cert Input Plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/x509_cert/README.md).
+  ///
+  /// Provides information about X509 certificates accessible via local file, tcp, udp, https or smtp protocol
+  x509_cert: Listing<X509CertInput>?
 }
 
 open class Processors {
