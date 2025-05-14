@@ -30,7 +30,7 @@ function apply(type: Class|TypeAlias, value: Any): Any =
   let (result =
     attemptApply(type, value)
   )
-    if (result is ConversionFailure) throw(result.Error) else result
+    if (result is ConversionFailure) throw(result.error) else result
 
 /// Same as [apply], but returns [ConversionFailure] rather than throwing.
 function attemptApply(type: Class|TypeAlias, value: Any): Any|ConversionFailure =
