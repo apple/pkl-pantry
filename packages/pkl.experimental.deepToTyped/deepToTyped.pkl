@@ -30,7 +30,7 @@ function apply(type: Class|TypeAlias, value: Any): Any =
   let (result =
     attemptApply(type, value)
   )
-    if (result is ConversionFailure) throw(result.message) else result
+    if (result is ConversionFailure) throw(result.Error) else result
 
 /// Same as [apply], but returns [ConversionFailure] rather than throwing.
 function attemptApply(type: Class|TypeAlias, value: Any): Any|ConversionFailure =
@@ -41,10 +41,26 @@ function attemptApply(type: Class|TypeAlias, value: Any): Any|ConversionFailure 
 
 
 class ConversionFailure {
+  fixed Error = "\(message) at \n\(renderedPath)"
   message: String
+  path: Listing<String|Int>
+
+  local renderedPath = path.toList().reverse().fold("", (acc, v) ->
+    if (v is String) "\(acc).\(v)" else "\(acc)[\(v)]"
+  )
 
   function toMapping(): ConversionFailure = this
   function toListing(): ConversionFailure = this
+  function appendPath(_path: String) = (this) {
+    path {
+      _path
+    }
+  }
+  function appendIndex(idx: Int) = (this) {
+    path {
+      idx
+    }
+  }
 }
 
 function Fail(_message: String): ConversionFailure = new {
@@ -145,7 +161,7 @@ local function applyDynamicOrMapping(type: reflect.Class, value: Dynamic|Mapping
             acc
           else
             let (result = applyProperty(valueAsMap, prop))
-              if (result is ConversionFailure) result else acc.put(name, result)
+              if (result is ConversionFailure) result.appendPath(name) else acc.put(name, result)
       )
     )
       if (converted is ConversionFailure) converted else converted.toTyped(type.reflectee)
@@ -226,9 +242,9 @@ local function applyMapping(keyType: reflect.Type, valueType: reflect.Type, valu
   applyMap(keyType, valueType, value).toMapping()
 
 local function applyList(type: reflect.Type, value: Dynamic|Collection): List|ConversionFailure =
-  value.toList().fold(List(), (acc: List|ConversionFailure, v) -> if (acc is ConversionFailure) acc else
+  value.toList().foldIndexed(List(), (idx: Int, acc: List|ConversionFailure, v) -> if (acc is ConversionFailure) acc else
     let (_v = applyType(type, v))
-      if (_v is ConversionFailure) _v else
+      if (_v is ConversionFailure) _v.appendIndex(idx) else
         acc.add(_v)
   )
 
