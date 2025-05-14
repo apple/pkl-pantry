@@ -41,7 +41,7 @@ function attemptApply(type: Class|TypeAlias, value: Any): Any|ConversionFailure 
 
 
 class ConversionFailure {
-  fixed Error = "\(message) at \n\(renderedPath)"
+  fixed error = "\(message) (at path \(renderedPath))"
   message: String
   path: Listing<String|Int>
 
