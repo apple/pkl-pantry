@@ -1,5 +1,5 @@
 examples {
-  ["RestateCluster.pkl"] {
+  ["v1/RestateCluster.pkl"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -98,7 +98,7 @@ examples {
     
     """
   }
-  ["RestateCluster.pkl -- dependency notation for k8s"] {
+  ["v1/RestateCluster.pkl -- dependency notation for k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -197,7 +197,7 @@ examples {
     
     """
   }
-  ["RestateCluster.pkl -- different version of k8s"] {
+  ["v1/RestateCluster.pkl -- different version of k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///

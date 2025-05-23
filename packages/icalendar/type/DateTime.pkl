@@ -1,0 +1,41 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// This value type is used to identify values that specify a precise calendar date and time of day.
+///
+/// https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5
+module icalendar.type.DateTime
+
+import "Date.pkl"
+import "Time.pkl"
+import "DateTime.pkl"
+
+typealias DateTimeString = String(matches(Regex("\(Date.dateRegex)T\(Time.timeRegex)")))
+
+date: Date
+
+time: Time
+
+/// Indicates that [time] is UTC, not local.
+fixed utc: Boolean = time.utc
+
+function toString(): String = "\(date)T\(time)"
+
+/// Parse a [DateTimeString] into a [DateTime].
+const function DateTime(input: DateTimeString): DateTime = new {
+  local parts: List<String>(length == 2) = input.split("T")
+  date = Date.Date(parts.first)
+  time = Time.Time(parts.last)
+}

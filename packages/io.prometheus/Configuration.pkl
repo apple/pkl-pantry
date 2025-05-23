@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -393,8 +393,12 @@ class RelabelConfig {
 ///   Then, set `target_label` to `replacement`, with match group references
 ///   (`${1}`, `${2}`, ...) in `replacement` substituted by their value.
 ///   If `regex` does not match, no replacement takes place.
+/// * `"lowercase"`: Maps the concatenated source_labels to their lower case.
+/// * `"uppercase"`: Maps the concatenated source_labels to their upper case.
 /// * `"keep"`: Drop targets for which `regex` does not match the concatenated `source_labels`.
 /// * `"drop"`: Drop targets for which `regex` matches the concatenated `source_labels`.
+/// * `"keepequal"`: Drop targets for which the concatenated source_labels do not match target_label.
+/// * `"dropequal"`: Drop targets for which the concatenated source_labels do match target_label.
 /// * `"hashmod"`: Set `target_label` to the `modulus` of a hash of the concatenated `source_labels`.
 /// * `"labelmap"`: Match `regex` against all label names.
 ///   Then copy the values of the matching labels to label names given by `replacement`
@@ -402,7 +406,7 @@ class RelabelConfig {
 /// * `"labeldrop"`: Match `regex` against all label names.
 ///   Any label that matches will be removed from the set of labels.
 /// * `"labelkeep"`: Match `regex` against all label names.
-typealias RelabelAction = "replace"|"keep"|"drop"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
+typealias RelabelAction = "replace"|"lowercase"|"uppercase"|"keep"|"drop"|"keepequal"|"dropequal"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
 
 /// Allows specifying a list of targets and a common label set for them.
 ///

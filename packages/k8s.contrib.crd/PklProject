@@ -25,9 +25,9 @@ dependencies {
   ["uri"] = import("../pkl.experimental.uri/PklProject")
   ["syntax"] = import("../pkl.experimental.syntax/PklProject")
 
-  ["k8s"] { uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1" }
+  ["k8s"] { uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.2.0" }
 }
 
 package {
-  version = "2.0.0"
+  version = "3.0.1"
 }

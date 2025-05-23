@@ -206,12 +206,37 @@ function isClassLike(schema: JsonSchema.Schema): Boolean =
     // Edge case: if `$ref` exists, any other property should be ignored.
     schema.$ref == null && schema.properties != null
 
+// only need to include stdlib names that would be used by the code generator
+const local builtInNames = Set(
+  "Mapping",
+  "Listing",
+  "Dynamic",
+  "String",
+  "Boolean",
+  "Int",
+  "Int16",
+  "Int32",
+  "UInt",
+  "UInt8",
+  "UInt16",
+  "UInt32",
+  "Float",
+  "Null",
+  "Number",
+  "Deprecated"
+)
+
+local function normalizeTypeName(name: String) =
+  let (capitalized = utils.pascalCase(name))
+    if (builtInNames.contains(capitalized)) "\(capitalized)1"
+    else capitalized
+
 /// Determine the name of a type.
 ///
 /// Try to use the parent property's name as part of the class name in case of conflict.
 /// If already at the root, add a number at the end.
 local function determineTypeName(path: List<String>, candidateName: String, existingTypeNames: Set<Type>, index: Int): Type =
-  let (candidateType = new Type { name = utils.pascalCase(candidateName); moduleName = module.moduleName })
+  let (candidateType = new Type { name = normalizeTypeName(candidateName); moduleName = module.moduleName })
     if (existingTypeNames.contains(candidateType))
       if (path.isEmpty)
         determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
@@ -219,7 +244,7 @@ local function determineTypeName(path: List<String>, candidateName: String, exis
         let (newPath = dropLast(path))
           determineTypeName(
             newPath,
-            getCandidateName(newPath) + utils.pascalCase(candidateName),
+            getCandidateName(newPath) + normalizeTypeName(candidateName),
             existingTypeNames,
             index
           )

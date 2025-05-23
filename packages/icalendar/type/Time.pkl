@@ -1,0 +1,54 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// This value type is used to identify values that contain a time of day.
+///
+/// https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12
+module icalendar.type.Time
+
+import "Time.pkl"
+
+// language=Regexp
+const hidden timeRegex = "([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]|60)Z?"
+typealias TimeString = String(matches(Regex(timeRegex)))
+
+/// Hour value.
+h: Int(isBetween(0, 23))
+
+/// Minute value.
+m: Int(isBetween(0, 59))
+
+/// Seconds value.
+///
+/// A value of 60 allows accounting for positive leap seconds.
+s: Int(isBetween(0, 60))
+
+/// Indicates that the time is UTC, not local.
+utc: Boolean
+
+function toString(): String = List(
+  h.toString().padStart(2, "0"),
+  m.toString().padStart(2, "0"),
+  s.toString().padStart(2, "0"),
+  if (utc) "Z" else ""
+).join("")
+
+/// Parse a [TimeString] into a [Time].
+const function Time(input: TimeString): Time = new {
+  h = input.substring(0, 2).toInt()
+  m = input.substring(2, 4).toInt()
+  s = input.substring(4, 6).toInt()
+  utc = input.getOrNull(6) == "Z"
+}
