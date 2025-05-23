@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,9 @@
 /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#schema-object>
 open module org.openapis.v3.Schema
 
-import "Schema.pkl"
+import "Extension.pkl"
 import "Reference.pkl"
+import "Schema.pkl"
 
 /// The basic type of the value represented by this schema.
 ///
@@ -291,6 +292,15 @@ deprecated: Boolean?
 /// value can be used to contain the example with escaping where necessary.
 example: Any?
 
+/// Custom properties starting with x- extend OpenAPI with additional information
+/// or functionality.
+///
+/// This is a child property because Pkl modules cannot express both known names
+/// and arbitrary names.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+hidden extensions: Mapping<Extension.Key, Any>?
+
 /// Helps inform of alternative schemas.
 ///
 /// When request bodies or response payloads may be one of a number of different
@@ -367,16 +377,18 @@ class PropertySchema extends Schema {
   xml: Xml?
 }
 
-hidden renderers: Mapping<String, ValueRenderer> = new {
-  ["json"] = new JsonRenderer {}
-  ["yaml"] = new YamlRenderer {}
-  ["pcf"] = new PcfRenderer {}
-}
-
 output {
   // It's pretty common to have OpenAPI written in YAML. Therefore, we support the YAML format too.
-  renderer = let (format = read?("prop:pkl.outputFormat") ?? "json")
-      if (renderers.containsKey(format))
-        renderers[format]
-      else throw("Unsupported output format: `\(format)`. Supported formats are `json`, `yaml` and `pcf`.")
+  // noinspection TypeMismatch
+  local const format: "json"|"yaml"|"pcf" = read?("prop:pkl.outputFormat") ?? "json"
+
+  local const renderers: Mapping<String, ValueRenderer> = new {
+    ["json"] = new JsonRenderer {}
+    ["yaml"] = new YamlRenderer {}
+    ["pcf"] = new PcfRenderer {}
+  }
+
+  renderer = (renderers[format]) {
+    converters = Extension.converters
+  }
 }

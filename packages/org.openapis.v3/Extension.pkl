@@ -13,12 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../basePklProject.pkl"
+/// The Extension object represents the possibility of adding additional data
+/// to extend the specification at certain points.
+///
+/// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+module org.openapis.v3.Extension
 
-package {
-  version = "1.1.0"
-}
+import "Info.pkl"
+import "SecurityScheme.pkl"
+import "Schema.pkl"
 
-dependencies {
-  ["openapi"] = import("../org.openapis.v3/PklProject")
+/// A string representing the key of an extension.
+typealias Key = String(startsWith("x-"), length > 2)
+
+hidden converters: Mapping<Class|String, (unknown) -> Any> = new {
+  local extractExtensions = (it: Module) -> it.toMap() + (it.getProperty("extensions") ?? Map()).toMap()
+  [Schema.getClass()] = extractExtensions
+  [SecurityScheme.getClass()] = extractExtensions
+  [Info.getClass()] = extractExtensions
 }
