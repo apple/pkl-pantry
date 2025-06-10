@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -448,6 +448,31 @@ allOf: Listing<Schema>(!isEmpty)?
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/combining.html#not>
 not: Schema?
+
+/// The dependentRequired keyword conditionally requires that certain properties
+/// must be present if a given property is present in an object
+///
+/// <https://json-schema.org/understanding-json-schema/reference/conditionals#dependentRequired>
+dependentRequired: Mapping<String, Listing<String>>?
+
+/// The dependentSchemas keyword conditionally applies a subschema when a given property is present.
+/// This schema is applied in the same way allOf applies schemas
+///
+/// <https://json-schema.org/understanding-json-schema/reference/conditionals#dependentSchemas>
+dependentSchemas: Mapping<String, Schema>?
+
+/// The `if`, `then` and `else` keywords allow the application of a subschema based on the outcome of another schema
+/// If `if` is valid, `then` must also be valid (and `else` is ignored.) If `if` is invalid, `else` must also be valid (and `then` is ignored)
+/// If `then` or `else` is not defined, `if` behaves as if they have a value of `true`.
+///
+/// <https://json-schema.org/understanding-json-schema/reference/conditionals#ifthenelse>
+`if`: Schema?
+
+/// If `then` and/or `else` appear in a schema without `if`, `then` and `else` are ignored.
+then: Schema?
+
+/// If `then` and/or `else` appear in a schema without `if`, `then` and `else` are ignored.
+`else`: Schema?
 
 // endregion
 
