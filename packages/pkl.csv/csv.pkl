@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -254,14 +254,21 @@ local class StringyTableParser {
                       }.parseResult
 
   function findValueEndIndex(position: UInt): UInt =
-    let (characterAtPosition = input.getOrNull(position))
-      if (characterAtPosition == "\"")
-        if (input.getOrNull(position + 1) == "\"")
-          findValueEndIndex(position + 2)
-        else
-          position
-      else if (characterAtPosition == null)
-        throw("Premature end of quoted field")
-      else
-        findValueEndIndex(position + 1)
+    let (remainingPositions = IntSeq(position, input.length - 1))
+      remainingPositions.fold(Pair(position, false), (state, currentPos) ->
+        let (searchPos = state.first)
+          let (found = state.second)
+            if (found || currentPos < searchPos)
+              state  // Already found or haven't reached search position yet
+            else
+              let (characterAtPosition = input.getOrNull(currentPos))
+                new Mapping {
+                  ["\""] =
+                    if (input.getOrNull(currentPos + 1) == "\"")
+                      Pair(currentPos + 2, false)  // Escaped quote, skip ahead by 2
+                    else
+                      Pair(currentPos, true)  // Found unescaped quote, this is the end
+                  [null] = throw("Premature end of quoted field")
+                }.getOrNull(characterAtPosition) ?? Pair(currentPos + 1, false)  // Continue searching, advance by 1
+      ).first
 }
