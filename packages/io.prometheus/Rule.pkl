@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,8 @@ class RecordingRuleGroup {
   limit: Int?
 
   /// Labels to add or overwrite before storing the result for its rules.
-  /// Labels defined in RecordingRule will override the key if it has a collision.
+  ///
+  /// Labels defined in [RecordingRule] will override the key if it has a collision.
   labels: Labels?
 
   rules: Listing<RecordingRule>
@@ -68,7 +69,8 @@ class AlertingRuleGroup {
   limit: Int?
 
   /// Labels to add or overwrite before storing the result for its rules.
-  /// Labels defined in AlertingRule will override the key if it has a collision.
+  ///
+  /// Labels defined in [AlertingRule] will override the key if it has a collision.
   labels: Labels?
 
   rules: Listing<AlertingRule>
