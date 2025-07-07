@@ -47,6 +47,10 @@ class RecordingRuleGroup {
   /// Limit the number of alerts an alerting rule and series a recording rule can produce.
   limit: Int?
 
+  /// Labels to add or overwrite before storing the result for its rules.
+  /// Labels defined in RecordingRule will override the key if it has a collision.
+  labels: Labels?
+
   rules: Listing<RecordingRule>
 }
 
@@ -62,6 +66,10 @@ class AlertingRuleGroup {
 
   /// Limit the number of alerts an alerting rule and series a recording rule can produce.
   limit: Int?
+
+  /// Labels to add or overwrite before storing the result for its rules.
+  /// Labels defined in AlertingRule will override the key if it has a collision.
+  labels: Labels?
 
   rules: Listing<AlertingRule>
 }
