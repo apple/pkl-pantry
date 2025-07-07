@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ groups {
   new AlertingRuleGroup {
     name = "alerting_rules"
     interval = 5.min
+    labels {
+      ["group"] = "alerts"
+    }
     rules {
       new {
         alert = "HighRequestLatency"
@@ -40,6 +43,9 @@ groups {
   new RecordingRuleGroup {
     name = "recording_rules"
     interval = 10.h
+    labels {
+      ["group"] = "recording"
+    }
     rules {
       new {
         `record` = "job:http_inprogress_requests:sum"
