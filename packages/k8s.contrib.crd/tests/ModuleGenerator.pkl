@@ -72,4 +72,14 @@ examples {
       value.text
     }
   }
+
+  ["apiGroup subdomains"] {
+    for (path, value in (generate) {
+      sourceContents = read("fixtures/crds_subdomain.yaml")
+      source = "dummy://test_uri"
+      baseApiGroup = "bar"
+    }.output.files!!) {
+      Pair(path, value.value.declaration.moduleHeader.name.parts.toList().map((it) -> it.value).join("."))
+    }
+  }
 }

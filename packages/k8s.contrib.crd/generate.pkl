@@ -80,7 +80,9 @@ k8sVersion: String(semver.isValid(this)) = "1.0.1"
 /// // Use dependency notation, assuming the dependency is called `@k8s`.
 /// k8sImportPath = "@k8s"
 /// ```
-k8sImportPath: String = "package://pkg.pkl-lang.org/pkl-k8s/k8s@\(k8sVersion)#"
+k8sImportPath: String = read?("prop:k8sImportPath") ?? "package://pkg.pkl-lang.org/pkl-k8s/k8s@\(k8sVersion)#"
+
+baseApiGroup: String = read?("prop:baseApiGroup") ?? "k8s.io"
 
 /// Where to find the CRDs; can be a URI (`https:`, `file:` etc), an absolute file path, or a relative file path
 source: String = read("prop:source")
@@ -150,7 +152,7 @@ output {
   text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
   files {
     for (mod in modules) {
-      ["\(mod.moduleName.split(".").takeLast(2).join("/")).pkl"] = mod.moduleNode.output
+      ["\(mod.moduleName.replaceFirst(Regex(#"^\#(baseApiGroup)\."#), "").split(".").join("/")).pkl"] = mod.moduleNode.output
     }
   }
 }

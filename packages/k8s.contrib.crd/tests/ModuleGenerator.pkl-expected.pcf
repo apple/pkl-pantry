@@ -1,5 +1,5 @@
 examples {
-  ["v1/RestateCluster.pkl"] {
+  ["dev/restate/v1/RestateCluster.pkl"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -98,7 +98,7 @@ examples {
     
     """
   }
-  ["v1/RestateCluster.pkl -- dependency notation for k8s"] {
+  ["dev/restate/v1/RestateCluster.pkl -- dependency notation for k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -197,7 +197,7 @@ examples {
     
     """
   }
-  ["v1/RestateCluster.pkl -- different version of k8s"] {
+  ["dev/restate/v1/RestateCluster.pkl -- different version of k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -373,5 +373,9 @@ examples {
     }
     
     """
+  }
+  ["apiGroup subdomains"] {
+    Pair("v1/Foo.pkl", "bar.v1.Foo")
+    Pair("baz/v1/Qux.pkl", "bar.baz.v1.Qux")
   }
 }
