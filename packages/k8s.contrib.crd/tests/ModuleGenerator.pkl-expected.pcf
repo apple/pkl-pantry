@@ -1,5 +1,21 @@
 examples {
-  ["dev/restate/v1/RestateCluster.pkl"] {
+  ["k8sSchema.pkl"] {
+    """
+    module dev.restate.k8sSchema
+    
+    /// Resource modules keyed by `kind` and `apiVersion`.
+    ///
+    /// Note: Declared template type is [unknown] instead of `K8sResource`
+    /// to delay loading a template until it is accessed.
+    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
+      ["RestateCluster"] {
+        ["restate.dev/v1"] = import("v1/RestateCluster")
+      }
+    }
+    
+    """
+  }
+  ["v1/RestateCluster.pkl"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -98,7 +114,23 @@ examples {
     
     """
   }
-  ["dev/restate/v1/RestateCluster.pkl -- dependency notation for k8s"] {
+  ["k8sSchema.pkl -- dependency notation for k8s"] {
+    """
+    module dev.restate.k8sSchema
+    
+    /// Resource modules keyed by `kind` and `apiVersion`.
+    ///
+    /// Note: Declared template type is [unknown] instead of `K8sResource`
+    /// to delay loading a template until it is accessed.
+    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
+      ["RestateCluster"] {
+        ["restate.dev/v1"] = import("v1/RestateCluster")
+      }
+    }
+    
+    """
+  }
+  ["v1/RestateCluster.pkl -- dependency notation for k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -197,7 +229,23 @@ examples {
     
     """
   }
-  ["dev/restate/v1/RestateCluster.pkl -- different version of k8s"] {
+  ["k8sSchema.pkl -- different version of k8s"] {
+    """
+    module dev.restate.k8sSchema
+    
+    /// Resource modules keyed by `kind` and `apiVersion`.
+    ///
+    /// Note: Declared template type is [unknown] instead of `K8sResource`
+    /// to delay loading a template until it is accessed.
+    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
+      ["RestateCluster"] {
+        ["restate.dev/v1"] = import("v1/RestateCluster")
+      }
+    }
+    
+    """
+  }
+  ["v1/RestateCluster.pkl -- different version of k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -298,14 +346,28 @@ examples {
   }
   ["conflicting schemas"] {
     """
+    module com.bar.k8sSchema
+    
+    /// Resource modules keyed by `kind` and `apiVersion`.
+    ///
+    /// Note: Declared template type is [unknown] instead of `K8sResource`
+    /// to delay loading a template until it is accessed.
+    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
+      ["FooBar"] {
+        ["bar.com/v1"] = import("v1/FooBar")
+      }
+    }
+    
+    """
+    """
     /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module bar.foo.v1.FooBar
+    module com.bar.v1.FooBar
     
     extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
     
     import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
     
-    fixed apiVersion: "foo.bar/v1"
+    fixed apiVersion: "bar.com/v1"
     
     fixed kind: "FooBar"
     
@@ -375,7 +437,8 @@ examples {
     """
   }
   ["apiGroup subdomains"] {
-    Pair("v1/Foo.pkl", "bar.v1.Foo")
-    Pair("baz/v1/Qux.pkl", "bar.baz.v1.Qux")
+    Pair("k8sSchema.pkl", "bar.k8sSchema")
+    Pair("com/bar/v1/Foo.pkl", "com.bar.v1.Foo")
+    Pair("com/bar/baz/v1/Qux.pkl", "com.bar.baz.v1.Qux")
   }
 }

@@ -26,6 +26,7 @@ import "../generate.pkl"
 local generator = (generate) {
   sourceContents = read("fixtures/crds.yaml")
   source = "dummy://test_uri"
+  baseApiGroup = "restate.dev"
   converters {
     ["restateclusters.restate.dev"] {
       [List("spec", "compute", "env", "[]")] = EnvVar
@@ -67,6 +68,7 @@ examples {
   ["conflicting schemas"] {
     for (_, value in (generate) {
       sourceContents = read("fixtures/crds_conflict.yaml")
+      baseApiGroup = "bar.com"
       source = "dummy://test_uri"
     }.output.files!!) {
       value.text

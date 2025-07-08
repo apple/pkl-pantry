@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   name: foo.bar.com
 spec:
-  group: bar
+  group: bar.com
   names:
     categories: []
     kind: Foo
@@ -84,7 +84,7 @@ kind: CustomResourceDefinition
 metadata:
   name: qux.baz.bar.com
 spec:
-  group: baz.bar
+  group: baz.bar.com
   names:
     categories: []
     kind: Qux
