@@ -1,5 +1,5 @@
 /**
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@ package com.apple.pkl.apple_pantry
 
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import org.junit.jupiter.api.condition.DisabledIf
 import org.pkl.core.EvaluatorBuilder
 import org.pkl.core.ModuleSource
-import org.pkl.core.parser.Lexer
 import org.pkl.core.project.Project
+import org.pkl.parser.Lexer
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.exists

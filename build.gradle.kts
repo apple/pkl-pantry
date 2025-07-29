@@ -74,6 +74,7 @@ repositories {
 
 dependencies {
     testImplementation(libs.pklCore)
+    testImplementation(libs.pklParser)
     testImplementation(libs.junitEngine)
     testImplementation(libs.junitParams)
 }
