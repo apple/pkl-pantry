@@ -1,20 +1,4 @@
 examples {
-  ["k8sSchema.pkl"] {
-    """
-    module dev.restate.k8sSchema
-    
-    /// Resource modules keyed by `kind` and `apiVersion`.
-    ///
-    /// Note: Declared template type is [unknown] instead of `K8sResource`
-    /// to delay loading a template until it is accessed.
-    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
-      ["RestateCluster"] {
-        ["restate.dev/v1"] = import("v1/RestateCluster")
-      }
-    }
-    
-    """
-  }
   ["v1/RestateCluster.pkl"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
@@ -114,22 +98,6 @@ examples {
     
     """
   }
-  ["k8sSchema.pkl -- dependency notation for k8s"] {
-    """
-    module dev.restate.k8sSchema
-    
-    /// Resource modules keyed by `kind` and `apiVersion`.
-    ///
-    /// Note: Declared template type is [unknown] instead of `K8sResource`
-    /// to delay loading a template until it is accessed.
-    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
-      ["RestateCluster"] {
-        ["restate.dev/v1"] = import("v1/RestateCluster")
-      }
-    }
-    
-    """
-  }
   ["v1/RestateCluster.pkl -- dependency notation for k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
@@ -225,22 +193,6 @@ examples {
       /// storageRequestBytes is the amount of storage to request in volume claims. It is allowed to increase
       /// but not decrease.
       storageRequestBytes: Int(this >= 1.0)
-    }
-    
-    """
-  }
-  ["k8sSchema.pkl -- different version of k8s"] {
-    """
-    module dev.restate.k8sSchema
-    
-    /// Resource modules keyed by `kind` and `apiVersion`.
-    ///
-    /// Note: Declared template type is [unknown] instead of `K8sResource`
-    /// to delay loading a template until it is accessed.
-    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
-      ["RestateCluster"] {
-        ["restate.dev/v1"] = import("v1/RestateCluster")
-      }
     }
     
     """
@@ -346,20 +298,6 @@ examples {
   }
   ["conflicting schemas"] {
     """
-    module com.bar.k8sSchema
-    
-    /// Resource modules keyed by `kind` and `apiVersion`.
-    ///
-    /// Note: Declared template type is [unknown] instead of `K8sResource`
-    /// to delay loading a template until it is accessed.
-    resourceTemplates: Mapping<String, Mapping<String, unknown>> = new {
-      ["FooBar"] {
-        ["bar.com/v1"] = import("v1/FooBar")
-      }
-    }
-    
-    """
-    """
     /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
     module com.bar.v1.FooBar
     
@@ -437,7 +375,6 @@ examples {
     """
   }
   ["apiGroup subdomains"] {
-    Pair("k8sSchema.pkl", "bar.k8sSchema")
     Pair("com/bar/v1/Foo.pkl", "com.bar.v1.Foo")
     Pair("com/bar/baz/v1/Qux.pkl", "com.bar.baz.v1.Qux")
   }

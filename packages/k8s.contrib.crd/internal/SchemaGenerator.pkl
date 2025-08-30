@@ -25,6 +25,8 @@ baseApiGroup: String
 
 crds: Listing<ModuleGenerator.CRD>
 
+k8sImportPath: String
+
 fixed moduleNode: ModuleNode = new {
   declaration {
     moduleHeader {
@@ -37,6 +39,9 @@ fixed moduleNode: ModuleNode = new {
         }
       }
     }
+  }
+  imports {
+    new { value = "\(k8sImportPath)/K8sResource.pkl" }
   }
   properties {
     new {
@@ -54,7 +59,9 @@ fixed moduleNode: ModuleNode = new {
                 new TypeNode.DeclaredTypeNode {
                   name { parts { new { value = "String" } } }
                 }
-                new TypeNode.BuiltInTypeNode { type = "unknown" }
+                new TypeNode.DeclaredTypeNode {
+                  name { parts { new { value = "K8sResource" } } }
+                }
               }
             }
           }
@@ -63,9 +70,6 @@ fixed moduleNode: ModuleNode = new {
       docComment {
         value = """
           Resource modules keyed by `kind` and `apiVersion`.
-
-          Note: Declared template type is [unknown] instead of `K8sResource`
-          to delay loading a template until it is accessed.
           """
       }
       defaultValue = new ExpressionNode.ObjectExpressionNode {

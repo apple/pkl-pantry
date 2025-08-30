@@ -22,6 +22,7 @@ import "../generate.pkl"
 examples {
   ["schema generation"] {
     (generate) {
+      generateSchema = true
       sourceContents = read("fixtures/crds_subdomain.yaml")
       source = "dummy://test_uri"
       baseApiGroup = "bar.com"
