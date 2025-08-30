@@ -1,5 +1,5 @@
 examples {
-  ["dev/restate/v1/RestateCluster.pkl"] {
+  ["v1/RestateCluster.pkl"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -98,7 +98,7 @@ examples {
     
     """
   }
-  ["dev/restate/v1/RestateCluster.pkl -- dependency notation for k8s"] {
+  ["v1/RestateCluster.pkl -- dependency notation for k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -197,7 +197,7 @@ examples {
     
     """
   }
-  ["dev/restate/v1/RestateCluster.pkl -- different version of k8s"] {
+  ["v1/RestateCluster.pkl -- different version of k8s"] {
     """
     /// Auto-generated derived type for RestateClusterSpec via `CustomResource`
     ///
@@ -299,13 +299,13 @@ examples {
   ["conflicting schemas"] {
     """
     /// This module was generated from the CustomResourceDefinition at <dummy://test_uri>.
-    module bar.foo.v1.FooBar
+    module com.bar.v1.FooBar
     
     extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
     
     import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
     
-    fixed apiVersion: "foo.bar/v1"
+    fixed apiVersion: "bar.com/v1"
     
     fixed kind: "FooBar"
     
@@ -375,7 +375,7 @@ examples {
     """
   }
   ["apiGroup subdomains"] {
-    Pair("v1/Foo.pkl", "bar.v1.Foo")
-    Pair("baz/v1/Qux.pkl", "bar.baz.v1.Qux")
+    Pair("com/bar/v1/Foo.pkl", "com.bar.v1.Foo")
+    Pair("com/bar/baz/v1/Qux.pkl", "com.bar.baz.v1.Qux")
   }
 }

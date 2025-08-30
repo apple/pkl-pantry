@@ -1,0 +1,20 @@
+examples {
+  ["schema generation"] {
+    """
+    module com.bar.k8sSchema
+    
+    import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+    
+    /// Resource modules keyed by `kind` and `apiVersion`.
+    resourceTemplates: Mapping<String, Mapping<String, K8sResource>> = new {
+      ["Foo"] {
+        ["bar.com/v1"] = import("v1/Foo")
+      }
+      ["Qux"] {
+        ["baz.bar.com/v1"] = import("baz/v1/Qux")
+      }
+    }
+    
+    """
+  }
+}

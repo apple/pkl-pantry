@@ -64,6 +64,7 @@ import "@deepToTyped/deepToTyped.pkl"
 import "@uri/URI.pkl"
 
 import "internal/ModuleGenerator.pkl"
+import "internal/SchemaGenerator.pkl"
 
 /// The version of the Pkl Kubernetes package to import.
 ///
@@ -82,7 +83,14 @@ k8sVersion: String(semver.isValid(this)) = "1.0.1"
 /// ```
 k8sImportPath: String = read?("prop:k8sImportPath") ?? "package://pkg.pkl-lang.org/pkl-k8s/k8s@\(k8sVersion)#"
 
+/// The base API group.
+///
+/// Used to determine the output directory structure and which parts should be included in the path.
 baseApiGroup: String = read?("prop:baseApiGroup") ?? "k8s.io"
+local baseApiGroupModulePrefix = baseApiGroup.split(".").reverse().join(".")
+
+/// Enable or disable generating a k8sSchema.pkl at the root of the output.
+generateSchema: Boolean = read?("prop:generateSchema")?.toBoolean() ?? false
 
 /// Where to find the CRDs; can be a URI (`https:`, `file:` etc), an absolute file path, or a relative file path
 source: String = read("prop:source")
@@ -106,7 +114,7 @@ sourceContents: String|Resource = read(URI.encode(sourceUri))
 /// Default: `false`.
 logPaths: Boolean? = read?("prop:logPaths")?.toBoolean()
 
-local crds: Listing<ModuleGenerator.CRD> =
+local _crds: Listing<ModuleGenerator.CRD> =
   let (parser = new yaml.Parser { useMapping = true })
     new {
       for (crd in parser.parseAll(sourceContents)) {
@@ -134,7 +142,7 @@ local crds: Listing<ModuleGenerator.CRD> =
 converters: Mapping<String, Mapping<List<String>, Module|Class|TypeAlias>>?
 
 fixed modules: Listing<ModuleGenerator> = new {
-  for (_crd in crds) {
+  for (_crd in _crds) {
     for (_version in _crd.spec.versions) {
       new ModuleGenerator {
         k8sImportPath = module.k8sImportPath
@@ -148,11 +156,20 @@ fixed modules: Listing<ModuleGenerator> = new {
   }
 }
 
+fixed schema: SchemaGenerator = new {
+  k8sImportPath = module.k8sImportPath
+  crds = _crds
+  baseApiGroup = module.baseApiGroup
+}
+
 output {
   text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
   files {
+    when (generateSchema) {
+      ["k8sSchema.pkl"] = schema.moduleNode.output
+    }
     for (mod in modules) {
-      ["\(mod.moduleName.replaceFirst(Regex(#"^\#(baseApiGroup)\."#), "").split(".").join("/")).pkl"] = mod.moduleNode.output
+      ["\(mod.moduleName.replaceFirst(Regex(#"^\#(baseApiGroupModulePrefix)\."#), "").split(".").join("/")).pkl"] = mod.moduleNode.output
     }
   }
 }

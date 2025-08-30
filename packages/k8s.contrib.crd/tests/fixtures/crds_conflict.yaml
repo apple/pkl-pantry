@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   name: foo.bar.com
 spec:
-  group: foo.bar
+  group: bar.com
   names:
     categories: []
     kind: FooBar
