@@ -186,6 +186,9 @@ class Job {
 
   /// Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
   machine: Machine?
+
+  // Options for CircleCI [IP ranges feature](https://circleci.com/docs/guides/security/ip-ranges/).
+  circleci_ip_ranges: Boolean?
 }
 
 typealias ResourceClass =
