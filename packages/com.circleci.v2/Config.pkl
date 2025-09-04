@@ -816,6 +816,14 @@ output {
   renderer = new YamlRenderer {
     converters {
       [AbstractStep] = (it) -> Map(it.__name__, it.toMap())
+      [Duration] = (it) ->
+        let (dur =
+          if (it.unit is "d") it.toUnit("min")
+          else if (it.unit is "us"|"ms"|"ns") it.toUnit("s")
+          else it
+        )
+        let (unit = if (dur.unit == "min") "m" else dur.unit)
+          "\(dur.value)\(unit)"
       [Dynamic] = (it) ->
         if (it.hasProperty("__name__"))
           Map(it.__name__, it.toMap().remove("__name__"))
