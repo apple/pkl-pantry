@@ -207,6 +207,8 @@ typealias ResourceClass =
   |"macos.m1.large.gen1"
   |"m2pro.medium"
   |"m2pro.large"
+  |"m4pro.medium"
+  |"m4pro.large"
   |"windows.medium"
   |"windows.large"
   |"windows.xlarge"
@@ -218,6 +220,7 @@ typealias ResourceClass =
   |"gpu.nvidia.medium"
   |"gpu.nvidia.large"
   |"windows.gpu.nvidia.medium"
+  |String
 
 
 class MacOSExecutor {
