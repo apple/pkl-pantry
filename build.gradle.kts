@@ -103,6 +103,7 @@ dependencies {
   testImplementation(libs.pklParser)
   testImplementation(libs.junitEngine)
   testImplementation(libs.junitParams)
+  testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 val repositoryUrl = "https://github.com/apple/pkl-pantry"
