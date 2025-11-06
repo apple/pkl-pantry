@@ -1,0 +1,141 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// A [tar](https://en.wikipedia.org/wiki/Tar_(computing)) archiver.
+///
+/// Implements the [pax](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/pax.html) and
+/// [UStar](https://en.wikipedia.org/wiki/Tar_(computing)#UStar_format) formats.
+///
+/// Basic usage:
+/// ```
+/// import "package://pkg.pkl-lang.org/pkl-pantry/pkl.tar@0.1.0"
+///
+/// output {
+///   value = files
+///   renderer = new tar.Renderer {}
+///   files {
+///     ["foo/bar.yaml"] {
+///       value = someValue
+///       renderer = new YamlRenderer {}
+///     }
+///     ["foo/bar.json"] {
+///       value = someValue
+///       renderer = new JsonRenderer {}
+///     }
+///   }
+/// }
+/// ```
+@ModuleInfo { minPklVersion = "0.30.0" }
+module pkl.tar.tar
+
+import "pkl:math"
+
+import "File.pkl"
+
+/// A representation of a filesystem for purposes of tar archives.
+///
+/// See [Renderer] for restrictions on keys (file paths) for UStar archives.
+typealias FileSystem = Mapping<String, *FileOutput | File>
+
+/// A renderer for [tar](https://en.wikipedia.org/wiki/Tar_(computing)) archives.
+///
+/// Implements the [pax](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/pax.html)
+/// (default) and [UStar](https://en.wikipedia.org/wiki/Tar_(computing)#UStar_format) formats.
+///
+/// Pax archives do not impose size or length restrictions on any file properties.
+///
+/// UStar archives impose these restrictions:
+/// * Paths may be no more than 256 characters long, often less.
+///   * Specifically, the path may consist of two segments joined over a `/`.
+///   * The first segment may be up to 155 bytes long.
+///   * The second segment may be up to 100 bytes long.
+///   * Characters must be in the [POSIX portable character set](https://en.wikipedia.org/wiki/Portable_character_set).
+/// * Link target paths may consist of up to 100 bytes.
+///   * Characters must be in the [POSIX portable character set](https://en.wikipedia.org/wiki/Portable_character_set).
+/// * Files must be less than 2^33 bytes long (8 GiB).
+/// * File modification timestamp must be less than 2^33.
+/// * Owner uid and gid must be less than 2^21.
+class Renderer extends BytesRenderer {
+  /// Configurations for pax format archives.
+  ///
+  /// If null, no pax headers will be included and the result will be a UStar archive.
+  pax: Pax? = new {}
+
+  /// Default file information to use for any [FileOutput] values or [File] values
+  /// with no specified file info in the rendered [FileSystem].
+  defaultFileInfo: File.Info = new {
+    mode = Set("ur", "uw", "gr", "or") // -rw-r--r-- or 0644
+    uid = math.maxUInt16
+    gid = math.maxUInt16
+    mtime = 0.0 // 1970-01-01T00:00:00Z
+    uname = "nobody"
+    gname = "nobody"
+  }
+
+  /// Create an archive from a [FileSystem].
+  function renderValue(value: Any): Bytes =
+    if (value is FileSystem)
+      let (
+        fs =
+          if (pax?.globalHeaderFields?.isEmpty ?? true)
+            value
+          else
+            new Mapping {
+              [pax.globalexthdrName] = new File.GlobalExtendedHeader {
+                paxFields = pax.globalHeaderFields!!
+              }
+              ...value
+            }
+      )
+        fs
+          .fold(List(), (result, path, file) ->
+            let (tarFile = toTar(file, defaultFileInfo))
+              (result |> File.maybeAppend(pax != null, () -> tarFile.makePax(path, pax!!)))
+                + File.checksum(tarFile.makeHeader(path, pax))
+                + tarFile.paddedBytes.toList()
+          )
+          .toBytes()
+    else
+      throw("Rendered value must be a tar.FileSystem")
+
+  /// Create an archive from a [FileSystem].
+  ///
+  /// A tar document ends with two blocks (1024 bytes) of 0x00 bytes.
+  function renderDocument(value: Any): Bytes = renderValue(value) + File.endOfArchive.toBytes()
+}
+
+/// Configurations for producing pax archives.
+class Pax {
+  globalHeaderFields: File.PaxFields
+
+  notPid: UInt = 0
+
+  /// Equivalent to pax option `exthdr.name`.
+  ///
+  /// String "{{dir}}" is replaced with the directory name, equivalent to pax `%d`
+  /// String "{{file}}" is replaced with the file name, equivalent to pax `%f`
+  exthdrName: String = "{{dir}}/PaxHeaders.\(notPid)/{{file}}"
+
+  /// Equivalent to pax option `globexthdr.name`.
+  globalexthdrName: String = "\(read?("env:TMPDIR") ?? "/tmp")/GlobalHead.\(notPid).1"
+}
+
+/// Convert any [FileOutput] instance into a [TarFileOutput], setting sensible default values for
+/// tar-specific fields.
+local const function toTar(f: FileOutput | File, defaultInfo: File.Info): File(info != null) =
+  if (f is File)
+    (f) { info = super.info ?? defaultInfo }
+  else
+    new File.RegularFile { file = f; info = defaultInfo }
