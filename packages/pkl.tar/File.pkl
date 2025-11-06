@@ -1,0 +1,407 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+abstract module pkl.tar.File
+
+import "pkl:math"
+
+import "File.pkl"
+import "tar.pkl"
+
+local typealias Buffer = List<UInt8>
+local typealias PosixPortableString =
+  String(
+    codePoints.every((char) ->
+      char == 0 || char.isBetween(0x0007, 0x000d) || char.isBetween(0x0020, 0x007e)
+    )
+  )
+local const blockLength = 512
+local const magic = List(0x75, 0x73, 0x74, 0x61, 0x72, 0x00) // "ustar\0"
+local const version = List(0x30, 0x30) // "00"
+local typealias Block = Buffer(length == blockLength)
+
+/// Pax archive extended header data fields.
+typealias PaxFields = Mapping<PosixPortableString(!contains("=")), String>
+
+local const ustarMaxLinkLength: UInt = 100
+local const ustarMaxUidGid: UInt = 2 ** 21 as UInt
+local const ustarMaxSizeTimestamp: UInt = 2 ** 33 as UInt
+
+/// File type marker, also known as `linkflag`.
+fixed type: Char
+
+/// The numeric byte value of [type].
+fixed typeByte: UInt8 = type.encodeToBytes("UTF-8")[0]
+
+/// File information.
+info: Info?
+
+/// Pax archive extended header data fields.
+paxFields: PaxFields = new {
+  when (info != null) {
+    when (info.gid > ustarMaxUidGid) {
+      ["gid"] = info.gid.toString()
+    }
+    when (info.uid > ustarMaxUidGid) {
+      ["uid"] = info.uid.toString()
+    }
+    when (info.mtime != info.mtime.truncate()) {
+      ["mtime"] = formatPaxNumber(info.mtime)
+    }
+    when (!(info.uname is PosixPortableString)) {
+      ["uname"] = info.uname
+    }
+    when (!(info.gname is PosixPortableString)) {
+      ["gname"] = info.gname
+    }
+  }
+}
+
+/// The payload bytes of this file, padded to the nearest 512 bytes.
+fixed paddedBytes: Buffer(length % blockLength == 0) = List()
+
+/// Generate the UStar header for this file including [type]-specific customizations.
+function makeHeader(path: String, pax: tar.Pax?): Block = makeBaseHeader(path, pax)
+
+/// Generate the UStar header for this file before [type]-specific customatizations.
+function makeBaseHeader(path: String, pax: tar.Pax?): Block =
+  let (pathParts = splitFilename(path, pax))
+    List(
+      pathParts.first, // name [0, 100)
+      formatOctal(info!!.encodedMode, 8), // mode [100, 108)
+      formatOctal(validateNumericField(info!!.uid, ustarMaxUidGid, "uid", pax), 8), // uid [108, 116)
+      formatOctal(validateNumericField(info!!.gid, ustarMaxUidGid, "gid", pax), 8), // gid [116, 124)
+      nul(12), // size [124, 136)
+      formatOctal(
+        validateNumericField(info!!.mtime.toInt(), ustarMaxSizeTimestamp, "mtime", pax),
+        12
+      ), // mtime [136, 148)
+      nul(8), // cksum [148, 156)
+      List(typeByte), // typeflag [156, 157)
+      nul(100), // linkname [157, 257)
+      magic, // magic [257, 263)
+      version, // version [263, 265)
+      validateStringField(info!!.uname, 32, "uname", pax), // uname [265, 297)
+      validateStringField(info!!.gname, 32, "gname", pax), // gname [297, 329)
+      nul(8), // devmajor [329, 337)
+      nul(8), // devminor [337, 345)
+      pathParts.second, // prefix [345, 500)
+      nul(12) // padding [500, 512)
+    ).flatten()
+
+local self = this
+
+/// Generate the pax header and payload for this file, if enabled and applicable.
+function makePax(path: String, pax: tar.Pax): Buffer(length % blockLength == 0) =
+  let (
+    paxHeader = new ExtendedHeader {
+      paxFields = (self.paxFields) {
+        when (splitFilename(path, pax) == null) {
+          ["path"] = path
+        }
+      }
+    }
+  )
+    if (paxHeader.paxFields.isEmpty)
+      List()
+    else
+      checksum(paxHeader.makeHeader(path, pax)) + paxHeader.paddedBytes
+
+/// File metdata information.
+class Info {
+  /// File permissions mode.
+  mode: Set<Mode>
+
+  /// File modification time in epoch seconds.
+  ///
+  /// Truncated to whole seconds for UStar archives.
+  /// Must be < 2**33 for UStar archives.
+  mtime: Number
+
+  /// File owner user id.
+  ///
+  /// Must be < 2**21 for UStar archives.
+  uid: UInt
+
+  /// File owner group id.
+  ///
+  /// Must be < 2**21 for UStar archives.
+  gid: UInt
+
+  /// File owner user name.
+  ///
+  /// Must have length < 32 for UStar archives.
+  uname: String
+
+  /// File owner group name.
+  ///
+  /// Must have length < 32 for UStar archives.
+  gname: String
+
+  /// Numerically encoded value of [mode].
+  hidden fixed encodedMode: UInt16 = mode.fold(0, (res, elem) -> res.or(modeValues[elem]))
+}
+
+/// File permissions mode.
+typealias Mode = "suid" | "sgid" | "ur" | "uw" | "ux" | "gr" | "gw" | "gx" | "or" | "ow" | "ox"
+
+/// Map of human-readable [Mode] values to their underlying byte representation.
+const modeValues: Map<Mode, UInt> =
+  // 0o1000 is reserved
+  Map(
+    "suid", 0o4000,
+    "sgid", 0o2000,
+    "ur", 0o0400,
+    "uw", 0o0200,
+    "ux", 0o0100,
+    "gr", 0o0040,
+    "gw", 0o0020,
+    "gx", 0o0010,
+    "or", 0o0004,
+    "ow", 0o0002,
+    "ox", 0o0001
+  )
+
+/// A "blank" [Info] used as default metadata for pax extended headers.
+const blankInfo: Info = new {
+  mode = Set("ur", "gr", "or") // -r--r--r-- or 0444
+  uid = 0
+  gid = 0
+  mtime = 0
+  uname = ""
+  gname = ""
+}
+
+/// The end-of-archive indicator: 1024 bytes of zero bytes.
+const endOfArchive: Buffer = nul(2 * blockLength)
+
+/// A regular file with contents from a [FileOutput].
+class RegularFile extends File {
+  fixed type: "0"
+
+  /// The file contents to archive.
+  ///
+  /// Must have bytes.length < 2**33 for UStar archives.
+  file: FileOutput
+
+  /// The length of [file] in bytes.
+  fixed fileSize: UInt = file.bytes.length
+
+  paxFields {
+    when (fileSize > ustarMaxSizeTimestamp) {
+      ["size"] = fileSize.toString()
+    }
+  }
+
+  fixed paddedBytes: Buffer(length % blockLength == 0) = padToBlock(file.bytes)
+
+  local self = this
+
+  function makeHeader(path: String, pax: tar.Pax?): Block =
+    let (fileSizeField = validateNumericField(fileSize, ustarMaxSizeTimestamp, "size", pax))
+      self.makeBaseHeader(path, pax).replaceRange(124, 136, formatOctal(fileSizeField, 12))
+}
+
+open class Link extends File {
+  fixed type: "1"
+
+  /// Link target path.
+  ///
+  /// Must have encodeToBytes("UTF-8").length <= 100 for UStar archives.
+  target: String
+
+  paxFields {
+    when (target.encodeToBytes("UTF-8").length > ustarMaxLinkLength) {
+      ["linkpath"] = target
+    }
+  }
+
+  local self = this
+
+  function makeHeader(path: String, pax: tar.Pax?): Block =
+    let (linkName = validateStringField(target, ustarMaxLinkLength, "linkname", pax))
+      self.makeBaseHeader(path, pax).replaceRange(157, 257, linkName)
+}
+
+class SymbolicLink extends Link {
+  fixed type: "2"
+}
+
+class Directory extends File {
+  fixed type: "5"
+}
+
+open local class ExtendedHeader extends File {
+  fixed type: "x"
+
+  fixed nameField: "exthdrName"
+
+  local self = this
+
+  info = blankInfo
+
+  function makeHeader(path: String, pax: tar.Pax?): Block =
+    let (dir = path.split("/").dropLast(1).join("/"))
+    let (file = path.split("/").last)
+    let (
+      paxPath = pax!!.getProperty(nameField).replaceAll("{{dir}}", dir).replaceAll("{{file}}", file)
+    )
+    let (fileSizeField = validateNumericField(bytes.length, ustarMaxSizeTimestamp, "size", pax))
+      self.makeBaseHeader(paxPath, pax).replaceRange(124, 136, formatOctal(fileSizeField, 12))
+
+  fixed bytes: Bytes =
+    self.paxFields
+      .toMap()
+      .entries
+      .map((field) ->
+        let (kv = " \(field.key)=\(field.value)\n")
+          convergePaxFieldLength(kv, kv.length + kv.length.toString().length)
+      )
+      .join("")
+      .encodeToBytes("UTF-8")
+
+  fixed paddedBytes: Buffer(length % blockLength == 0) = padToBlock(bytes)
+
+  // pax headers don't have pax headers :)
+  function makePax(_, _) = List()
+}
+
+/// Calculate the final contents of an encoded pax field, ensuring the encoded length matches
+/// the actual length (which includes the endoded length).
+local const function convergePaxFieldLength(kv: String, len: UInt): String =
+  let (maybeRecord = "\(len)\(kv)")
+    if (maybeRecord.length == len)
+      maybeRecord
+    else
+      convergePaxFieldLength(kv, len + 1)
+
+class GlobalExtendedHeader extends ExtendedHeader {
+  fixed type: "g"
+
+  fixed nameField: "globalexthdrName"
+}
+
+/// Return a List of zero bytes of the specified length.
+const function nul(length: Int): Buffer = if (length <= 0) List() else List(0).repeat(length)
+
+/// Turn a [UInt] into an ASCII octal string terminated by a nul byte of the given [size].
+local const function formatOctal(value: UInt, size: UInt): Buffer(length == size) =
+  value.toRadixString(8).padStart(size - 1, "0").encodeToBytes("UTF-8").toList() + List(0)
+
+/// Split a file path into the two fields UStar uses.
+///
+///
+/// The name (first) field is the path (nul-terminated) if the length is < 100 bytes, otherwise it
+/// is the longest string after a `/` up to 100 bytes, nul-terminated. It is 100 bytes long.
+///
+/// The prefix (second) field is all nul if the length is < 100 bytes, otherwise it is the path
+/// before the first field not including the `/` separator (nul-terminated). It is 155 bytes long.
+///
+/// UStar format archives will throw an error if the path does not consist of characters in the
+/// [POSIX portable character set](https://en.wikipedia.org/wiki/Portable_character_set) or do not
+/// meet the above length constraints.
+///
+/// Pax format archives will truncate the prefix from the beginning for paths that are too long.
+local const function splitFilename(
+  path: String,
+  pax: tar.Pax?
+): Pair<Buffer(length == 100), Buffer(length == 155)>? =
+  let (_ = validateStringField(path, null, "path", pax))
+  let (name = path.encodeToBytes("UTF-8").toList())
+    if (name.length <= 100)
+      Pair(name + nul(100 - name.length), nul(155))
+    else
+      // suffix is the longest suffix under 100 bytes that starts after a /
+      let (suffix = name.takeLast(100).dropWhile((char) -> char != 0x2f).drop(1))
+      // prefix is the rest of the string not including the joining /
+      let (fullPrefix = name.dropLast(suffix.length + 1))
+      let (prefix = fullPrefix.takeLast(155))
+        if (fullPrefix.length > 155)
+          if (pax == null)
+            throw("Path `\(path)` too long for UStar archive")
+          else
+            null
+        else
+          Pair(
+            suffix + nul(100 - suffix.length),
+            prefix + nul(155 - prefix.length)
+          )
+
+/// When producing a UStar archive, validate strings consists of legal POSIX portable characters.
+///
+/// If specified, also validate the string's length.
+/// For pax archives, the string is truncated to this length.
+local const function validateStringField(
+  value: String,
+  maxLength: UInt?,
+  field: String,
+  pax: tar.Pax?
+): Buffer(maxLength == null || length == maxLength) =
+  let (encoded = value.encodeToBytes("UTF-8").toList())
+    if (pax == null && !(value is PosixPortableString))
+      throw("\(field) in UStar archives must use the POSIX portable character set")
+    else if (pax == null && maxLength != null && encoded.length > maxLength)
+      throw("\(field)  in UStar archives must be fewer than \(maxLength) bytes long")
+    else if (maxLength != null)
+      encoded.take(maxLength) + nul(maxLength - encoded.length)
+    else
+      encoded
+
+/// When producing a UStar archive, validate that numbers do not exceed the field's maximum value.
+///
+/// For pax archives, the number is clamped to the maximum.
+local const function validateNumericField(
+  value: UInt,
+  max: UInt,
+  field: String,
+  pax: tar.Pax?
+): UInt =
+  if (value < max)
+    value
+  else if (pax != null)
+    math.min(value, max - 1) as UInt
+  else
+    throw("\(field) in UStar archives must be less than \(max)")
+
+/// Given a header [Block], return the same block with its checksum calculated.
+///
+/// Procedure:
+/// 1. Replace the 8 byte checksum fields with ASCII spaces (0x20).
+/// 2. Sum every byte in the header block.
+/// 3. Encode as a 6 digit octal number, followed by a NUL and then a space.
+/// 4. Replace the 8 byte checksum field with the encoded checksum.
+///   * This impl reuses the blanked checksum header and replaces the first 7 bytes with the sum.
+const function checksum(header: Block): Block =
+  let (headerBlankChecksum = header.replaceRange(148, 156, List(0x20).repeat(8)))
+  let (sum = headerBlankChecksum.fold(0, (res, byte) -> res + byte))
+    headerBlankChecksum.replaceRange(148, 155, formatOctal(sum, 7))
+
+/// Utility [Mixin] for evaluating and adding (+) a [Buffer] only if [cond] is `true`.
+const function maybeAppend(cond: Boolean, makeBuffer: () -> Buffer): (Buffer) -> Buffer = (parent) ->
+  if (cond) parent + makeBuffer.apply() else parent
+
+/// Pad (with zero bytes) some [Bytes] to a multiple of 512 bytes.
+local const function padToBlock(buffer: Bytes): Buffer(length % blockLength == 0) =
+  if (buffer.length != 0)
+    buffer.toList() + nul(blockLength - (buffer.length % blockLength))
+  else
+    List()
+
+/// Format a [Number] for inclusion in a pax header.
+///
+/// This is similar to `Float.toInt()` but avoids scientific notation.
+/// Maximum of 20 decimal total (whole and fractional) digits of precision.
+const function formatPaxNumber(value: Number): String =
+  value.toFixed(20).dropLastWhile((it) -> it == "0")
