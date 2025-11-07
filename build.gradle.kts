@@ -12,7 +12,6 @@
  * the License.
  */
 import groovy.json.JsonSlurper
-import java.io.OutputStream
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -202,15 +201,17 @@ val isInCircleCi = System.getenv("CIRCLE_PROJECT_REPONAME") != null
 
 val prepareCiGit by
   tasks.registering {
-    if (isInCircleCi) {
-      providers
-        .exec { commandLine("git", "config", "user.email", "pkl-oss@groups.apple.com") }
-        .result
-        .get()
-      providers
-        .exec { commandLine("git", "config", "user.name", "The Pkl Team (automation)") }
-        .result
-        .get()
+    doLast {
+      if (isInCircleCi) {
+        providers
+          .exec { commandLine("git", "config", "user.email", "pkl-oss@groups.apple.com") }
+          .result
+          .get()
+        providers
+          .exec { commandLine("git", "config", "user.name", "The Pkl Team (automation)") }
+          .result
+          .get()
+      }
     }
   }
 
@@ -245,16 +246,9 @@ val prepareReleases by
           println("⏩")
           continue
         }
-        val taskOutput = StringBuilder()
-        providers
-          .exec {
-            commandLine("git", "tag", "-l", pkg)
-            logging.addStandardOutputListener { taskOutput.append(it) }
-            standardOutput = OutputStream.nullOutputStream()
-          }
-          .result
-          .get()
-        if (taskOutput.contains(pkg)) {
+        val execProvider = providers.exec { commandLine("git", "tag", "-l", pkg) }
+        execProvider.result.get()
+        if (execProvider.standardOutput.asText.get().contains(pkg)) {
           println("☑️")
           continue
         }
