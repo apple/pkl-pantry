@@ -76,10 +76,10 @@ class Renderer extends BytesRenderer {
   /// Default file information to use for any [FileOutput] values or [File] values
   /// with no specified file info in the rendered [FileSystem].
   defaultFileInfo: File.Info = new {
-    mode = Set("ur", "uw", "gr", "or") // -rw-r--r-- or 0644
+    mode = 0o0644
     uid = math.maxUInt16
     gid = math.maxUInt16
-    mtime = 0.0 // 1970-01-01T00:00:00Z
+    mtime = 0 // 1970-01-01T00:00:00Z
     uname = "nobody"
     gname = "nobody"
   }
@@ -94,7 +94,7 @@ class Renderer extends BytesRenderer {
           else
             new Mapping {
               [pax.globalexthdrName] = new File.GlobalExtendedHeader {
-                paxFields = pax.globalHeaderFields!!
+                paxFields = pax.globalHeaderFields
               }
               ...value
             }

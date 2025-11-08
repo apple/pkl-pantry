@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env -S bash -e
 
 # test the files archive.*.pkl in this directory
 # evaluate each and ask tar to list the result's contents

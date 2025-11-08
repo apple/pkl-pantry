@@ -43,13 +43,15 @@ local const ustarMaxSizeTimestamp: UInt = 2 ** 33 as UInt
 fixed type: Char
 
 /// The numeric byte value of [type].
-fixed typeByte: UInt8 = type.encodeToBytes("UTF-8")[0]
+fixed typeByte: UInt8 = type.codePoints[0]
 
 /// File information.
 info: Info?
 
 /// Pax archive extended header data fields.
-paxFields: PaxFields = new {
+paxFields: PaxFields
+
+fixed effectivePaxFields: PaxFields = (paxFields) {
   when (info != null) {
     when (info.gid > ustarMaxUidGid) {
       ["gid"] = info.gid.toString()
@@ -57,8 +59,13 @@ paxFields: PaxFields = new {
     when (info.uid > ustarMaxUidGid) {
       ["uid"] = info.uid.toString()
     }
-    when (info.mtime != info.mtime.truncate()) {
-      ["mtime"] = formatPaxNumber(info.mtime)
+    when (
+      if (info.mtime is UInt) // if UInt is out of UStar range
+        (info.mtime as UInt) > ustarMaxSizeTimestamp
+      else // if String has decimal digits or is out of UStar range
+        info.mtime.contains(".") || info.mtime.toInt() > ustarMaxSizeTimestamp
+    ) {
+      ["mtime"] = info.mtime as String
     }
     when (!(info.uname is PosixPortableString)) {
       ["uname"] = info.uname
@@ -80,12 +87,15 @@ function makeBaseHeader(path: String, pax: tar.Pax?): Block =
   let (pathParts = splitFilename(path, pax))
     List(
       pathParts.first, // name [0, 100)
-      formatOctal(info!!.encodedMode, 8), // mode [100, 108)
+      formatOctal(info!!.mode, 8), // mode [100, 108)
       formatOctal(validateNumericField(info!!.uid, ustarMaxUidGid, "uid", pax), 8), // uid [108, 116)
       formatOctal(validateNumericField(info!!.gid, ustarMaxUidGid, "gid", pax), 8), // gid [116, 124)
       nul(12), // size [124, 136)
       formatOctal(
-        validateNumericField(info!!.mtime.toInt(), ustarMaxSizeTimestamp, "mtime", pax),
+        if (info!!.mtime is UInt)
+          validateNumericField(info!!.mtime as UInt, ustarMaxSizeTimestamp, "mtime", pax)
+        else
+          validateNumericField(info!!.mtime.toFloat().toInt(), ustarMaxSizeTimestamp, "mtime", pax),
         12
       ), // mtime [136, 148)
       nul(8), // cksum [148, 156)
@@ -121,14 +131,31 @@ function makePax(path: String, pax: tar.Pax): Buffer(length % blockLength == 0) 
 
 /// File metdata information.
 class Info {
-  /// File permissions mode.
-  mode: Set<Mode>
+  /// File permissions mode bit set.
+  ///
+  /// Cases:
+  /// * 0o4000 - setuid
+  /// * 0o2000 - setgid
+  /// * 0o1000 - Reserved
+  /// * 0o0400 - Readable by user
+  /// * 0o0200 - Writable by user
+  /// * 0o0100 - Executable by user
+  /// * 0o0040 - Readable by group
+  /// * 0o0020 - Writable by group
+  /// * 0o0010 - Executable by group
+  /// * 0o0004 - Readable by other
+  /// * 0o0002 - Writable by other
+  /// * 0o0001 - Executable by other
+  mode: Int(isBetween(0o0000, 0o7777))
 
   /// File modification time in epoch seconds.
   ///
+  /// Timestamps with fractional seconds may be specified as a [String] containing a positive real
+  /// number with arbitrary precision.
+  ///
   /// Truncated to whole seconds for UStar archives.
   /// Must be < 2**33 for UStar archives.
-  mtime: Number
+  mtime: UInt | String(matches(Regex(#"\d+(\.\d+)?"#)))
 
   /// File owner user id.
   ///
@@ -149,34 +176,11 @@ class Info {
   ///
   /// Must have length < 32 for UStar archives.
   gname: String
-
-  /// Numerically encoded value of [mode].
-  hidden fixed encodedMode: UInt16 = mode.fold(0, (res, elem) -> res.or(modeValues[elem]))
 }
-
-/// File permissions mode.
-typealias Mode = "suid" | "sgid" | "ur" | "uw" | "ux" | "gr" | "gw" | "gx" | "or" | "ow" | "ox"
-
-/// Map of human-readable [Mode] values to their underlying byte representation.
-const modeValues: Map<Mode, UInt> =
-  // 0o1000 is reserved
-  Map(
-    "suid", 0o4000,
-    "sgid", 0o2000,
-    "ur", 0o0400,
-    "uw", 0o0200,
-    "ux", 0o0100,
-    "gr", 0o0040,
-    "gw", 0o0020,
-    "gx", 0o0010,
-    "or", 0o0004,
-    "ow", 0o0002,
-    "ox", 0o0001
-  )
 
 /// A "blank" [Info] used as default metadata for pax extended headers.
 const blankInfo: Info = new {
-  mode = Set("ur", "gr", "or") // -r--r--r-- or 0444
+  mode = 0o0644
   uid = 0
   gid = 0
   mtime = 0
@@ -205,7 +209,7 @@ class RegularFile extends File {
     }
   }
 
-  fixed paddedBytes: Buffer(length % blockLength == 0) = padToBlock(file.bytes)
+  fixed paddedBytes: Buffer = padToBlock(file.bytes)
 
   local self = this
 
@@ -272,7 +276,7 @@ open local class ExtendedHeader extends File {
       .join("")
       .encodeToBytes("UTF-8")
 
-  fixed paddedBytes: Buffer(length % blockLength == 0) = padToBlock(bytes)
+  fixed paddedBytes: Buffer = padToBlock(bytes)
 
   // pax headers don't have pax headers :)
   function makePax(_, _) = List()
@@ -398,10 +402,3 @@ local const function padToBlock(buffer: Bytes): Buffer(length % blockLength == 0
     buffer.toList() + nul(blockLength - (buffer.length % blockLength))
   else
     List()
-
-/// Format a [Number] for inclusion in a pax header.
-///
-/// This is similar to `Float.toInt()` but avoids scientific notation.
-/// Maximum of 20 decimal total (whole and fractional) digits of precision.
-const function formatPaxNumber(value: Number): String =
-  value.toFixed(20).dropLastWhile((it) -> it == "0")

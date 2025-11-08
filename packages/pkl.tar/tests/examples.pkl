@@ -69,6 +69,7 @@ local function vizWords(str: List<UInt8>(length % 8 == 0)): String =
         )
         .toBytes()
         .decodeToString("UTF-8")
+        .dropLastWhile((char) -> char == " ")
   )
     IntSeq(0, str.length ~/ 4 - 1)
       .fold(List(), (res, i) -> res.add(str.sublist(i * 4, i * 4 + 4).toBytes().hex))

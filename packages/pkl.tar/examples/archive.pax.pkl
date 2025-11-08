@@ -39,14 +39,14 @@ renderer {
   defaultFileInfo {
     uid = 2 ** 21 as UInt
     gid = 2 ** 21 as UInt
-    mtime = 1767225600000.123456 // 2026-01-01T00:00:00.123456Z
+    mtime = "1767225600000.123456" // 2026-01-01T00:00:00.123456Z
     uname = "aUserNameLongerThan32EncodedBytes"
     gname = "aGroupNameLongerThan32EncodedBytes"
   }
   pax {
     globalexthdrName = "/tmp/GlobalHead.\(notPid).1"
     globalHeaderFields {
-      ["atime"] = File.formatPaxNumber(defaultFileInfo.mtime)
+      ["atime"] = defaultFileInfo.mtime as String
     }
   }
 }
