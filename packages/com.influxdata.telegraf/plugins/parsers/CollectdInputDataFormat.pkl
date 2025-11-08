@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ collectd_auth_file: String?
 /// Collectd security level to enfore.
 ///
 /// Default: `"none"`
-collectd_security_level: ("none"|"sign"|"encrypt")?
+collectd_security_level: ("none" | "sign" | "encrypt")?
 
 /// Paths of to TypesDB specifications.
 collectd_typesdb: Listing<String>?
@@ -39,4 +39,4 @@ collectd_typesdb: Listing<String>?
 /// * "join" will parse and store the multi-value plugin as a single multi-value measurement.
 ///
 /// Default: `"split"`, for backward compatibility with previous versions of influxdb.
-collectd_parse_multivalue: ("split"|"join")?
+collectd_parse_multivalue: ("split" | "join")?

@@ -1,0 +1,42 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+open module com.influxdata.telegraf.Outputs
+
+import "plugins/outputs/DiscardOutput.pkl"
+import "plugins/outputs/FileOutput.pkl"
+import "plugins/outputs/HttpOutput.pkl"
+import "plugins/outputs/OpenTelemetryOutput.pkl"
+import "plugins/outputs/PrometheusClientOutput.pkl"
+
+/// This plugin writes telegraf metrics to files.
+file: Listing<FileOutput>?
+
+/// This output plugin simply drops all metrics that are sent to it.
+///
+/// It is only meant to be used for testing purposes.
+discard: Listing<DiscardOutput>?
+
+/// This plugin starts a [Prometheus](https://prometheus.io) Client, it exposes all metrics on `/metrics` (default)
+/// to be polled by a Prometheus server.
+prometheus_client: Listing<PrometheusClientOutput>?
+
+/// This plugin sends metrics to [OpenTelemetry](https://opentelemetry.io) servers and agents via gRPC.
+opentelemetry: Listing<OpenTelemetryOutput>?
+
+/// The [HTTP output plugin](https://github.com/influxdata/telegraf/blob/master/plugins/outputs/http/README.md)
+/// writes metrics to a HTTP endpoint using one of the supported data formats. For data formats supporting
+/// batching, metrics are sent in batches by default.
+http: Listing<HttpOutput>?

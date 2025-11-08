@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ timeout: Duration?
 /// Supports: "prometheus-v1", "prometheus-v2"
 ///
 /// Default: "prometheus-v1"
-metrics_schema: (*"prometheus-v1"|"prometheus-v2")?
+metrics_schema: (*"prometheus-v1" | "prometheus-v2")?
 
 /// Optional TLS Config.
 ///
@@ -46,4 +46,3 @@ tls_cert: String?
 
 /// Add service key
 tls_key: String?
-

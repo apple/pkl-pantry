@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ pipe: Boolean?
 /// Method used to watch for file updates.
 ///
 /// Default: `"inotify"`
-watch_method: (*"inotify"|"poll")?
+watch_method: (*"inotify" | "poll")?
 
 /// Maximum lines of the file to process that have not yet be written by the output.
 ///

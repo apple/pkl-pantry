@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,14 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+open module com.influxdata.telegraf.Processors
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
-}
+import "plugins/processors/StarlarkProcessor.pkl"
 
-package {
-  version = "1.6.0"
-}
+/// The [starlark processor](https://github.com/influxdb/telegraf/tree/master/plugins/processors/starlark) calls
+/// a Starlark function for each matched metric, allowing for custom programmatic metric processing.
+starlark: Listing<StarlarkProcessor>?

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ monitor_kubernetes_pods: Boolean?
 /// - `cluster`: the kubernetes watch api (default, no need to specify)
 /// - `node`: the local cadvisor api; for scalability. Note that the config [node_ip] or the
 ///   environment variable `NODE_IP` must be set to the host IP.
-pod_scrape_scope: ("cluster"|"node")?
+pod_scrape_scope: ("cluster" | "node")?
 
 /// Only for node scrape scope: node IP of the node that telegraf is running on.
 ///
