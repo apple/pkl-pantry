@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ module com.influxdata.telegraf.plugins.inputs.ExecInput
 
 extends "Input.pkl"
 
-import ".../parsers/InputDataFormat.pkl"
+import "../parsers/InputDataFormat.pkl"
 
 /// Commands array.
 commands: Listing<String>
@@ -32,11 +32,8 @@ hidden env: Mapping<String, String>
 /// The environment variables as exposed to the exec input plugin.
 ///
 /// This is an internal property that is derived from [env].
-fixed environment: Listing<String> = env
-  .toMap()
-  .entries
-  .map((entry) -> "\(entry.key)=\(entry.value)")
-  .toListing()
+fixed environment: Listing<String> =
+  env.toMap().entries.map((entry) -> "\(entry.key)=\(entry.value)").toListing()
 
 /// Timeout for each command to complete.
 timeout: Duration?

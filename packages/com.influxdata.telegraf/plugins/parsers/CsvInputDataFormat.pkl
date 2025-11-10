@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ csv_column_names: Listing<String>?
 ///
 /// Specify types in order by column (e.g., `csv_column_types { "string"; "int"; "float" }`).
 /// If this is not specified, type conversion will be done on the types above.
-csv_column_types: Listing<"int"|"float"|"bool"|"string">?
+csv_column_types: Listing<"int" | "float" | "bool" | "string">?
 
 /// Indicates the number of rows to skip before looking for header information.
 csv_skip_rows: Int(isPositive)?

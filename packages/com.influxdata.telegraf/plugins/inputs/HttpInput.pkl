@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import "../parsers/InputDataFormat.pkl"
 urls: Listing<String>
 
 /// HTTP method.
-method: "GET"|"POST"|"PUT"|"PATCH"
+method: "GET" | "POST" | "PUT" | "PATCH"
 
 /// Optional HTTP headers.
 headers: Mapping<String, String>?
@@ -40,7 +40,7 @@ body: String?
 /// HTTP Content-Encoding for write request body.
 ///
 /// Can be set to "gzip" to compress body or "identity" to apply no encoding.
-content_encoding: ("gzip"|"identity")?
+content_encoding: ("gzip" | "identity")?
 
 /// Optional file with Bearer token file content is added as an Authorization header.
 bearer_token: String?

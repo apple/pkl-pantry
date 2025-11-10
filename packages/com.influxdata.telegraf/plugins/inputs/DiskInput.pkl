@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ extends "Input.pkl"
 /// Set mount_points will restrict the stats to only the specified mount points.
 mount_points: Listing<String>?
 
-typealias FsType = "tmpfs"|"devtmpfs"|"devfs"|"iso9660"|"overlay"|"aufs"|"squashfs"
+typealias FsType = "tmpfs" | "devtmpfs" | "devfs" | "iso9660" | "overlay" | "aufs" | "squashfs"
 
 /// Ignore mount points by filesystem type.
 ignore_fs: Listing<FsType>?

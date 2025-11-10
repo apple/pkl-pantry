@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,13 +60,13 @@ coralogix: Coralogix?
 /// Set the compression method used to send data.
 ///
 /// Default: `"none"`
-compression: ("none"|"gzip")?
+compression: ("none" | "gzip")?
 
 /// Additional OpenTelemetry resource attributes
-attributes: Mapping<String,String>?
+attributes: Mapping<String, String>?
 
 /// Additional gRPC request metadata headers
-headers: Mapping<String,String>?
+headers: Mapping<String, String>?
 
 class Coralogix {
   /// The private key, which can be found in Settings > Send Your Data.

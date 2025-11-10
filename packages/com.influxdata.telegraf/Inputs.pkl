@@ -1,0 +1,96 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+open module com.influxdata.telegraf.Inputs
+
+import "plugins/inputs/CpuInput.pkl"
+import "plugins/inputs/DiskInput.pkl"
+import "plugins/inputs/ExecInput.pkl"
+import "plugins/inputs/FileInput.pkl"
+import "plugins/inputs/HttpInput.pkl"
+import "plugins/inputs/Jolokia2AgentInput.pkl"
+import "plugins/inputs/NetInput.pkl"
+import "plugins/inputs/OpenTelemetry.pkl"
+import "plugins/inputs/PrometheusInput.pkl"
+import "plugins/inputs/SocketListenerInput.pkl"
+import "plugins/inputs/SolrInput.pkl"
+import "plugins/inputs/TailInput.pkl"
+import "plugins/inputs/X509CertInput.pkl"
+
+/// The file plugin parses the complete contents of a file every interval using the selected input data format.
+///
+/// Note: If you wish to parse only newly appended lines use the tail input plugin instead.
+/// <https://github.com/influxdata/telegraf/blob/master/plugins/inputs/file>
+file: Listing<FileInput>?
+
+/// The prometheus input plugin gathers metrics from HTTP servers exposing metrics in Prometheus format.
+///
+/// <https://github.com/influxdata/telegraf/blob/release-1.17/plugins/inputs/prometheus/README.md>
+prometheus: Listing<PrometheusInput>?
+
+/// The [OpenTelemetry input plugin](https://github.com/influxdb/telegraf/tree/master/plugins/inputs/opentelemetry)
+/// is an input plugin, which listen on a service port for OpenTelemetry formatted metrics.
+opentelemetry: Listing<OpenTelemetry>?
+
+/// The Socket Listener is a service input plugin that listens for messages
+/// from streaming (tcp, unix) or datagram (udp, unixgram) protocols.
+///
+/// The plugin expects messages in the
+/// [Telegraf Input Data Formats](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md).
+socket_listener: Listing<SocketListenerInput>?
+
+/// The [Disk input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/disk/README.md)
+/// gathers metrics about disk usage by mount point.
+disk: Listing<DiskInput>?
+
+/// The [CPU input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/cpu/README.md)
+/// gathers metrics about cpu usage.
+cpu: Listing<CpuInput>?
+
+/// The [HTTP input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/http/README.md)
+/// collects metrics from one or more HTTP(S) endpoints.
+///
+/// The endpoint should have metrics formatted in one of the supported input data formats.
+/// Each data format has its own unique set of configuration options which can be added to the input configuration.
+http: Listing<HttpInput>?
+
+/// The [net input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/net/NET_README.md)
+/// gathers metrics about network interface and protocol usage (Linux only).
+net: Listing<NetInput>?
+
+/// The [exec input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/exec/README.md)
+/// read metrics from one or more commands that can output to stdout.
+exec: Listing<ExecInput>?
+
+/// The [Solr input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/solr/README.md)
+/// gathers metrics from one or more Solr servers
+solr: Listing<SolrInput>?
+
+/// [Jolokia Agent Input Plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/jolokia2_agent)
+///
+/// Reads JMX metrics from one or more Jolokia agent REST endpoints.
+jolokia2_agent: Listing<Jolokia2AgentInput>?
+
+/// The [X509 Cert Input Plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/x509_cert/README.md).
+///
+/// Provides information about X509 certificates accessible via local file, tcp, udp, https or smtp protocol
+x509_cert: Listing<X509CertInput>?
+
+/// This service plugin continuously reads a file and parses new data as it arrives similar to the
+/// [tail -f command](https://man7.org/linux/man-pages/man1/tail.1.html).
+///
+/// The incoming messages are expected to be in one of the supported
+/// [data formats](https://docs.influxdata.com/telegraf/v1/data_formats/input/).
+tail: Listing<TailInput>?

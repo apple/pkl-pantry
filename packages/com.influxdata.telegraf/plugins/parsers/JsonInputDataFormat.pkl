@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ json_time_key: String?
 /// json_time_format = "unix"
 /// json_time_format = "unix_ms"
 /// ```
-json_time_format: ("unix"|"unix_ms"|"unix_us"|"unix_ns"|String)?
+json_time_format: ("unix" | "unix_ms" | "unix_us" | "unix_ns" | String)?
 
 /// Allows you to provide an override for timestamps
 /// that don't already include an offset, e.g., `"04/06/2016 12:41:45"`.

@@ -1,0 +1,148 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The HTTP output plugin writes metrics to a HTTP endpoint.
+///
+/// This plugin uses one of the supported
+/// [data formats](https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_OUTPUT.md).
+/// For data formats supporting batching, metrics are sent in batches by default. Each data format
+/// has its own unique set of configuration options which can be added to the output configuration.
+module com.influxdata.telegraf.plugins.outputs.HttpOutput
+
+extends "Output.pkl"
+
+import "../serializers/OutputDataFormat.pkl"
+
+/// The address to send metrics to.
+url: String?
+
+/// Timeout for HTTP message.
+///
+/// Default: `5.s`
+timeout: Duration?
+
+/// HTTP method.
+method: "POST" | "PUT" | "PATCH"
+
+/// HTTP Basic Auth credentials.
+username: String?
+password: String?
+
+/// OAuth2 Client Credentials Grant
+client_id: String?
+client_secret: String?
+token_url: String?
+audience: String?
+scopes: Listing<String>?
+
+/// Goole API Auth
+google_application_credentials: String?
+
+/// HTTP Proxy support
+use_system_proxy: Boolean?
+http_proxy_url: String?
+
+/// Optional TLS Config.
+tls_ca: String?
+tls_cert: String?
+tls_key: String?
+
+/// Use TLS but skip chain & host verification.
+///
+/// Default: false
+insecure_skip_verify: Boolean?
+
+/// Optional Cookie authentication
+cookie_auth_url: String?
+cookie_auth_method: String?
+cookie_auth_username: String?
+cookie_auth_password: String?
+cookie_auth_headers: String?
+cookie_auth_body: String?
+
+/// Cookie auth renewal interval.
+///
+/// E.g. "5m"
+/// If not set or set to "0", cookie will not be renewed.
+cookie_auth_renewal: Duration?
+
+/// Data format to output.
+///
+/// Each data format has its own unique set of configuration options, read
+/// more about them here:
+/// https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_OUTPUT.md
+data_format: OutputDataFormat?
+
+/// Use batch serialization format (default) instead of line based format.
+///
+/// Default: true
+/// Batch format is more efficient and should be used unless line based
+/// format is really needed.
+use_batch_format: Boolean?
+
+/// HTTP Content-Encoding for write request body.
+///
+/// Can be set to "gzip" to compress body or "identity" to apply no encoding.
+content_encoding: String?
+
+/// Maximum number of idle (keep-alive) connections across all hosts.
+///
+/// Zero means no limit.
+max_idle_conn: UInt?
+
+/// The maximum idle (keep-alive) connections to keep per-host.
+///
+/// If zero, default(2) will be is used.
+max_idle_conn_per_host: UInt?
+
+/// Maximum amount of time before idle connection is closed.
+///
+/// Zero means no limit.
+idle_conn_timeout: UInt?
+
+/// Amazon Region
+region: String?
+
+/// Amazon Credentials
+///
+/// Amazon Credentials are not built unless the following aws_service
+/// setting is set to a non-empty string. It may need to match the name of
+/// the service output to as well
+aws_service: String?
+
+/// Credentials configuration.
+///
+/// Credentials are loaded in the following order
+/// 1. Web identity provider credentials via STS if role_arn and web_identity_token_file are specified
+/// 2. Assumed credentials via STS if role_arn is specified
+/// 3. explicit credentials from 'access_key' and 'secret_key'
+/// 4. shared profile from 'profile'
+/// 5. environment variables
+/// 6. shared credentials file
+/// 7. EC2 Instance Profile
+access_key: String?
+secret_key: String?
+token: String?
+role_arn: String?
+web_identity_token_file: String?
+role_session_name: String?
+profile: String?
+shared_credential_file: String?
+
+/// Optional list of statuscodes (<200 or >300) upon which requests should not be retried.
+non_retryable_statuscodes: List<UInt>?
+
+/// Optional HTTP headers.
+headers: Mapping<String, String>?

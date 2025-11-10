@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,20 +54,20 @@ metric: Listing<MetricConfig>
 class MetricConfig {
   /// Metric name.
   name: String
-  
+
   /// The object name of a JMX MBean.
   ///
   /// MBean property-key values can contain a wildcard `*`, allowing to fetch multiple MBeans with one declaration.
   mbean: String
-  
+
   /// List of MBean attributes to read.
   paths: Listing<String>
-  
+
   /// String to set as the name of the field produced by this metric.
   ///
   /// This can contain substitutions.
   field_name: String?
-  
+
   /// String to prepend to the field names produced by this metric declaration.
   ///
   /// This can contain substitutions.
@@ -75,7 +75,7 @@ class MetricConfig {
 
   /// Character to use to join Mbean attributes when creating fields.
   field_separator: String?
-  
+
   /// String to prepend to the tag names produced by this metric declaration.
   tag_prefix: String?
 
