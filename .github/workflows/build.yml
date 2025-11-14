@@ -1,0 +1,40 @@
+# Do not modify!
+# This file was generated from a template using https://github.com/StefMa/pkl-gha
+
+name: Build
+'on':
+  push:
+    branches-ignore:
+    - main
+    - release/*
+    tags-ignore:
+    - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  build:
+    permissions:
+      checks: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '17'
+        distribution: temurin
+        cache: gradle
+    - run: ./gradlew build
+    - uses: actions/upload-artifact@v5
+      with:
+        path: build
+    - name: Publish test results
+      if: '!cancelled()'
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        comment_mode: 'off'
+        files: build/test-results/**/*.xml

@@ -1,0 +1,109 @@
+amends "@pkl.impl.ghactions/PklCI.pkl"
+
+import "@gha/actions/Artifact.pkl"
+import "@gha/actions/Common.pkl"
+import "@gha/actions/Setup.pkl"
+import "@gha/Workflow.pkl"
+import "@gha/Context.pkl"
+
+triggerDocsBuild = "both"
+
+testReports {
+  junit {
+    "build/test-results/**/*.xml"
+  }
+}
+
+local buildAndTest: Workflow = new {
+  jobs {
+    ["build"] {
+      `runs-on` = "ubuntu-latest"
+      steps {
+        new Common.Checkout {
+          with {
+            `fetch-depth` = 0
+          }
+        }
+        new Setup.Java {
+          with {
+            `java-version` = "17"
+            distribution = "temurin"
+            cache = "gradle"
+          }
+        }
+        new {
+          run = "./gradlew build"
+        }
+        new Artifact.Upload {
+          with {
+            path = "build"
+          }
+        }
+      }
+    }
+  }
+}
+
+prb = buildAndTest
+
+build = buildAndTest
+
+main = (buildAndTest) {
+  jobs {
+    ["release"] {
+      `runs-on` = "ubuntu-latest"
+      permissions {
+        contents = "write"
+      }
+      steps {
+        new Common.Checkout {
+          with {
+            `fetch-depth` = 0
+          }
+        }
+        new Artifact.Download {}
+        new {
+          name = "Publish release on GitHub"
+          env {
+            ["GH_TOKEN"] = Context.github.token
+            ["GH_REPO"] = Context.github.repository
+            ["SHA"] = Context.github.sha
+          }
+          // language=bash
+          run =
+            #"""
+            if [[ -d build/releases && -n "$(ls -A build/releases)" ]]
+            then
+              for dir in build/releases/*
+              do
+                if [[ -d "$dir" ]]
+                then
+                  pkg=$(basename "$dir")
+                  if gh release view "$pkg" ; then
+                    echo "Package $pkg already published"
+                  else
+                    # TODO we can be kinder to GitHub by querying once for all releases.
+                    echo -n "> Releasing $pkg at SHA1 "$SHA"..."
+                    gh release create "$pkg" \
+                      --title "$pkg" \
+                      --target "$SHA" \
+                      --notes "Release of $pkg" \
+                      "$dir"/*
+                    echo "DONE"
+                  fi
+                else
+                  echo "> SKIPPING $dir; not a directory"
+                fi
+              done
+            else
+              echo "No new packages to release."
+            fi
+            """#
+        }
+      }
+      needs {
+        "build"
+      }
+    }
+  }
+}
