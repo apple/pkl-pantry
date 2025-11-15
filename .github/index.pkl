@@ -6,7 +6,7 @@ import "@gha/actions/Setup.pkl"
 import "@gha/Workflow.pkl"
 import "@gha/Context.pkl"
 
-triggerDocsBuild = "both"
+triggerPackageDocsBuild = "main"
 
 testReports {
   junit {
@@ -61,7 +61,12 @@ main = (buildAndTest) {
             `fetch-depth` = 0
           }
         }
-        new Artifact.Download {}
+        new Artifact.Download {
+          with {
+            name = "build"
+            path = "build"
+          }
+        }
         new {
           name = "Publish release on GitHub"
           env {

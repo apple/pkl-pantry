@@ -46,6 +46,9 @@ jobs:
       with:
         fetch-depth: 0
     - uses: actions/download-artifact@v6
+      with:
+        name: build
+        path: build
     - name: Publish release on GitHub
       env:
         GH_TOKEN: ${{ github.token }}
@@ -85,6 +88,7 @@ jobs:
         name: test-results-xml-release
         path: build/test-results/**/*.xml
   publish-test-results:
+    if: '!failure() && !cancelled()'
     needs:
     - build
     - release
@@ -100,7 +104,7 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       with:
         comment_mode: 'off'
-        files: build/test-results/**/*.xml
+        files: test-results-xml-*/**/*.xml
   trigger-downstream-builds:
     if: github.repository_owner == 'apple'
     needs:
@@ -116,12 +120,12 @@ jobs:
         app-id: ${{ secrets.PKL_CI_CLIENT_ID }}
         private-key: ${{ secrets.PKL_CI }}
         owner: ${{ github.repository_owner }}
-    - name: Trigger pkl-lang.org build
+    - name: Trigger pkl-package-docs build
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
       run: |-
         gh workflow run \
-          --repo apple/pkl-lang.org \
+          --repo apple/pkl-package-docs \
           --ref main \
           --field source_run="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           main.yml

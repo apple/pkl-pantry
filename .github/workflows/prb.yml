@@ -41,3 +41,31 @@ jobs:
       with:
         name: test-results-event-file
         path: ${{ github.event_path }}
+  check-pkl-github-actions:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup Pkl
+      id: setup-pkl
+      env:
+        PKL_VERSION: 0.30.0
+        PKL_FILENAME: pkl
+        PKL_DOWNLOAD_URL: https://github.com/apple/pkl/releases/download/0.30.0/pkl-linux-amd64
+      shell: bash
+      run: |-
+        DIR="$(mktemp -d /tmp/pkl-$PKL_VERSION-XXXXXX)"
+        PKL_EXEC="$DIR/$PKL_FILENAME"
+        curl -sfL -o $PKL_EXEC "$PKL_DOWNLOAD_URL"
+        chmod +x $PKL_EXEC
+        echo "$DIR" >> "$GITHUB_PATH"
+        echo "pkl_exec=$PKL_EXEC" >> "$GITHUB_OUTPUT"
+    - shell: bash
+      run: pkl eval -m .github/ --project-dir .github/ .github/index.pkl
+    - name: check git status
+      shell: bash
+      run: |-
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "Running pkl resulted in a diff! You likely need to run 'pkl eval' and commit the changes."
+          git diff --name-only
+          exit 1
+        fi
