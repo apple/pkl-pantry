@@ -1,0 +1,130 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+amends "@pkl.impl.ghactions/PklCI.pkl"
+
+import "@gha/actions/Artifact.pkl"
+import "@gha/actions/Common.pkl"
+import "@gha/actions/Setup.pkl"
+import "@gha/Context.pkl"
+import "@gha/Workflow.pkl"
+
+triggerPackageDocsBuild = "main"
+
+testReports {
+  junit {
+    "build/test-results/**/*.xml"
+  }
+}
+
+local buildAndTest: Workflow = new {
+  jobs {
+    ["build"] {
+      `runs-on` = "ubuntu-latest"
+      steps {
+        new Common.Checkout {
+          with {
+            `fetch-depth` = 0
+          }
+        }
+        new Setup.Java {
+          with {
+            `java-version` = "21"
+            distribution = "temurin"
+            cache = "gradle"
+          }
+        }
+        new {
+          run = "./gradlew build"
+        }
+        new Artifact.Upload {
+          with {
+            name = "build"
+            path = "build"
+          }
+        }
+      }
+    }
+  }
+}
+
+prb = buildAndTest
+
+build = buildAndTest
+
+main = (buildAndTest) {
+  jobs {
+    ["release"] {
+      `runs-on` = "ubuntu-latest"
+      permissions {
+        contents = "write"
+      }
+      steps {
+        new Common.Checkout {
+          with {
+            `fetch-depth` = 0
+          }
+        }
+        new Artifact.Download {
+          with {
+            name = "build"
+            path = "build"
+          }
+        }
+        new {
+          name = "Publish release on GitHub"
+          env {
+            ["GH_TOKEN"] = Context.github.token
+            ["GH_REPO"] = Context.github.repository
+            ["SHA"] = Context.github.sha
+          }
+          // language=bash
+          run =
+            #"""
+            if [[ -d build/releases && -n "$(ls -A build/releases)" ]]
+            then
+              for dir in build/releases/*
+              do
+                if [[ -d "$dir" ]]
+                then
+                  pkg=$(basename "$dir")
+                  if gh release view "$pkg" ; then
+                    echo "Package $pkg already published"
+                  else
+                    # TODO we can be kinder to GitHub by querying once for all releases.
+                    echo -n "> Releasing $pkg at SHA1 "$SHA"..."
+                    gh release create "$pkg" \
+                      --title "$pkg" \
+                      --target "$SHA" \
+                      --notes "Release of $pkg" \
+                      "$dir"/*
+                    echo "DONE"
+                  fi
+                else
+                  echo "> SKIPPING $dir; not a directory"
+                fi
+              done
+            else
+              echo "No new packages to release."
+            fi
+            """#
+        }
+      }
+      needs {
+        "build"
+      }
+    }
+  }
+}

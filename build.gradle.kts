@@ -93,7 +93,7 @@ spotless {
   }
 }
 
-kotlin { jvmToolchain(17) }
+kotlin { jvmToolchain(21) }
 
 repositories { mavenCentral() }
 

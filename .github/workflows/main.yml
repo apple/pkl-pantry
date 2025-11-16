@@ -1,0 +1,132 @@
+# Do not modify!
+# This file was generated from a template using https://github.com/StefMa/pkl-gha
+
+name: Build (main)
+'on':
+  push:
+    branches:
+    - main
+    tags-ignore:
+    - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: temurin
+        cache: gradle
+    - run: ./gradlew build
+    - uses: actions/upload-artifact@v5
+      with:
+        name: build
+        path: build
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-results-xml-build
+        path: build/test-results/**/*.xml
+  release:
+    needs:
+    - build
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    - uses: actions/download-artifact@v6
+      with:
+        name: build
+        path: build
+    - name: Publish release on GitHub
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        SHA: ${{ github.sha }}
+      run: |-
+        if [[ -d build/releases && -n "$(ls -A build/releases)" ]]
+        then
+          for dir in build/releases/*
+          do
+            if [[ -d "$dir" ]]
+            then
+              pkg=$(basename "$dir")
+              if gh release view "$pkg" ; then
+                echo "Package $pkg already published"
+              else
+                # TODO we can be kinder to GitHub by querying once for all releases.
+                echo -n "> Releasing $pkg at SHA1 "$SHA"..."
+                gh release create "$pkg" \
+                  --title "$pkg" \
+                  --target "$SHA" \
+                  --notes "Release of $pkg" \
+                  "$dir"/*
+                echo "DONE"
+              fi
+            else
+              echo "> SKIPPING $dir; not a directory"
+            fi
+          done
+        else
+          echo "No new packages to release."
+        fi
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-results-xml-release
+        path: build/test-results/**/*.xml
+  publish-test-results:
+    if: '!failure() && !cancelled()'
+    needs:
+    - build
+    - release
+    permissions:
+      checks: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v6
+      with:
+        pattern: test-results-xml-*
+    - name: Publish test results
+      if: '!cancelled()'
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        comment_mode: 'off'
+        files: test-results-xml-*/**/*.xml
+  trigger-downstream-builds:
+    if: github.repository_owner == 'apple'
+    needs:
+    - build
+    - release
+    - publish-test-results
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create app token
+      id: app-token
+      uses: actions/create-github-app-token@v2
+      with:
+        app-id: ${{ secrets.PKL_CI_CLIENT_ID }}
+        private-key: ${{ secrets.PKL_CI }}
+        owner: ${{ github.repository_owner }}
+    - name: Trigger pkl-package-docs build
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      run: |-
+        gh workflow run \
+          --repo apple/pkl-package-docs \
+          --ref main \
+          --field source_run="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          main.yml
