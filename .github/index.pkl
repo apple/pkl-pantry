@@ -36,6 +36,7 @@ local buildAndTest: Workflow = new {
         }
         new Artifact.Upload {
           with {
+            name = "build"
             path = "build"
           }
         }
