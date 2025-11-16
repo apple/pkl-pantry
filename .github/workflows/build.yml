@@ -25,12 +25,13 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-java@v5
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: temurin
         cache: gradle
     - run: ./gradlew build
     - uses: actions/upload-artifact@v5
       with:
+        name: build
         path: build
     - name: Publish test results
       if: '!cancelled()'
