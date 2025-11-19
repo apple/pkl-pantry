@@ -1,0 +1,127 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+import "@com.github.actions.contrib/generate-action.pkl" as generate
+import "@syntax/ExpressionNode.pkl"
+import "@syntax/TypeNode.pkl"
+
+local generator = (generate) {
+  actionName = "enricomi/publish-unit-test-result-action@v2"
+  moduleNamePrefix = "com.github.actions.community"
+  abstractTypedStepModule = "@com.github.actions/AbstractTypedStep.pkl"
+}
+
+local function osEquals(os: String): ExpressionNode = new ExpressionNode
+  .BinaryOperatorExpressionNode {
+  lhs = new ExpressionNode.MemberAccessExpressionNode {
+    identifier {
+      value = "os"
+    }
+  }
+  operator = "=="
+  rhs = new ExpressionNode.LiteralValueExpressionNode {
+    value = os
+  }
+}
+
+fixed theModule = (generator.moduleNode) {
+  properties {
+    new {
+      modifiers {
+        "hidden"
+      }
+      name {
+        value = "os"
+      }
+      docComment {
+        value = "The OS that this action runs on."
+      }
+      defaultValue = new ExpressionNode.LiteralValueExpressionNode { value = "linux" }
+      typeAnnotation {
+        type = new TypeNode.UnionTypeNode {
+          members {
+            for (member in List("macOS", "linux", "windows")) {
+              new TypeNode.StringLiteralTypeNode { value = member }
+            }
+          }
+        }
+      }
+    }
+
+    new {
+      modifiers {
+        "hidden"
+      }
+      name {
+        value = "noPowershell"
+      }
+      docComment {
+        value = "Running on Windows without PowerShell installed."
+      }
+      defaultValue = new ExpressionNode.LiteralValueExpressionNode { value = false }
+      typeAnnotation {
+        type = new TypeNode.ConstrainedTypeNode {
+          typeNode = new TypeNode.DeclaredTypeNode {
+            name {
+              parts {
+                new { value = "Boolean" }
+              }
+            }
+          }
+          constraints {
+            new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "implies"
+              }
+              arguments {
+                osEquals("windows")
+              }
+            }
+          }
+        }
+      }
+    }
+    [[name.value == "action"]] {
+      typeAnnotation = null
+      defaultValue = new ExpressionNode.IfElseExpressionNode {
+        condition = osEquals("linux")
+        ifBranch = new ExpressionNode.LiteralValueExpressionNode {
+          value = "EnricoMi/publish-unit-test-result-action"
+        }
+        elseBranch = new ExpressionNode.IfElseExpressionNode {
+          condition = osEquals("macOS")
+          ifBranch = new ExpressionNode.LiteralValueExpressionNode {
+            value = "EnricoMi/publish-unit-test-result-action/macos"
+          }
+          elseBranch = new ExpressionNode.IfElseExpressionNode {
+            condition = new ExpressionNode.MemberAccessExpressionNode {
+              identifier {
+                value = "noPowershell"
+              }
+            }
+            ifBranch = new ExpressionNode.LiteralValueExpressionNode {
+              value = "EnricoMi/publish-unit-test-result-action/windows/bash"
+            }
+            elseBranch = new ExpressionNode.LiteralValueExpressionNode {
+              value = "EnricoMi/publish-unit-test-result-action/windows"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+output = theModule.output

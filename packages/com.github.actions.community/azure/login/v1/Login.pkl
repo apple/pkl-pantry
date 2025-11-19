@@ -1,0 +1,66 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Authenticate to Azure and run your Azure CLI or Azure PowerShell based actions or scripts.
+module com.github.actions.community.azure.login.v1.Login
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "azure/login"
+
+fixed version: "v1"
+
+with: With
+
+class With {
+  /// Paste output of `az ad sp create-for-rbac` as value of secret variable: AZURE_CREDENTIALS
+  creds: String?
+
+  /// ClientId of the Azure Service principal created.
+  `client-id`: String?
+
+  /// TenantId of the Azure Service principal created.
+  `tenant-id`: String?
+
+  /// Azure subscriptionId
+  `subscription-id`: String?
+
+  /// Set this value to true to enable Azure PowerShell Login in addition to Azure CLI login
+  ///
+  /// Default if unspecified: `false`
+  `enable-AzPSSession`: Boolean?
+
+  /// Name of the environment. Supported values are azurecloud, azurestack, azureusgovernment, azurechinacloud, azuregermancloud. Default being azurecloud
+  ///
+  /// Default if unspecified: `"azurecloud"`
+  environment: (
+    "azurecloud" | "azurestack" | "azureusgovernment" | "azurechinacloud" | "azuregermancloud"
+  )?
+
+  /// Set this value to true to enable support for accessing tenants without subscriptions
+  ///
+  /// Default if unspecified: `false`
+  `allow-no-subscriptions`: Boolean?
+
+  /// Provide audience field for access-token. Default value is api://AzureADTokenExchange
+  ///
+  /// Default if unspecified: `"api://AzureADTokenExchange"`
+  audience: String?
+
+  /// The type of authentication. Supported values are SERVICE_PRINCIPAL, IDENTITY. Default value is SERVICE_PRINCIPAL
+  ///
+  /// Default if unspecified: `"SERVICE_PRINCIPAL"`
+  `auth-type`: ("SERVICE_PRINCIPAL" | "IDENTITY")?
+}

@@ -1,0 +1,176 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Generates the actions within the `com.github.actions` and `com.github.actions.catalog` packages.
+///
+/// Usage:
+///
+///     pkl eval generate-catalog.pkl -m ../
+module com.github.actions.contrib.`generate-catalog`
+
+import "pkl:yaml"
+
+import "@com.github.actions.contrib/generate-action.pkl" as generate
+import "@syntax/ClassOrModuleNode.pkl"
+import "@syntax/TypeNode.pkl"
+
+import "enricomi.pkl"
+
+local yamlParser = new yaml.Parser { mode = "1.2" }
+
+hidden fixed adjustments: Mapping<
+  String,
+  Mapping<String, Mixin<ClassOrModuleNode.PropertyDefinitionNode>>
+> = new {
+  ["actions/checkout"] {
+    ["submodules"] {
+      typeAnnotation {
+        type = new TypeNode.NullableTypeNode {
+          typeNode = new TypeNode.UnionTypeNode {
+            members {
+              new TypeNode.DeclaredTypeNode {
+                name {
+                  parts {
+                    new { value = "Boolean" }
+                  }
+                }
+              }
+              new TypeNode.StringLiteralTypeNode {
+                value = "recursive"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// noinspection UnresolvedElement
+function getVersions(action: String): Listing<String> =
+  let (
+    resource =
+      read(
+        "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(action)/metadata.yml"
+      )
+  )
+    yamlParser.parse(resource).versionsWithTypings
+
+local coreActions: Listing<String> = new {
+  "actions/cache"
+  "actions/checkout"
+  "actions/configure-pages"
+  "actions/create-github-app-token"
+  "actions/create-release"
+  "actions/deploy-pages"
+  "actions/download-artifact"
+  "actions/first-interaction"
+  "actions/github-script"
+  "actions/labeler"
+  "actions/setup-dotnet"
+  "actions/setup-go"
+  "actions/setup-java"
+  "actions/setup-node"
+  "actions/setup-python"
+  "actions/stale"
+  "actions/upload-artifact"
+  "actions/upload-pages-artifact"
+}
+
+// NOTE: enricomi is handled separately
+local catalogActions: Listing<String> = new {
+  "peter-evans/create-issue-from-file"
+  "peter-evans/create-pull-request"
+  "actions-rs/audit-check"
+  "actions-rs/cargo"
+  "actions-rs/clippy-check"
+  "actions-rs/toolchain"
+  "aws-actions/amazon-ecr-login"
+  "aws-actions/amazon-ecs-deploy-task-definition"
+  "aws-actions/amazon-ecs-render-task-definition"
+  "aws-actions/configure-aws-credentials"
+  "azure/docker-login"
+  "azure/login"
+  "azure/webapps-deploy"
+  "codecov/codecov-action"
+  "docker/build-push-action"
+  "docker/login-action"
+  "docker/metadata-action"
+  "docker/setup-buildx-action"
+  "docker/setup-qemu-action"
+  // Currently throws; `https://raw.githubusercontent.com/ruby/setup-ruby/refs/tags/v1/action.yml` is not a valid URL.
+  // "ruby/setup-ruby"
+}
+
+local allCoreVersions: Listing<String> = new {
+  for (action in coreActions) {
+    for (version in getVersions(action)) {
+      "\(action)@\(version)"
+    }
+  }
+}
+
+local allCommunityActions: Listing<String> = new {
+  for (action in catalogActions) {
+    for (version in getVersions(action)) {
+      "\(action)@\(version)"
+    }
+  }
+}
+
+local coreGenerator = (generate) {
+  moduleNamePrefix = "com.github.actions"
+  abstractTypedStepModule = ".../AbstractTypedStep.pkl"
+}
+
+local communityGenerator = (generate) {
+  moduleNamePrefix = "com.github.actions.community"
+  abstractTypedStepModule = "@com.github.actions/AbstractTypedStep.pkl"
+}
+
+output {
+  files {
+    for (action in allCoreVersions) {
+      for (
+        fileName, fileOutput in
+          (coreGenerator) {
+            actionName = action
+            local actionWithoutVersion = action.substring(0, action.indexOf("@"))
+            adjustments = module.adjustments.getOrNull(actionWithoutVersion)
+          }
+            .output
+            .files!!
+      ) {
+        ["packages/com.github.actions/\(fileName)"] = fileOutput
+      }
+    }
+    for (action in allCommunityActions) {
+      for (
+        fileName, fileOutput in
+          (communityGenerator) {
+            actionName = action
+            local actionWithoutVersion = action.substring(0, action.indexOf("@"))
+            adjustments = module.adjustments.getOrNull(actionWithoutVersion)
+          }
+            .output
+            .files!!
+      ) {
+        ["packages/com.github.actions.community/\(fileName)"] = fileOutput
+      }
+    }
+    ["packages/com.github.actions.community/enricomi/publish-unit-test-result-action/v2/PublishUnitTestResultAction.pkl"] =
+      enricomi.output
+  }
+}

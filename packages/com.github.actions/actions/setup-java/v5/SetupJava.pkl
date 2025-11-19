@@ -1,0 +1,110 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Set up a specific version of the Java JDK and add the command-line tools to the PATH
+module com.github.actions.actions.`setup-java`.v5.SetupJava
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "actions/setup-java"
+
+fixed version: "v5"
+
+with: With
+
+class With {
+  /// The Java version to set up. Takes a whole or semver Java version. See examples of supported syntax in README file
+  `java-version`: String?
+
+  /// The path to the `.java-version` file. See examples of supported syntax in README file
+  `java-version-file`: String?
+
+  /// Java distribution. See the list of supported distributions in README file
+  distribution: "adopt"
+    | "adopt-hotspot"
+    | "adopt-openj9"
+    | "corretto"
+    | "liberica"
+    | "microsoft"
+    | "temurin"
+    | "zulu"
+
+  /// The package type (jdk, jre, jdk+fx, jre+fx)
+  ///
+  /// Default if unspecified: `"jdk"`
+  `java-package`: ("jdk" | "jre" | "jdk+fx" | "jre+fx")?
+
+  /// The architecture of the package (defaults to the action runner's architecture)
+  architecture: String?
+
+  /// Path to where the compressed JDK is located
+  jdkFile: String?
+
+  /// Set this option if you want the action to check for the latest available version that satisfies the version spec
+  ///
+  /// Default if unspecified: `false`
+  `check-latest`: Boolean?
+
+  /// ID of the distributionManagement repository in the pom.xml file. Default is `github`
+  ///
+  /// Default if unspecified: `"github"`
+  `server-id`: String?
+
+  /// Environment variable name for the username for authentication to the Apache Maven repository. Default is $GITHUB_ACTOR
+  ///
+  /// Default if unspecified: `"GITHUB_ACTOR"`
+  `server-username`: String?
+
+  /// Environment variable name for password or token for authentication to the Apache Maven repository. Default is $GITHUB_TOKEN
+  ///
+  /// Default if unspecified: `"GITHUB_TOKEN"`
+  `server-password`: String?
+
+  /// Path to where the settings.xml file will be written. Default is ~/.m2.
+  `settings-path`: String?
+
+  /// Overwrite the settings.xml file if it exists. Default is "true".
+  ///
+  /// Default if unspecified: `true`
+  `overwrite-settings`: Boolean?
+
+  /// GPG private key to import. Default is empty string.
+  `gpg-private-key`: String?
+
+  /// Environment variable name for the GPG private key passphrase. Default is $GPG_PASSPHRASE.
+  `gpg-passphrase`: String?
+
+  /// Name of the build platform to cache dependencies. It can be "maven", "gradle" or "sbt".
+  cache: ("maven" | "gradle" | "sbt")?
+
+  /// The path to a dependency file: pom.xml, build.gradle, build.sbt, etc. This option can be used with the `cache` option. If this option is omitted, the action searches for the dependency file in the entire repository. This option supports wildcards and a list of file names for caching multiple dependencies.
+  `cache-dependency-path`: String?
+
+  /// Workaround to pass job status to post job step. This variable is not intended for manual setting
+  ///
+  /// Default if unspecified: `"${{ job.status }}"`
+  `job-status`: String?
+
+  /// The token used to authenticate when fetching version manifests hosted on github.com, such as for the Microsoft Build of OpenJDK. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
+  ///
+  /// Default if unspecified: `"${{ github.server_url == 'https://github.com' && github.token || '' }}"`
+  token: String?
+
+  /// Name of Maven Toolchain ID if the default name of "${distribution}_${java-version}" is not wanted. See examples of supported syntax in Advanced Usage file
+  `mvn-toolchain-id`: String?
+
+  /// Name of Maven Toolchain Vendor if the default name of "${distribution}" is not wanted. See examples of supported syntax in Advanced Usage file
+  `mvn-toolchain-vendor`: String?
+}

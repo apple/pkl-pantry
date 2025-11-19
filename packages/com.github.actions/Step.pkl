@@ -1,0 +1,58 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module com.github.actions.Step
+
+extends "AbstractStep.pkl"
+
+import "internal/util.pkl"
+
+/// Selects an action to run as part of a step in your job.
+/// An action is a reusable unit of code.
+/// You can use an action defined in the same repository as the workflow, a public repository, or in a published
+/// Docker container image.
+///
+/// We strongly recommend that you include the version of the action you are using by specifying a Git ref, SHA, or
+/// Docker tag.
+/// If you don't specify a version, it could break your workflows or cause unexpected behavior when the action owner
+/// publishes an update.
+///
+/// * Using the commit SHA of a released action version is the safest for stability and security.
+/// * If the action publishes major version tags, you should expect to receive critical fixes and security patches
+///   while still retaining compatibility. Note that this behavior is at the discretion of the action's author.
+/// * Using the default branch of an action may be convenient, but if someone releases a new major version with a
+///   breaking change, your workflow could break.
+///
+/// Some actions require inputs that you must set using the with keyword.
+/// Review the action's README file to determine the inputs required.
+///
+/// Actions are either JavaScript files or Docker containers.
+/// If the action you're using is a Docker container you must run the job in a Linux environment.
+/// For more details, see [runs-on].
+uses: String?
+
+/// Runs command-line programs that do not exceed 21,000 characters using the operating system's shell.
+///
+/// If you do not provide a name, the step name will default to the text specified in the run command.
+///
+/// Commands run using non-login shells by default.
+/// You can choose a different shell and customize the shell used to run commands.
+/// For more information, see [shell].
+///
+/// Each `run` keyword represents a new process and shell in the runner environment.
+run: String(length < 21_000)?(util.isExclusive(this, uses))
+
+/// Inputs to the action.
+with: Mapping<String, String | Number | Boolean>?
