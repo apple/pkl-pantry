@@ -1,0 +1,76 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Type information for GitHub Actions https://github.com/typesafegithub/github-actions-typing
+module io.github.typesafegithub.ActionTypes
+
+/// The inputs of the action.
+///
+/// https://github.com/typesafegithub/github-actions-typing/blob/main/README.md
+inputs: Mapping<String(matches(Regex("^[_a-zA-Z][a-zA-Z0-9_-]*$"))), Property>?
+
+/// The outputs of the action.
+///
+/// https://github.com/typesafegithub/github-actions-typing/blob/main/README.md
+outputs: Mapping<String(matches(Regex("^[_a-zA-Z][a-zA-Z0-9_-]*$"))), Property>?
+
+typealias TypeName = "string" | "boolean" | "integer" | "float" | "enum" | "list"
+
+abstract class AbstractProperty {
+  type: TypeName
+}
+
+class StringProperty extends AbstractProperty {
+  type: "string"
+}
+
+class BooleanProperty extends AbstractProperty {
+  type: "boolean"
+}
+
+class IntegerProperty extends AbstractProperty {
+  type: "integer"
+
+  name: String?
+
+  `named-values`: Mapping<String, Int>?
+}
+
+class FloatProperty extends AbstractProperty {
+  type: "float"
+}
+
+class ListProperty extends AbstractProperty {
+  type = "list"
+
+  separator: String
+
+  `list-item`: AbstractProperty
+}
+
+class EnumProperty extends AbstractProperty {
+  type: "enum"
+
+  `allowed-values`: Listing<String>
+
+  name: String?
+}
+
+typealias Property =
+  StringProperty | BooleanProperty | IntegerProperty | FloatProperty | EnumProperty | ListProperty
+
+output {
+  renderer = new YamlRenderer {}
+}
