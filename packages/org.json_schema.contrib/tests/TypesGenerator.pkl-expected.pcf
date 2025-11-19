@@ -63,6 +63,9 @@ examples {
     #"String(this != "foo")"#
     "String(!length.isBetween(5, 10))"
   }
+  ["null"] {
+    "Null"
+  }
   ["allOf"] {
     "String(length.isBetween(5, 10))"
   }

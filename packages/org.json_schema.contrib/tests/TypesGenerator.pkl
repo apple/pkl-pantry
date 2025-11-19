@@ -147,6 +147,11 @@ examples {
       }
     }, Map()).render("")
   }
+  ["null"] {
+    TypesGenerator.generateTypeNode(new JsonSchema {
+      type = "null"
+    }, Map()).render("")
+  }
   ["allOf"] {
     TypesGenerator.generateTypeNode(new JsonSchema {
       type = "string"

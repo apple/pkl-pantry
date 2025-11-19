@@ -653,6 +653,11 @@ local function isMappingSchema(schema: JsonSchema) =
   let (type = unwrappedSingularType(schema))
     type == "object" || schema.properties != null || schema.additionalProperties != null
 
+/// Tells if the [schema] should be generated as a [Null].
+local function isNullSchema(schema: JsonSchema) =
+  let (type = unwrappedSingularType(schema))
+    type == "null" || constOrEnumsMatch(schema, (elem) -> elem is Null)
+
 /// Generates the basic declared type (Int, Float, etc).
 ///
 /// In some cases, the basic type returns a refined type based off constraints (e.g. UInt8).
@@ -673,6 +678,8 @@ local function generateBaseType(schema: JsonSchema, typeNames: Type.TypeNames): 
   else if (schema.allOf != null)
     let (collatedSchema = collateAllOf(schema))
       generateBaseType(collatedSchema, typeNames)
+  else if (isNullSchema(schema))
+    Pair(schema, utils.declaredType("Null"))
   else
     Pair(schema, utils.declaredType("Any"))
 
