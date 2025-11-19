@@ -1,0 +1,67 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Set up a specific version of Python and add the command-line tools to the PATH.
+module com.github.actions.actions.`setup-python`.v4.SetupPython
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "actions/setup-python"
+
+fixed version: "v4"
+
+with: With
+
+class With {
+  /// Version range or exact version of Python or PyPy to use, using SemVer's version range syntax. Reads from .python-version if unset.
+  `python-version`: String?
+
+  /// File containing the Python version to use. Example: .python-version
+  `python-version-file`: String?
+
+  /// Used to specify a package manager for caching in the default directory. Supported values: pip, pipenv, poetry.
+  cache: ("pip" | "pipenv" | "poetry")?
+
+  /// The target architecture (x86, x64) of the Python or PyPy interpreter.
+  architecture: ("x64" | "x86")?
+
+  /// Set this option if you want the action to check for the latest available version that satisfies the version spec.
+  ///
+  /// Default if unspecified: `false`
+  `check-latest`: Boolean?
+
+  /// The token used to authenticate when fetching Python distributions from https://github.com/actions/python-versions. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
+  ///
+  /// Default if unspecified: `"${{ github.server_url == 'https://github.com' && github.token || '' }}"`
+  token: String?
+
+  /// Used to specify the path to dependency files. Supports wildcards or a list of file names for caching multiple dependencies.
+  hidden `cache-dependency-path-list`: Listing<String>?
+
+  /// Used to specify the path to dependency files. Supports wildcards or a list of file names for caching multiple dependencies.
+  ///
+  /// To set as a [Listing], use [cache-dependency-path-list].
+  `cache-dependency-path`: String? = `cache-dependency-path-list`?.join("\n")
+
+  /// Set this option if you want the action to update environment variables.
+  ///
+  /// Default if unspecified: `true`
+  `update-environment`: Boolean?
+
+  /// When 'true', a version range passed to 'python-version' input will match prerelease versions if no GA versions are found. Only 'x.y' version range is supported for CPython.
+  ///
+  /// Default if unspecified: `false`
+  `allow-prereleases`: Boolean?
+}

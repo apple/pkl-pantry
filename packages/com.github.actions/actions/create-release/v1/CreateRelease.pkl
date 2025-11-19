@@ -1,0 +1,58 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Create a release for a tag in your repository
+module com.github.actions.actions.`create-release`.v1.CreateRelease
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "actions/create-release"
+
+fixed version: "v1"
+
+with: With
+
+class With {
+  /// The name of the tag. This should come from the webhook payload, `github.GITHUB_REF` when a user pushes a new tag
+  tag_name: String
+
+  /// The name of the release. For example, `Release v1.0.1`
+  release_name: String
+
+  /// Text describing the contents of the tag.
+  body: String?
+
+  /// Path to file with information about the tag.
+  body_path: String?
+
+  /// `true` to create a draft (unpublished) release, `false` to create a published one. Default: `false`
+  ///
+  /// Default if unspecified: `false`
+  draft: Boolean?
+
+  /// `true` to identify the release as a prerelease. `false` to identify the release as a full release. Default: `false`
+  ///
+  /// Default if unspecified: `false`
+  prerelease: Boolean?
+
+  /// Any branch or commit SHA the Git tag is created from, unused if the Git tag already exists. Default: SHA of current commit
+  commitish: String?
+
+  /// Owner of the repository if it is not the current one
+  owner: String?
+
+  /// Repository on which to release.  Used only if you want to create the release on another repo
+  repo: String?
+}

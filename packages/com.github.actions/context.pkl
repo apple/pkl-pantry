@@ -1,0 +1,155 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Access context information in GitHub Actions workflows in a type safe manner.
+///
+/// For more check the
+/// [GitHub documentation](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs)
+module com.github.actions.context
+
+/// Information about the workflow run.
+github: GitHub
+
+/// Information about the currently running job.
+job: Job
+
+/// For reusable workflows only, contains outputs of jobs from the reusable workflow.
+jobs: Jobs
+
+/// Information about the steps that have been run in the current job.
+steps: Steps
+
+/// Information about the runner that is running the current job.
+runner: Runner
+
+/// Information about the matrix execution strategy for the current job.
+strategy: Strategy
+
+/// Contains the outputs of all jobs that are defined as a dependency of the current job.
+needs: Needs
+
+class GitHub {
+  action: String = custom("action")
+  actionPath: String = custom("action_path")
+  actionRef: String = custom("action_ref")
+  actionRepository: String = custom("action_repository")
+  actionStatus: String = custom("action_status")
+  actor: String = custom("actor")
+  actorId: String = custom("actor_id")
+  apiUrl: String = custom("api_url")
+  baseRef: String = custom("base_ref")
+  eventName: String = custom("event_name")
+  eventPath: String = custom("event_path")
+  graphqlUrl: String = custom("graphql_url")
+  headRef: String = custom("head_ref")
+  job: String = custom("job")
+  path: String = custom("path")
+  ref: String = custom("ref")
+  refName: String = custom("ref_name")
+  refProtected: String = custom("ref_protected")
+  refType: String = custom("ref_type")
+  repository: String = custom("repository")
+  repositoryId: String = custom("repository_id")
+  repositoryOwner: String = custom("repository_owner")
+  repositoryOwnerId: String = custom("repository_owner_id")
+  repositoryUrl: String = custom("repository_url")
+  retentionDays: String = custom("retention_days")
+  runId: String = custom("run_id")
+  runNumber: String = custom("run_number")
+  runAttempt: String = custom("run_attempt")
+  serverUrl: String = custom("server_url")
+  sha: String = custom("sha")
+  token: String = custom("token")
+  triggeringActor: String = custom("triggering_actor")
+  workflow: String = custom("workflow")
+  workflowRef: String = custom("workflow_ref")
+  workflowSha: String = custom("workflow_sha")
+  workspace: String = custom("workspace")
+
+  function event(name: String): String = custom("event.\(name)")
+  function custom(name: String): String = "${{ github.\(name) }}"
+}
+
+function env(name: String): String = "${{ env.\(name) }}"
+
+class Job {
+  container: String = custom("container")
+  containerId: String = custom("container.id")
+  containerNetwork: String = custom("container.network")
+  status: String = custom("status")
+  services: JobServices = new JobServices {}
+
+  function custom(name: String): String = "${{ job.\(name) }}"
+}
+
+class JobServices {
+  function id(serviceId: String): String = custom("\(serviceId).id")
+  function network(serviceId: String): String = custom("\(serviceId).network")
+  function ports(serviceId: String): String = custom("\(serviceId).ports")
+
+  function custom(serviceId: String): String = "${{ job.services.\(serviceId) }}"
+}
+
+class Jobs {
+  function result(jobId: String): String = custom("\(jobId).result")
+  function output(jobId: String, outputName: String): String =
+    custom("\(jobId).output.\(outputName)")
+
+  function custom(name: String): String = "${{ jobs.\(name) }}"
+}
+
+class Steps {
+  function conclusion(stepId: String): String = custom("\(stepId).conclusion")
+  function outcome(stepId: String): String = custom("\(stepId).outcome")
+  function outputs(stepId: String, outputName: String): String =
+    custom("\(stepId).outputs.\(outputName)")
+
+  function custom(name: String): String = "${{ steps.\(name) }}"
+}
+
+class Runner {
+  name: String = custom("name")
+  os: String = custom("os")
+  arch: String = custom("arch")
+  temp: String = custom("temp")
+  toolCache: String = custom("tool_cache")
+  debug: String = custom("debug")
+  environment: String = custom("environment")
+
+  function custom(name: String): String = "${{ runner.\(name) }}"
+}
+
+function secrets(name: String): String = "${{ secrets.\(name) }}"
+
+class Strategy {
+  failFast: Boolean = custom("fail-fast").toBoolean()
+  jobIndex: Int = custom("job-index").toInt()
+  jobTotal: Int = custom("job-total").toInt()
+  maxParallel: Int = custom("max-parallel").toInt()
+
+  function custom(name: String): String = "${{ strategy.\(name) }}"
+}
+
+function matrix(propertyName: String): String = "${{ matrix.\(propertyName) }}"
+
+class Needs {
+  function output(jobId: String, ouputName: String): String =
+    custom("\(jobId).outputs.\(ouputName)")
+  function result(jobId: String): String = custom("\(jobId).result")
+
+  function custom(name: String): String = "${{ needs.\(name) }}"
+}
+
+function inputs(name: String): String = "${{ inputs.\(name) }}"
