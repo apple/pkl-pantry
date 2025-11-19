@@ -30,7 +30,7 @@ class With {
 
   /// List of a customs host-to-IP mapping (e.g., docker:10.180.0.1)
   ///
-  /// To set as a [Listing], use [add-hosts-list].
+  /// To set as a [Listing], use [`add-hosts-list`].
   `add-hosts`: String? = `add-hosts-list`?.join("\n")
 
   /// List of extra privileged entitlement (e.g., network.host,security.insecure)
@@ -54,7 +54,7 @@ class With {
 
   /// List of build-time variables
   ///
-  /// To set as a [Listing], use [build-args-list].
+  /// To set as a [Listing], use [`build-args-list`].
   `build-args`: String? = `build-args-list`?.join("\n")
 
   /// List of additional build contexts (e.g., name=path)
@@ -62,7 +62,7 @@ class With {
 
   /// List of additional build contexts (e.g., name=path)
   ///
-  /// To set as a [Listing], use [build-contexts-list].
+  /// To set as a [Listing], use [`build-contexts-list`].
   `build-contexts`: String? = `build-contexts-list`?.join("\n")
 
   /// Builder instance
@@ -73,7 +73,7 @@ class With {
 
   /// List of external cache sources for buildx (e.g., user/app:cache, type=local,src=path/to/dir)
   ///
-  /// To set as a [Listing], use [cache-from-list].
+  /// To set as a [Listing], use [`cache-from-list`].
   `cache-from`: String? = `cache-from-list`?.join("\n")
 
   /// List of cache export destinations for buildx (e.g., user/app:cache, type=local,dest=path/to/dir)
@@ -81,7 +81,7 @@ class With {
 
   /// List of cache export destinations for buildx (e.g., user/app:cache, type=local,dest=path/to/dir)
   ///
-  /// To set as a [Listing], use [cache-to-list].
+  /// To set as a [Listing], use [`cache-to-list`].
   `cache-to`: String? = `cache-to-list`?.join("\n")
 
   /// Optional parent cgroup for the container used in the build
@@ -119,7 +119,7 @@ class With {
 
   /// Do not cache specified stages
   ///
-  /// To set as a [Listing], use [no-cache-filters-list].
+  /// To set as a [Listing], use [`no-cache-filters-list`].
   `no-cache-filters`: String? = `no-cache-filters-list`?.join(",")
 
   /// List of output destinations (format: type=local,dest=path)
@@ -167,7 +167,7 @@ class With {
 
   /// List of secret files to expose to the build (e.g., key=filename, MY_SECRET=./secret.txt)
   ///
-  /// To set as a [Listing], use [secret-files-list].
+  /// To set as a [Listing], use [`secret-files-list`].
   `secret-files`: String? = `secret-files-list`?.join("\n")
 
   /// Size of /dev/shm (e.g., 2g)

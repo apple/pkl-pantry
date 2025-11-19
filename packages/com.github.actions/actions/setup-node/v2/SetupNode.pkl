@@ -63,7 +63,7 @@ class With {
 
   /// Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.
   ///
-  /// To set as a [Listing], use [cache-dependency-path-list].
+  /// To set as a [Listing], use [`cache-dependency-path-list`].
   `cache-dependency-path`: String? = `cache-dependency-path-list`?.join("\n")
 
   /// Deprecated. Use node-version instead. Will not be supported after October 1, 2019

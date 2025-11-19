@@ -70,7 +70,7 @@ class With {
   ///
   /// Default if unspecified: `"400,401,403,404,422"`
   ///
-  /// To set as a [Listing], use [retry-exempt-status-codes-list].
+  /// To set as a [Listing], use [`retry-exempt-status-codes-list`].
   `retry-exempt-status-codes`: String? = `retry-exempt-status-codes-list`?.join(",")
 
   /// An optional GitHub REST API URL to connect to a different GitHub instance. For example, https://my.github-enterprise-server.com/api/v3

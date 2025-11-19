@@ -41,7 +41,7 @@ class With {
 
   /// An ordered list of keys to use for restoring the cache if no cache hit occurred for key
   ///
-  /// To set as a [Listing], use [restore-keys-list].
+  /// To set as a [Listing], use [`restore-keys-list`].
   `restore-keys`: String? = `restore-keys-list`?.join("\n")
 
   /// The chunk size used to split up large files during upload, in bytes

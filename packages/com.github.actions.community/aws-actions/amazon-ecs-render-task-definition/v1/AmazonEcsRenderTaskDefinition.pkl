@@ -48,7 +48,7 @@ class With {
 
   /// Variables to add to the container. Each variable is of the form KEY=value, you can specify multiple variables with multi-line YAML strings.
   ///
-  /// To set as a [Listing], use [environment-variables-list].
+  /// To set as a [Listing], use [`environment-variables-list`].
   `environment-variables`: String? = `environment-variables-list`?.join("\n")
 
   /// Create/Override logDriver inside logConfiguration
@@ -59,7 +59,7 @@ class With {
 
   /// Create/Override options inside logConfiguration. Each variable is of the form key=value, you can specify multiple variables with multi-line YAML strings.
   ///
-  /// To set as a [Listing], use [log-configuration-options-list].
+  /// To set as a [Listing], use [`log-configuration-options-list`].
   `log-configuration-options`: String? = `log-configuration-options-list`?.join("\n")
 
   /// Create/Override options inside dockerLabels. Each variable is key=value, you can specify multiple variables with multi-line YAML.
@@ -67,7 +67,7 @@ class With {
 
   /// Create/Override options inside dockerLabels. Each variable is key=value, you can specify multiple variables with multi-line YAML.
   ///
-  /// To set as a [Listing], use [docker-labels-list].
+  /// To set as a [Listing], use [`docker-labels-list`].
   `docker-labels`: String? = `docker-labels-list`?.join("\n")
 
   /// The command used by ECS to start the container image
@@ -78,7 +78,7 @@ class With {
 
   /// S3 object arns to set env variables onto the container. You can specify multiple files with multi-line YAML strings.
   ///
-  /// To set as a [Listing], use [env-files-list].
+  /// To set as a [Listing], use [`env-files-list`].
   `env-files`: String? = `env-files-list`?.join("\n")
 
   /// Secrets to add to the container. Each secret is of the form KEY=valueFrom, where valueFrom is a secret arn. You can specify multiple secrets with multi-line YAML strings.

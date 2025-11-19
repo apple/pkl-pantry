@@ -41,7 +41,7 @@ class With {
 
   /// An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.
   ///
-  /// To set as a [Listing], use [restore-keys-list].
+  /// To set as a [Listing], use [`restore-keys-list`].
   `restore-keys`: String? = `restore-keys-list`?.join("\n")
 
   /// The chunk size used to split up large files during upload, in bytes

@@ -70,6 +70,6 @@ class With {
   ///
   /// Default if unspecified: `"400,401,403,404,422"`
   ///
-  /// To set as a [Listing], use [retry-exempt-status-codes-list].
+  /// To set as a [Listing], use [`retry-exempt-status-codes-list`].
   `retry-exempt-status-codes`: String? = `retry-exempt-status-codes-list`?.join(",")
 }

@@ -38,7 +38,7 @@ class With {
 
   /// List of additional driver-specific options. (eg. image=moby/buildkit:master)
   ///
-  /// To set as a [Listing], use [driver-opts-list].
+  /// To set as a [Listing], use [`driver-opts-list`].
   `driver-opts`: String? = `driver-opts-list`?.join("\n")
 
   /// BuildKit daemon flags

@@ -255,11 +255,12 @@ class InputProperty {
           value = self.name
         }
         docComment {
+          local ident: IdentifierNode = new { value = self.effectiveInputName }
           value =
             """
             \(docCommentValue)
 
-            To set as a [Listing], use [\(self.effectiveInputName)].
+            To set as a [Listing], use [\(ident.render(""))].
             """
         }
         when (input.deprecationMessage != null) {

@@ -52,7 +52,7 @@ class With {
 
   /// Used to specify the path to dependency files. Supports wildcards or a list of file names for caching multiple dependencies.
   ///
-  /// To set as a [Listing], use [cache-dependency-path-list].
+  /// To set as a [Listing], use [`cache-dependency-path-list`].
   `cache-dependency-path`: String? = `cache-dependency-path-list`?.join("\n")
 
   /// Set this option if you want the action to update environment variables.

@@ -41,7 +41,7 @@ class With {
 
   /// A comma or newline-separated list of file paths to commit. Paths should follow git's pathspec syntax. Defaults to adding all new and modified files.
   ///
-  /// To set as a [Listing], use [add-paths-list].
+  /// To set as a [Listing], use [`add-paths-list`].
   `add-paths`: String? = `add-paths-list`?.join("\n")
 
   /// The message to use when committing changes.
@@ -125,7 +125,7 @@ class With {
 
   /// A comma or newline separated list of GitHub teams to request a review from. Note that a `repo` scoped Personal Access Token (PAT) may be required.
   ///
-  /// To set as a [Listing], use [team-reviewers-list].
+  /// To set as a [Listing], use [`team-reviewers-list`].
   `team-reviewers`: String? = `team-reviewers-list`?.join("\n")
 
   /// The number of the milestone to associate the pull request with.

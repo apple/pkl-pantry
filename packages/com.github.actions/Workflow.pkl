@@ -469,7 +469,7 @@ class Push extends Trigger {
 }
 
 class RegistryPackage extends Trigger {
-  types: Listing<ReleaseType>?
+  types: Listing<RegistryPackageType>?
 }
 typealias RegistryPackageType = "published" | "updated"
 

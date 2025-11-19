@@ -81,7 +81,7 @@ class With {
 
   /// Separator to use for annotations output (default \n)
   ///
-  /// To set as a [Listing], use [sep-annotations-list].
+  /// To set as a [Listing], use [`sep-annotations-list`].
   `sep-annotations`: String? = `sep-annotations-list`?.join("\n")
 
   /// Bake target name (default docker-metadata-action)

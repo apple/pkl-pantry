@@ -81,7 +81,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-issue-labels-list].
+  /// To set as a [Listing], use [`exempt-issue-labels-list`].
   `exempt-issue-labels`: String? = `exempt-issue-labels-list`?.join(",")
 
   /// The reason to use when closing an issue.
@@ -106,7 +106,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-pr-labels-list].
+  /// To set as a [Listing], use [`exempt-pr-labels-list`].
   `exempt-pr-labels`: String? = `exempt-pr-labels-list`?.join(",")
 
   /// The milestones that mean an issue or a pull request is exempt from being marked as stale. Separate multiple milestones with commas (eg. "milestone1,milestone2").
@@ -118,7 +118,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-milestones-list].
+  /// To set as a [Listing], use [`exempt-milestones-list`].
   `exempt-milestones`: String? = `exempt-milestones-list`?.join(",")
 
   /// The milestones that mean an issue is exempt from being marked as stale. Separate multiple milestones with commas (eg. "milestone1,milestone2"). Override "exempt-milestones" option regarding only the issues.
@@ -130,7 +130,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-issue-milestones-list].
+  /// To set as a [Listing], use [`exempt-issue-milestones-list`].
   `exempt-issue-milestones`: String? = `exempt-issue-milestones-list`?.join(",")
 
   /// The milestones that mean a pull request is exempt from being marked as stale. Separate multiple milestones with commas (eg. "milestone1,milestone2"). Override "exempt-milestones" option regarding only the pull requests.
@@ -142,7 +142,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-pr-milestones-list].
+  /// To set as a [Listing], use [`exempt-pr-milestones-list`].
   `exempt-pr-milestones`: String? = `exempt-pr-milestones-list`?.join(",")
 
   /// Exempt all issues and pull requests with milestones from being marked as stale. Default to false.
@@ -169,7 +169,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [only-labels-list].
+  /// To set as a [Listing], use [`only-labels-list`].
   `only-labels`: String? = `only-labels-list`?.join(",")
 
   /// Only issues or pull requests with at least one of these labels are checked if stale. Defaults to `` (disabled) and can be a comma-separated list of labels.
@@ -181,7 +181,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [any-of-labels-list].
+  /// To set as a [Listing], use [`any-of-labels-list`].
   `any-of-labels`: String? = `any-of-labels-list`?.join(",")
 
   /// Only issues with at least one of these labels are checked if stale. Defaults to `` (disabled) and can be a comma-separated list of labels. Override "any-of-labels" option regarding only the issues.
@@ -193,7 +193,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [any-of-issue-labels-list].
+  /// To set as a [Listing], use [`any-of-issue-labels-list`].
   `any-of-issue-labels`: String? = `any-of-issue-labels-list`?.join(",")
 
   /// Only pull requests with at least one of these labels are checked if stale. Defaults to `` (disabled) and can be a comma-separated list of labels. Override "any-of-labels" option regarding only the pull requests.
@@ -205,7 +205,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [any-of-pr-labels-list].
+  /// To set as a [Listing], use [`any-of-pr-labels-list`].
   `any-of-pr-labels`: String? = `any-of-pr-labels-list`?.join(",")
 
   /// Only issues with all of these labels are checked if stale. Defaults to `[]` (disabled) and can be a comma-separated list of labels. Override "only-labels" option regarding only the issues.
@@ -217,7 +217,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [only-issue-labels-list].
+  /// To set as a [Listing], use [`only-issue-labels-list`].
   `only-issue-labels`: String? = `only-issue-labels-list`?.join(",")
 
   /// Only pull requests with all of these labels are checked if stale. Defaults to `[]` (disabled) and can be a comma-separated list of labels. Override "only-labels" option regarding only the pull requests.
@@ -229,7 +229,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [only-pr-labels-list].
+  /// To set as a [Listing], use [`only-pr-labels-list`].
   `only-pr-labels`: String? = `only-pr-labels-list`?.join(",")
 
   /// The maximum number of operations per run, used to control rate limiting (GitHub API CRUD related).
@@ -281,7 +281,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-assignees-list].
+  /// To set as a [Listing], use [`exempt-assignees-list`].
   `exempt-assignees`: String? = `exempt-assignees-list`?.join(",")
 
   /// The assignees which exempt an issue from being marked as stale. Separate multiple assignees with commas (eg. "user1,user2"). Override "exempt-assignees" option regarding only the issues.
@@ -293,7 +293,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-issue-assignees-list].
+  /// To set as a [Listing], use [`exempt-issue-assignees-list`].
   `exempt-issue-assignees`: String? = `exempt-issue-assignees-list`?.join(",")
 
   /// The assignees which exempt a pull request from being marked as stale. Separate multiple assignees with commas (eg. "user1,user2"). Override "exempt-assignees" option regarding only the pull requests.
@@ -305,7 +305,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [exempt-pr-assignees-list].
+  /// To set as a [Listing], use [`exempt-pr-assignees-list`].
   `exempt-pr-assignees`: String? = `exempt-pr-assignees-list`?.join(",")
 
   /// Exempt all issues and pull requests with assignees from being marked as stale. Default to false.
@@ -342,7 +342,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [labels-to-add-when-unstale-list].
+  /// To set as a [Listing], use [`labels-to-add-when-unstale-list`].
   `labels-to-add-when-unstale`: String? = `labels-to-add-when-unstale-list`?.join(",")
 
   /// A comma delimited list of labels to remove when a stale issue or pull request receives activity and has the stale-issue-label or stale-pr-label removed from it.
@@ -354,7 +354,7 @@ class With {
   ///
   /// Default if unspecified: `""`
   ///
-  /// To set as a [Listing], use [labels-to-remove-when-unstale-list].
+  /// To set as a [Listing], use [`labels-to-remove-when-unstale-list`].
   `labels-to-remove-when-unstale`: String? = `labels-to-remove-when-unstale-list`?.join(",")
 
   /// Any update (update/comment) can reset the stale idle time on the issues and pull requests.

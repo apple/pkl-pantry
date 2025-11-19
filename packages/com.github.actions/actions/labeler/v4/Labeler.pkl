@@ -50,6 +50,6 @@ class With {
 
   /// The pull request number(s)
   ///
-  /// To set as a [Listing], use [pr-number-list].
+  /// To set as a [Listing], use [`pr-number-list`].
   `pr-number`: String? = `pr-number-list`?.join("\n")
 }

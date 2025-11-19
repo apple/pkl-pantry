@@ -24,7 +24,4 @@ dependencies {
 
 package {
   version = "1.0.0"
-  exclude {
-    "scripts/"
-  }
 }

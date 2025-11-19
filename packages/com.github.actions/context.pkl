@@ -20,136 +20,392 @@
 module com.github.actions.context
 
 /// Information about the workflow run.
-github: GitHub
+const github: GitHub
 
 /// Information about the currently running job.
-job: Job
+const job: Job
 
 /// For reusable workflows only, contains outputs of jobs from the reusable workflow.
-jobs: Jobs
+const jobs: Jobs
 
 /// Information about the steps that have been run in the current job.
-steps: Steps
+const steps: Steps
 
 /// Information about the runner that is running the current job.
-runner: Runner
+const runner: Runner
 
 /// Information about the matrix execution strategy for the current job.
-strategy: Strategy
+const strategy: Strategy
 
 /// Contains the outputs of all jobs that are defined as a dependency of the current job.
-needs: Needs
+const needs: Needs
 
 class GitHub {
-  action: String = custom("action")
-  actionPath: String = custom("action_path")
-  actionRef: String = custom("action_ref")
-  actionRepository: String = custom("action_repository")
-  actionStatus: String = custom("action_status")
-  actor: String = custom("actor")
-  actorId: String = custom("actor_id")
-  apiUrl: String = custom("api_url")
-  baseRef: String = custom("base_ref")
-  eventName: String = custom("event_name")
-  eventPath: String = custom("event_path")
-  graphqlUrl: String = custom("graphql_url")
-  headRef: String = custom("head_ref")
-  job: String = custom("job")
-  path: String = custom("path")
-  ref: String = custom("ref")
-  refName: String = custom("ref_name")
-  refProtected: String = custom("ref_protected")
-  refType: String = custom("ref_type")
-  repository: String = custom("repository")
-  repositoryId: String = custom("repository_id")
-  repositoryOwner: String = custom("repository_owner")
-  repositoryOwnerId: String = custom("repository_owner_id")
-  repositoryUrl: String = custom("repository_url")
-  retentionDays: String = custom("retention_days")
-  runId: String = custom("run_id")
-  runNumber: String = custom("run_number")
-  runAttempt: String = custom("run_attempt")
-  serverUrl: String = custom("server_url")
-  sha: String = custom("sha")
-  token: String = custom("token")
-  triggeringActor: String = custom("triggering_actor")
-  workflow: String = custom("workflow")
-  workflowRef: String = custom("workflow_ref")
-  workflowSha: String = custom("workflow_sha")
-  workspace: String = custom("workspace")
+  /// The name of the action currently running, or the
+  /// [`id`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsid)
+  /// of a step.
+  ///
+  /// GitHub removes special characters, and uses the name `__run` when the current step runs a
+  /// script without an `id`.
+  /// If you use the same action more than once in the same job, the name will include a suffix
+  /// with the sequence number with underscore before it.
+  /// For example, the first script you run will have the name `__run`, and the second script will
+  /// be named `__run_2`.
+  /// Similarly, the second invocation of `actions/checkout` will be `actionscheckout2`.
+  const action = custom("action")
 
-  function event(name: String): String = custom("event.\(name)")
-  function custom(name: String): String = "${{ github.\(name) }}"
+  /// The path where an action is located.
+  ///
+  /// This property is only supported in composite actions.
+  /// You can use this path to access files located in the same repository as the action, for
+  /// example by changing directories to the path: `cd ${{ github.action_path }}`.
+  const actionPath: String = custom("action_path")
+
+  /// For a step executing an action, this is the ref of the action being executed.
+  ///
+  /// For example, `v2`.
+  ///
+  /// Do not use in the `run` keyword.
+  /// To make this context work with composite actions, reference it within the `env` context of
+  /// the composite action.
+  const actionRef: String = custom("action_ref")
+
+  /// For a step executing an action, this is the owner and repository name of the action.
+  ///
+  /// For example, `actions/checkout`.
+  ///
+  /// Do not use in the `run` keyword.
+  /// To make this context work with composite actions, reference it within the `env` context of
+  /// the composite action.
+  const actionRepository: String = custom("action_repository")
+
+  /// For a composite action, the current result of the composite action.
+  const actionStatus: String = custom("action_status")
+
+  /// The username of the user that triggered the initial workflow run.
+  ///
+  /// If the workflow run is a re-run, this value may differ from `github.triggering_actor`.
+  /// Any workflow re-runs will use the privileges of `github.actor`, even if the actor initiating
+  /// the re-run (`github.triggering_actor`) has different privileges.
+  const actor: String = custom("actor")
+
+  /// The account ID of the person or app that triggered the initial workflow run.
+  ///
+  /// For example, `1234567`.
+  /// Note that this is different from the actor username.
+  const actorId: String = custom("actor_id")
+
+  /// The URL of the GitHub REST API.
+  const apiUrl: String = custom("api_url")
+
+  /// The `base_ref` or target branch of the pull request in a workflow run.
+  ///
+  /// This property is only available when the event that triggers a workflow run is either
+  /// `pull_request` or `pull_request_target`.
+  const baseRef: String = custom("base_ref")
+
+  /// The name of the event that triggered the workflow run.
+  const eventName: String = custom("event_name")
+
+  /// The path to the file on the runner that contains the full event webhook payload.
+  const eventPath: String = custom("event_path")
+
+  /// The URL of the GitHub GraphQL API.
+  const graphqlUrl: String = custom("graphql_url")
+
+  /// The `head_ref` or source branch of the pull request in a workflow run.
+  ///
+  /// This property is only available when the event that triggers a workflow run is either
+  /// `pull_request` or `pull_request_target`.
+  const headRef: String = custom("head_ref")
+
+  /// The
+  /// [`job_id`](/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_id)
+  /// of the current job.
+  ///
+  /// Note: This context property is set by the Actions runner, and is only available within the
+  /// execution `steps` of a job.
+  /// Otherwise, the value of this property will be `null`.
+  const job: String = custom("job")
+
+  /// Path on the runner to the file that sets system `PATH` variables from workflow commands.
+  ///
+  /// This file is unique to the current step and is a different file for each step in a job.
+  const path: String = custom("path")
+
+  /// The fully-formed ref of the branch or tag that triggered the workflow run.
+  ///
+  /// For workflows triggered by `push`, this is the branch or tag ref that was pushed.
+  /// For workflows triggered by `pull_request`, this is the pull request merge branch.
+  /// For workflows triggered by `release`, this is the release tag created.
+  /// For other triggers, this is the branch or tag ref that triggered the workflow run.
+  /// This is only set if a branch or tag is available for the event type.
+  /// The ref given is fully-formed, meaning that for branches the format is
+  /// `refs/heads/<branch_name>`.
+  /// For pull requests events except `pull_request_target`, it is `refs/pull/<pr_number>/merge`.
+  /// `pull_request_target` events have the `ref` from the base branch.
+  /// For tags it is `refs/tags/<tag_name>`.
+  /// For example, `refs/heads/feature-branch-1`.
+  const ref: String = custom("ref")
+
+  /// The short ref name of the branch or tag that triggered the workflow run.
+  ///
+  /// This value matches the branch or tag name shown on GitHub.
+  /// For example, `feature-branch-1`.
+  ///
+  /// For pull requests, the format is `<pr_number>/merge`.
+  const refName: String = custom("ref_name")
+
+  /// `true` if branch protections or rulesets are configured for the ref that triggered the
+  /// workflow run.
+  const refProtected: String = custom("ref_protected")
+
+  /// The type of ref that triggered the workflow run.
+  ///
+  /// Valid values are `branch` or `tag`.
+  const refType: String = custom("ref_type")
+
+  /// The owner and repository name.
+  ///
+  /// For example, `octocat/Hello-World`.
+  const repository: String = custom("repository")
+
+  /// The ID of the repository.
+  ///
+  /// For example, `123456789`.
+  /// Note that this is different from the repository name.
+  const repositoryId: String = custom("repository_id")
+
+  /// The repository owner's username.
+  ///
+  /// For example, `octocat`.
+  const repositoryOwner: String = custom("repository_owner")
+
+  /// The repository owner's account ID.
+  ///
+  /// For example, `1234567`.
+  /// Note that this is different from the owner's name.
+  const repositoryOwnerId: String = custom("repository_owner_id")
+
+  /// The Git URL to the repository.
+  ///
+  /// For example, `git://github.com/octocat/hello-world.git`.
+  const repositoryUrl: String = custom("repository_url")
+
+  /// The number of days that workflow run logs and artifacts are kept.
+  const retentionDays: String = custom("retention_days")
+
+  /// A unique number for each workflow run within a repository.
+  ///
+  /// This number does not change if you re-run the workflow run.
+  const runId: String = custom("run_id")
+
+  /// A unique number for each run of a particular workflow in a repository.
+  ///
+  /// This number begins at 1 for the workflow's first run, and increments with each new run.
+  /// This number does not change if you re-run the workflow run.
+  const runNumber: String = custom("run_number")
+
+  /// A unique number for each attempt of a particular workflow run in a repository.
+  ///
+  /// This number begins at 1 for the workflow run's first attempt, and increments with each
+  /// re-run.
+  const runAttempt: String = custom("run_attempt")
+
+  /// The URL of the GitHub server.
+  ///
+  /// For example: `https://github.com`.
+  const serverUrl: String = custom("server_url")
+
+  /// The commit SHA that triggered the workflow.
+  ///
+  /// The value of this commit SHA depends on the event that triggered the workflow.
+  /// For more information, see Events that trigger workflows.
+  /// For example, `ffac537e6cbbf934b08745a378932722df287a53`.
+  const sha: String = custom("sha")
+
+  /// A token to authenticate on behalf of the GitHub App installed on your repository.
+  ///
+  /// This is functionally equivalent to the `GITHUB_TOKEN` secret.
+  /// Note: This context property is set by the Actions runner, and is only available within the
+  /// execution `steps` of a job.
+  /// Otherwise, the value will be `null`.
+  const token: String = custom("token")
+
+  /// The username of the user that initiated the workflow run.
+  ///
+  /// If the workflow run is a re-run, this value may differ from `github.actor`.
+  /// Any workflow re-runs will use the privileges of `github.actor`, even if the actor initiating
+  /// the re-run (`github.triggering_actor`) has different privileges.
+  const triggeringActor: String = custom("triggering_actor")
+
+  /// The name of the workflow.
+  ///
+  /// If the workflow file doesn't specify a `name`, the value of this property is the full path of
+  /// the workflow file in the repository.
+  const workflow: String = custom("workflow")
+
+  /// The ref path to the workflow.
+  ///
+  /// For example, `octocat/hello-world/.github/workflows/my-workflow.yml@refs/heads/my_branch`.
+  const workflowRef: String = custom("workflow_ref")
+
+  /// The commit SHA for the workflow file.
+  const workflowSha: String = custom("workflow_sha")
+
+  /// The default working directory on the runner for steps, and the default location of your
+  /// repository when using the `checkout` action.
+  ///
+  /// For example, `/home/runner/work/my-repo-name/my-repo-name`.
+  const workspace: String = custom("workspace")
+
+  const function event(name: String): String = custom("event.\(name)")
+  local const function custom(name: String): String = "${{ github.\(name) }}"
 }
 
 function env(name: String): String = "${{ env.\(name) }}"
 
 class Job {
-  container: String = custom("container")
-  containerId: String = custom("container.id")
-  containerNetwork: String = custom("container.network")
-  status: String = custom("status")
-  services: JobServices = new JobServices {}
+  /// Object containing container information when the job runs in a container environment.
+  const container: String = custom("container")
 
-  function custom(name: String): String = "${{ job.\(name) }}"
+  /// The container's unique identifier assigned by the runner.
+  const containerId: String = custom("container.id")
+
+  /// The network ID created by the runner for inter-container communication within the job.
+  const containerNetwork: String = custom("container.network")
+
+  /// String indicating current job completion state.
+  ///
+  /// Possible values are `success`, `failure`, or `cancelled`.
+  /// This property reflects the job's final outcome.
+  const status: String = custom("status")
+
+  /// Object holding service container details created specifically for the job.
+  const services: JobServices = new JobServices {}
+
+  local const function custom(name: String): String = "${{ job.\(name) }}"
 }
 
 class JobServices {
-  function id(serviceId: String): String = custom("\(serviceId).id")
-  function network(serviceId: String): String = custom("\(serviceId).network")
-  function ports(serviceId: String): String = custom("\(serviceId).ports")
+  /// The service container's unique identifier.
+  const function id(serviceId: String): String = custom("\(serviceId).id")
 
-  function custom(serviceId: String): String = "${{ job.services.\(serviceId) }}"
+  /// The service container network ID.
+  const function network(serviceId: String): String = custom("\(serviceId).network")
+
+  /// Object mapping exposed port numbers to their values, enabling communication with services.
+  const function ports(serviceId: String): String = custom("\(serviceId).ports")
+
+  local const function custom(serviceId: String): String = "${{ job.services.\(serviceId) }}"
 }
 
 class Jobs {
-  function result(jobId: String): String = custom("\(jobId).result")
-  function output(jobId: String, outputName: String): String =
+  /// String indicating a reusable workflow job's completion state.
+  ///
+  /// Possible values: `success`, `failure`, `cancelled`, or `skipped`.
+  const function result(jobId: String): String = custom("\(jobId).result")
+
+  /// String value representing a specific job output in the reusable workflow context.
+  const function output(jobId: String, outputName: String): String =
     custom("\(jobId).output.\(outputName)")
 
-  function custom(name: String): String = "${{ jobs.\(name) }}"
+  local const function custom(name: String): String = "${{ jobs.\(name) }}"
 }
 
 class Steps {
-  function conclusion(stepId: String): String = custom("\(stepId).conclusion")
-  function outcome(stepId: String): String = custom("\(stepId).outcome")
-  function outputs(stepId: String, outputName: String): String =
+  /// String representing final step status after `continue-on-error` processing.
+  ///
+  /// Possible values: `success`, `failure`, `cancelled`, or `skipped`.
+  /// When a step fails but `continue-on-error` is true, outcome shows `failure` while conclusion
+  /// shows `success`.
+  const function conclusion(stepId: String): String = custom("\(stepId).conclusion")
+
+  /// String representing step result before `continue-on-error` applies.
+  ///
+  /// Possible values: `success`, `failure`, `cancelled`, or `skipped`.
+  const function outcome(stepId: String): String = custom("\(stepId).outcome")
+
+  /// String containing the specific output value from a completed step.
+  const function outputs(stepId: String, outputName: String): String =
     custom("\(stepId).outputs.\(outputName)")
 
-  function custom(name: String): String = "${{ steps.\(name) }}"
+  local const function custom(name: String): String = "${{ steps.\(name) }}"
 }
 
 class Runner {
-  name: String = custom("name")
-  os: String = custom("os")
-  arch: String = custom("arch")
-  temp: String = custom("temp")
-  toolCache: String = custom("tool_cache")
-  debug: String = custom("debug")
-  environment: String = custom("environment")
+  /// The runner's display name.
+  ///
+  /// Note: This is not guaranteed to be unique across repository and organization-level runners.
+  const name: String = custom("name")
 
-  function custom(name: String): String = "${{ runner.\(name) }}"
+  /// String specifying the operating system.
+  ///
+  /// Valid values are `Linux`, `Windows`, or `macOS`.
+  const os: String = custom("os")
+
+  /// String indicating system architecture.
+  ///
+  /// Possible values include `X86`, `X64`, `ARM`, or `ARM64`.
+  const arch: String = custom("arch")
+
+  /// The absolute path to a temporary directory on the runner that is cleaned at the beginning
+  /// and end of each job.
+  const temp: String = custom("temp")
+
+  /// String path to the directory containing preinstalled tools available on GitHub-hosted
+  /// runners for language setup and utilities.
+  const toolCache: String = custom("tool_cache")
+
+  /// String that is set only when debug logging is enabled, always containing value `1`.
+  ///
+  /// Useful for conditional verbose output.
+  const debug: String = custom("debug")
+
+  /// String indicating runner type.
+  ///
+  /// Values are `github-hosted` for GitHub-provided runners or `self-hosted` for user-configured
+  /// runners.
+  const environment: String = custom("environment")
+
+  local const function custom(name: String): String = "${{ runner.\(name) }}"
 }
 
 function secrets(name: String): String = "${{ secrets.\(name) }}"
 
 class Strategy {
-  failFast: Boolean = custom("fail-fast").toBoolean()
-  jobIndex: Int = custom("job-index").toInt()
-  jobTotal: Int = custom("job-total").toInt()
-  maxParallel: Int = custom("max-parallel").toInt()
+  /// Boolean that, when `true`, cancels all in-progress jobs if any matrix job fails.
+  const failFast: String = custom("fail-fast")
 
-  function custom(name: String): String = "${{ strategy.\(name) }}"
+  /// Zero-based number indicating the current job's position within the matrix.
+  ///
+  /// Note: First job has index `0`.
+  const jobIndex: String = custom("job-index")
+
+  /// Non-zero-based number representing total jobs in the matrix.
+  ///
+  /// For example, a four-job matrix has `job-total` value of `4`.
+  const jobTotal: String = custom("job-total")
+
+  /// Number limiting concurrent jobs during matrix execution strategy execution.
+  const maxParallel: String = custom("max-parallel")
+
+  local const function custom(name: String): String = "${{ strategy.\(name) }}"
 }
 
 function matrix(propertyName: String): String = "${{ matrix.\(propertyName) }}"
 
 class Needs {
-  function output(jobId: String, ouputName: String): String =
+  /// String value of a specific output from a dependent job.
+  const function output(jobId: String, ouputName: String): String =
     custom("\(jobId).outputs.\(ouputName)")
-  function result(jobId: String): String = custom("\(jobId).result")
 
-  function custom(name: String): String = "${{ needs.\(name) }}"
+  /// String reflecting a required job's final status.
+  ///
+  /// Possible values: `success`, `failure`, `cancelled`, or `skipped`.
+  const function result(jobId: String): String = custom("\(jobId).result")
+
+  local const function custom(name: String): String = "${{ needs.\(name) }}"
 }
 
 function inputs(name: String): String = "${{ inputs.\(name) }}"
