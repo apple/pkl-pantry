@@ -1,0 +1,63 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Deploy Web Apps/Containerized Web Apps to Azure. github.com/Azure/Actions
+module com.github.actions.community.azure.`webapps-deploy`.v2.WebappsDeploy
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "azure/webapps-deploy"
+
+fixed version: "v2"
+
+with: With
+
+class With {
+  /// Name of the Azure Web App
+  `app-name`: String
+
+  /// Applies to Web Apps(Windows and Linux) and Web App Containers(linux). Multi container scenario not supported. Publish profile (*.publishsettings) file contents with Web Deploy secrets
+  `publish-profile`: String?
+
+  /// Enter an existing Slot other than the Production slot
+  ///
+  /// Default if unspecified: `"production"`
+  `slot-name`: String?
+
+  /// Applies to Web App only: Path to package or folder. *.zip, *.war, *.jar or a folder to deploy
+  ///
+  /// Default if unspecified: `"."`
+  package: String?
+
+  /// Applies to Web App Containers only: Specify the fully qualified container image(s) name. For example, 'myregistry.azurecr.io/nginx:latest' or 'python:3.7.2-alpine/'. For multi-container scenario multiple container image names can be provided (multi-line separated)
+  hidden imagesList: Listing<String>?
+
+  /// Applies to Web App Containers only: Specify the fully qualified container image(s) name. For example, 'myregistry.azurecr.io/nginx:latest' or 'python:3.7.2-alpine/'. For multi-container scenario multiple container image names can be provided (multi-line separated)
+  ///
+  /// To set as a [Listing], use [imagesList].
+  images: String? = imagesList?.join("\n")
+
+  /// Applies to Web App Containers only: Path of the Docker-Compose file. Should be a fully qualified path or relative to the default working directory. Required for multi-container scenario
+  `configuration-file`: String?
+
+  /// Enter the start up command. For ex. dotnet run or dotnet run
+  `startup-command`: String?
+
+  /// Enter the resource group name of the web app
+  `resource-group-name`: String?
+
+  /// Applies to Sitecontainers, containes a list of siteContainer specs
+  `sitecontainers-config`: String?
+}

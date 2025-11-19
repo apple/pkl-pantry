@@ -1,0 +1,277 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Publishes JUnit, NUnit, XUnit, TRX, JSON test results on GitHub for .NET, Dart, Java, JS, Jest, Mocha, Python, Scala, …
+module com.github.actions.community.enricomi.`publish-unit-test-result-action`.v2.PublishUnitTestResultAction
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action =
+  if (os == "linux")
+    "EnricoMi/publish-unit-test-result-action"
+  else if (os == "macOS")
+    "EnricoMi/publish-unit-test-result-action/macos"
+  else if (noPowershell)
+    "EnricoMi/publish-unit-test-result-action/windows/bash"
+  else
+    "EnricoMi/publish-unit-test-result-action/windows"
+
+fixed version: "v2"
+
+with: With
+
+/// The OS that this action runs on.
+hidden os: "macOS" | "linux" | "windows" = "linux"
+
+/// Running on Windows without PowerShell installed.
+hidden noPowershell: Boolean(implies(os == "windows")) = false
+
+class With {
+  /// GitHub API Access Token.
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  github_token: String?
+
+  /// [deprecated] This is not needed any more as this is detected automatically.
+  @Deprecated {
+    message = "This is not needed any more as this is detected automatically."
+  }
+  github_token_actor: String?
+
+  /// Requests to the GitHub API are retried this number of times. The value must be a positive integer or zero.
+  ///
+  /// Default if unspecified: `"10"`
+  github_retries: Int?
+
+  /// Either "true" or "false", in which case it controls whether to verify the Github server’s TLS certificate, or a string, in which case it must be a path to a CA bundle to use. Default is "true".
+  ///
+  /// Default if unspecified: `true`
+  ssl_verify: Boolean?
+
+  /// Commit SHA to which test results are published. Only needed if the value of GITHUB_SHA does not work for you.
+  commit: String?
+
+  /// Name of the created check run.
+  ///
+  /// Default if unspecified: `"Test Results"`
+  check_name: String?
+
+  /// An alternative title for the pull request comment. Defaults to value of check_name input.
+  comment_title: String?
+
+  /// The action posts comments to pull requests that are associated with the commit. Set to "always" - always comment, "changes" - comment when changes w.r.t. the target branch exist, "changes in failures" - when changes in the number of failures and errors exist, "changes in errors" - when changes in the number of (only) errors exist, "failures" - when failures or errors exist, "errors" - when (only) errors exist, "off" - to not create pull request comments.
+  ///
+  /// Default if unspecified: `"always"`
+  comment_mode: (
+    "always"
+      | "changes"
+      | "changes in failures"
+      | "changes in errors"
+      | "failures"
+      | "errors"
+      | "off"
+  )?
+
+  /// The created test result check run has failure state if any test fails or test errors occur. Never fails when set to "nothing", fails only on errors when set to "errors". Default is "test failures".
+  ///
+  /// Default if unspecified: `"test failures"`
+  fail_on: ("nothing" | "errors" | "test failures")?
+
+  /// When set "true", the action itself fails when tests have failed (see option fail_on).
+  ///
+  /// Default if unspecified: `"false"`
+  action_fail: Boolean?
+
+  /// When set "true", the action itself fails when tests are inconclusive (no test results).
+  ///
+  /// Default if unspecified: `"false"`
+  action_fail_on_inconclusive: Boolean?
+
+  /// File patterns of test result files. Relative paths are known to work best, while the non-Docker action also works with absolute paths. Supports "*", "**", "?", and "[]" character ranges. Use multiline string for multiple patterns. Patterns starting with "!" exclude the matching files. There have to be at least one pattern starting without a "!".
+  hidden filesList: Listing<String>?
+
+  /// File patterns of test result files. Relative paths are known to work best, while the non-Docker action also works with absolute paths. Supports "*", "**", "?", and "[]" character ranges. Use multiline string for multiple patterns. Patterns starting with "!" exclude the matching files. There have to be at least one pattern starting without a "!".
+  ///
+  /// To set as a [Listing], use [filesList].
+  files: String? = filesList?.join("\n")
+
+  /// Deprecated, use "files" option instead.
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  hidden junit_files_list: Listing<String>?
+
+  /// Deprecated, use "files" option instead.
+  ///
+  /// To set as a [Listing], use [junit_files_list].
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  junit_files: String? = junit_files_list?.join("\n")
+
+  /// Deprecated, use "files" option instead.
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  hidden nunit_files_list: Listing<String>?
+
+  /// Deprecated, use "files" option instead.
+  ///
+  /// To set as a [Listing], use [nunit_files_list].
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  nunit_files: String? = nunit_files_list?.join("\n")
+
+  /// Deprecated, use "files" option instead.
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  hidden xunit_files_list: Listing<String>?
+
+  /// Deprecated, use "files" option instead.
+  ///
+  /// To set as a [Listing], use [xunit_files_list].
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  xunit_files: String? = xunit_files_list?.join("\n")
+
+  /// Deprecated, use "files" option instead.
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  hidden trx_files_list: Listing<String>?
+
+  /// Deprecated, use "files" option instead.
+  ///
+  /// To set as a [Listing], use [trx_files_list].
+  @Deprecated {
+    message = #"Use "files" option instead."#
+  }
+  trx_files: String? = trx_files_list?.join("\n")
+
+  /// Time values in the test result files have this unit. Supports "seconds" and "milliseconds".
+  ///
+  /// Default if unspecified: `"seconds"`
+  time_unit: ("seconds" | "milliseconds")?
+
+  /// Paths in the test result files should be relative to the git repository for annotations to work best. This prefix is added to (if starting with "+"), or remove from (if starting with "-") test file paths. Examples: "+src/" or "-/opt/actions-runner".
+  test_file_prefix: String?
+
+  /// Individual runs of the same test may see different failures. Reports all individual failures when set "true" or the first only otherwise.
+  report_individual_runs: Boolean?
+
+  /// In addition to reporting regular test logs, also report test suite logs. These are logs provided on suite level, not individual test level. Set to "info" for normal output, "error" for error output, "any" for both, or "none" for no suite logs at all. Defaults to "none".
+  ///
+  /// Default if unspecified: `"none"`
+  report_suite_logs: ("info" | "error" | "any" | "none")?
+
+  /// De-duplicates classes with same name by their file name when set "true", combines test results for those classes otherwise.
+  deduplicate_classes_by_file_name: Boolean?
+
+  /// Support for large files is enabled when set to "true". Defaults to "false", unless ignore_runs is "true".
+  large_files: Boolean?
+
+  /// Does not collect test run information from the test result files, which is useful for very large files. This disables any check run annotations.
+  ///
+  /// Default if unspecified: `"false"`
+  ignore_runs: Boolean?
+
+  /// Set to "true", the results are published as a check run, but it may not be associated with the workflow that ran this action.
+  ///
+  /// Default if unspecified: `"true"`
+  check_run: Boolean?
+
+  /// Set to "true", the results are published as part of the job summary page of the workflow run.
+  ///
+  /// Default if unspecified: `"true"`
+  job_summary: Boolean?
+
+  /// Test results are compared to results of earlier commits to highlight changes: "false" - disable comparison, "true" - compare across commits.
+  ///
+  /// Default if unspecified: `"true"`
+  compare_to_earlier_commit: Boolean?
+
+  /// As part of pull requests, GitHub builds a merge commit, which combines the commit and the target branch. If tests ran on the actual pushed commit, then set this to "commit". Defaults to "merge".
+  ///
+  /// Default if unspecified: `"merge"`
+  pull_request_build: ("commit" | "merge")?
+
+  /// An alternative event file to use. Useful to replace a "workflow_run" event file with the actual source event file.
+  event_file: String?
+
+  /// An alternative event name to use. Useful to replace a "workflow_run" event name with the actual source event name: github.event.workflow_run.event.
+  event_name: String?
+
+  /// Limits the number of removed or skipped tests reported on pull request comments. This report can be disabled with a value of 0. The default is 10.
+  test_changes_limit: Int?
+
+  /// Adds additional information to the check run. This is a comma-separated list of any of the following values: "all tests" - list all found tests, "skipped tests" - list all skipped tests. Set to "none" to add no extra annotations at all.
+  ///
+  /// Default if unspecified: `"all tests, skipped tests"`
+  hidden check_run_annotations_list: Listing<"all tests" | "skipped tests" | "none">?
+
+  /// Adds additional information to the check run. This is a comma-separated list of any of the following values: "all tests" - list all found tests, "skipped tests" - list all skipped tests. Set to "none" to add no extra annotations at all.
+  ///
+  /// Default if unspecified: `"all tests, skipped tests"`
+  ///
+  /// To set as a [Listing], use [check_run_annotations_list].
+  check_run_annotations: String? = check_run_annotations_list?.join(",")
+
+  /// Adds check run annotations only on given branches. Comma-separated list of branch names allowed, asterisk "*" matches all branches. Defaults to event.repository.default_branch or "main, master".
+  hidden check_run_annotations_branch_list: Listing<String>?
+
+  /// Adds check run annotations only on given branches. Comma-separated list of branch names allowed, asterisk "*" matches all branches. Defaults to event.repository.default_branch or "main, master".
+  ///
+  /// To set as a [Listing], use [check_run_annotations_branch_list].
+  check_run_annotations_branch: String? = check_run_annotations_branch_list?.join(",")
+
+  /// Sets the number of seconds the action waits between concurrent read requests to the GitHub API. This throttles the API usage to avoid abuse rate limits: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#abuse-rate-limits.
+  ///
+  /// Default if unspecified: `"0.25"`
+  seconds_between_github_reads: Float?
+
+  /// Sets the number of seconds the action waits between concurrent write requests to the GitHub API. This throttles the API usage to avoid abuse rate limits: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#abuse-rate-limits.
+  ///
+  /// Default if unspecified: `"2.0"`
+  seconds_between_github_writes: Float?
+
+  /// Sets the number of seconds to wait before retrying secondary rate limit errors. If not set, the default defined in the PyGithub library is used (currently 60 seconds).
+  secondary_rate_limit_wait_seconds: Float?
+
+  /// Results are written to this JSON file.
+  json_file: String?
+
+  /// Formatted numbers in JSON use this character to separate groups of thousands. Common values are "," or ".". Defaults to punctuation space (\u2008).
+  ///
+  /// Default if unspecified: `" "`
+  json_thousands_separator: String?
+
+  /// Write out all suite details to the JSON file. Setting this to "true" can greatly increase the size of the output. Defaults to "false".
+  ///
+  /// Default if unspecified: `"false"`
+  json_suite_details: Boolean?
+
+  /// Write out all individual test case results to the JSON file. Setting this to "true" can greatly increase the size of the output. Defaults to "false".
+  ///
+  /// Default if unspecified: `"false"`
+  json_test_case_results: Boolean?
+
+  /// Prior to v2.6.0, the action used the "/search/issues" REST API to find pull requests related to a commit. If you need to restore that behaviour, set this to "true". Defaults to "false".
+  ///
+  /// Default if unspecified: `"false"`
+  search_pull_requests: Boolean?
+}

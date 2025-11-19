@@ -1,0 +1,91 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Inserts a container image URI into a container definition in an Amazon ECS task definition JSON file, creating a new file.
+module com.github.actions.community.`aws-actions`.`amazon-ecs-render-task-definition`.v1.AmazonEcsRenderTaskDefinition
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "aws-actions/amazon-ecs-render-task-definition"
+
+fixed version: "v1"
+
+with: With
+
+class With {
+  /// The path to the ECS task definition JSON file
+  `task-definition`: String?
+
+  /// The full Amazon Resource Name (ARN) of the task definition to be used
+  `task-definition-arn`: String?
+
+  /// The name of a family that the task definition is registered to
+  `task-definition-family`: String?
+
+  /// The revision of the task definition being used
+  `task-definition-revision`: String?
+
+  /// The name of the container or containers defined in the containerDefinitions section of the ECS task definition. If more than one container, add the names comma separated.
+  `container-name`: String
+
+  /// The URI of the container image to insert into the ECS task definition
+  image: String
+
+  /// Variables to add to the container. Each variable is of the form KEY=value, you can specify multiple variables with multi-line YAML strings.
+  hidden `environment-variables-list`: Listing<String>?
+
+  /// Variables to add to the container. Each variable is of the form KEY=value, you can specify multiple variables with multi-line YAML strings.
+  ///
+  /// To set as a [Listing], use [environment-variables-list].
+  `environment-variables`: String? = `environment-variables-list`?.join("\n")
+
+  /// Create/Override logDriver inside logConfiguration
+  `log-configuration-log-driver`: String?
+
+  /// Create/Override options inside logConfiguration. Each variable is of the form key=value, you can specify multiple variables with multi-line YAML strings.
+  hidden `log-configuration-options-list`: Listing<String>?
+
+  /// Create/Override options inside logConfiguration. Each variable is of the form key=value, you can specify multiple variables with multi-line YAML strings.
+  ///
+  /// To set as a [Listing], use [log-configuration-options-list].
+  `log-configuration-options`: String? = `log-configuration-options-list`?.join("\n")
+
+  /// Create/Override options inside dockerLabels. Each variable is key=value, you can specify multiple variables with multi-line YAML.
+  hidden `docker-labels-list`: Listing<String>?
+
+  /// Create/Override options inside dockerLabels. Each variable is key=value, you can specify multiple variables with multi-line YAML.
+  ///
+  /// To set as a [Listing], use [docker-labels-list].
+  `docker-labels`: String? = `docker-labels-list`?.join("\n")
+
+  /// The command used by ECS to start the container image
+  command: String?
+
+  /// S3 object arns to set env variables onto the container. You can specify multiple files with multi-line YAML strings.
+  hidden `env-files-list`: Listing<String>?
+
+  /// S3 object arns to set env variables onto the container. You can specify multiple files with multi-line YAML strings.
+  ///
+  /// To set as a [Listing], use [env-files-list].
+  `env-files`: String? = `env-files-list`?.join("\n")
+
+  /// Secrets to add to the container. Each secret is of the form KEY=valueFrom, where valueFrom is a secret arn. You can specify multiple secrets with multi-line YAML strings.
+  hidden secretsList: Listing<String>?
+
+  /// Secrets to add to the container. Each secret is of the form KEY=valueFrom, where valueFrom is a secret arn. You can specify multiple secrets with multi-line YAML strings.
+  ///
+  /// To set as a [Listing], use [secretsList].
+  secrets: String? = secretsList?.join("\n")
+}

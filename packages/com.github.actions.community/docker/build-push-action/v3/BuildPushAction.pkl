@@ -1,0 +1,202 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Build and push Docker images with Buildx
+module com.github.actions.community.docker.`build-push-action`.v3.BuildPushAction
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "docker/build-push-action"
+
+fixed version: "v3"
+
+with: With
+
+class With {
+  /// List of a customs host-to-IP mapping (e.g., docker:10.180.0.1)
+  hidden `add-hosts-list`: Listing<String>?
+
+  /// List of a customs host-to-IP mapping (e.g., docker:10.180.0.1)
+  ///
+  /// To set as a [Listing], use [add-hosts-list].
+  `add-hosts`: String? = `add-hosts-list`?.join("\n")
+
+  /// List of extra privileged entitlement (e.g., network.host,security.insecure)
+  hidden allowList: Listing<String>?
+
+  /// List of extra privileged entitlement (e.g., network.host,security.insecure)
+  ///
+  /// To set as a [Listing], use [allowList].
+  allow: String? = allowList?.join("\n")
+
+  /// List of attestation parameters (e.g., type=sbom,generator=image)
+  hidden attestsList: Listing<String>?
+
+  /// List of attestation parameters (e.g., type=sbom,generator=image)
+  ///
+  /// To set as a [Listing], use [attestsList].
+  attests: String? = attestsList?.join(",")
+
+  /// List of build-time variables
+  hidden `build-args-list`: Listing<String>?
+
+  /// List of build-time variables
+  ///
+  /// To set as a [Listing], use [build-args-list].
+  `build-args`: String? = `build-args-list`?.join("\n")
+
+  /// List of additional build contexts (e.g., name=path)
+  hidden `build-contexts-list`: Listing<String>?
+
+  /// List of additional build contexts (e.g., name=path)
+  ///
+  /// To set as a [Listing], use [build-contexts-list].
+  `build-contexts`: String? = `build-contexts-list`?.join("\n")
+
+  /// Builder instance
+  builder: String?
+
+  /// List of external cache sources for buildx (e.g., user/app:cache, type=local,src=path/to/dir)
+  hidden `cache-from-list`: Listing<String>?
+
+  /// List of external cache sources for buildx (e.g., user/app:cache, type=local,src=path/to/dir)
+  ///
+  /// To set as a [Listing], use [cache-from-list].
+  `cache-from`: String? = `cache-from-list`?.join("\n")
+
+  /// List of cache export destinations for buildx (e.g., user/app:cache, type=local,dest=path/to/dir)
+  hidden `cache-to-list`: Listing<String>?
+
+  /// List of cache export destinations for buildx (e.g., user/app:cache, type=local,dest=path/to/dir)
+  ///
+  /// To set as a [Listing], use [cache-to-list].
+  `cache-to`: String? = `cache-to-list`?.join("\n")
+
+  /// Optional parent cgroup for the container used in the build
+  `cgroup-parent`: String?
+
+  /// Build's context is the set of files located in the specified PATH or URL
+  context: String?
+
+  /// Path to the Dockerfile
+  file: String?
+
+  /// List of metadata for an image
+  hidden labelsList: Listing<String>?
+
+  /// List of metadata for an image
+  ///
+  /// To set as a [Listing], use [labelsList].
+  labels: String? = labelsList?.join(",")
+
+  /// Load is a shorthand for --output=type=docker
+  ///
+  /// Default if unspecified: `"false"`
+  load: Boolean?
+
+  /// Set the networking mode for the RUN instructions during build
+  network: String?
+
+  /// Do not use cache when building the image
+  ///
+  /// Default if unspecified: `"false"`
+  `no-cache`: Boolean?
+
+  /// Do not cache specified stages
+  hidden `no-cache-filters-list`: Listing<String>?
+
+  /// Do not cache specified stages
+  ///
+  /// To set as a [Listing], use [no-cache-filters-list].
+  `no-cache-filters`: String? = `no-cache-filters-list`?.join(",")
+
+  /// List of output destinations (format: type=local,dest=path)
+  hidden outputsList: Listing<String>?
+
+  /// List of output destinations (format: type=local,dest=path)
+  ///
+  /// To set as a [Listing], use [outputsList].
+  outputs: String? = outputsList?.join(",")
+
+  /// List of target platforms for build
+  hidden platformsList: Listing<String>?
+
+  /// List of target platforms for build
+  ///
+  /// To set as a [Listing], use [platformsList].
+  platforms: String? = platformsList?.join(",")
+
+  /// Generate provenance attestation for the build (shorthand for --attest=type=provenance)
+  provenance: Boolean?
+
+  /// Always attempt to pull all referenced images
+  ///
+  /// Default if unspecified: `"false"`
+  pull: Boolean?
+
+  /// Push is a shorthand for --output=type=registry
+  ///
+  /// Default if unspecified: `"false"`
+  push: Boolean?
+
+  /// Generate SBOM attestation for the build (shorthand for --attest=type=sbom)
+  sbom: Boolean?
+
+  /// List of secrets to expose to the build (e.g., key=string, GIT_AUTH_TOKEN=mytoken)
+  hidden secretsList: Listing<String>?
+
+  /// List of secrets to expose to the build (e.g., key=string, GIT_AUTH_TOKEN=mytoken)
+  ///
+  /// To set as a [Listing], use [secretsList].
+  secrets: String? = secretsList?.join("\n")
+
+  /// List of secret files to expose to the build (e.g., key=filename, MY_SECRET=./secret.txt)
+  hidden `secret-files-list`: Listing<String>?
+
+  /// List of secret files to expose to the build (e.g., key=filename, MY_SECRET=./secret.txt)
+  ///
+  /// To set as a [Listing], use [secret-files-list].
+  `secret-files`: String? = `secret-files-list`?.join("\n")
+
+  /// Size of /dev/shm (e.g., 2g)
+  `shm-size`: String?
+
+  /// List of SSH agent socket or keys to expose to the build
+  hidden sshList: Listing<String>?
+
+  /// List of SSH agent socket or keys to expose to the build
+  ///
+  /// To set as a [Listing], use [sshList].
+  ssh: String? = sshList?.join("\n")
+
+  /// List of tags
+  hidden tagsList: Listing<String>?
+
+  /// List of tags
+  ///
+  /// To set as a [Listing], use [tagsList].
+  tags: String? = tagsList?.join("\n")
+
+  /// Sets the target stage to build
+  target: String?
+
+  /// Ulimit options (e.g., nofile=1024:1024)
+  ulimit: String?
+
+  /// GitHub Token used to authenticate against a repository for Git context
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  `github-token`: String?
+}

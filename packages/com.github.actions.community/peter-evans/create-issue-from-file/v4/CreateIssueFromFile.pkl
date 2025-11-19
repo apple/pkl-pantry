@@ -1,0 +1,62 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// An action to create an issue using content from a file
+module com.github.actions.community.`peter-evans`.`create-issue-from-file`.v4.CreateIssueFromFile
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "peter-evans/create-issue-from-file"
+
+fixed version: "v4"
+
+with: With
+
+class With {
+  /// The GitHub authentication token
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  token: String?
+
+  /// The target GitHub repository
+  ///
+  /// Default if unspecified: `"${{ github.repository }}"`
+  repository: String?
+
+  /// The issue number of an existing issue to update
+  `issue-number`: Int?
+
+  /// The title of the issue
+  title: String
+
+  /// The file path to the issue content
+  `content-filepath`: String?
+
+  /// A comma or newline-separated list of labels
+  hidden labelsList: Listing<String>?
+
+  /// A comma or newline-separated list of labels
+  ///
+  /// To set as a [Listing], use [labelsList].
+  labels: String? = labelsList?.join(",")
+
+  /// A comma or newline-separated list of assignees (GitHub usernames)
+  hidden assigneesList: Listing<String>?
+
+  /// A comma or newline-separated list of assignees (GitHub usernames)
+  ///
+  /// To set as a [Listing], use [assigneesList].
+  assignees: String? = assigneesList?.join(",")
+}

@@ -1,0 +1,135 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Creates a pull request for changes to your repository in the actions workspace
+module com.github.actions.community.`peter-evans`.`create-pull-request`.v5.CreatePullRequest
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "peter-evans/create-pull-request"
+
+fixed version: "v5"
+
+with: With
+
+class With {
+  /// GITHUB_TOKEN or a `repo` scoped Personal Access Token (PAT)
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  token: String?
+
+  /// Relative path under $GITHUB_WORKSPACE to the repository. Defaults to $GITHUB_WORKSPACE.
+  path: String?
+
+  /// A comma or newline-separated list of file paths to commit. Paths should follow git's pathspec syntax. Defaults to adding all new and modified files.
+  hidden `add-paths-list`: Listing<String>?
+
+  /// A comma or newline-separated list of file paths to commit. Paths should follow git's pathspec syntax. Defaults to adding all new and modified files.
+  ///
+  /// To set as a [Listing], use [add-paths-list].
+  `add-paths`: String? = `add-paths-list`?.join("\n")
+
+  /// The message to use when committing changes.
+  ///
+  /// Default if unspecified: `"[create-pull-request] automated change"`
+  `commit-message`: String?
+
+  /// The committer name and email address in the format `Display Name <email@address.com>`. Defaults to the GitHub Actions bot user.
+  ///
+  /// Default if unspecified: `"GitHub <noreply@github.com>"`
+  committer: String?
+
+  /// The author name and email address in the format `Display Name <email@address.com>`. Defaults to the user who triggered the workflow run.
+  ///
+  /// Default if unspecified: `"${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"`
+  author: String?
+
+  /// Add `Signed-off-by` line by the committer at the end of the commit log message.
+  ///
+  /// Default if unspecified: `false`
+  signoff: Boolean?
+
+  /// The pull request branch name.
+  ///
+  /// Default if unspecified: `"create-pull-request/patch"`
+  branch: String?
+
+  /// Delete the `branch` when closing pull requests, and when undeleted after merging. Recommend `true`.
+  ///
+  /// Default if unspecified: `false`
+  `delete-branch`: Boolean?
+
+  /// The branch suffix type when using the alternative branching strategy.
+  `branch-suffix`: String?
+
+  /// The pull request base branch. Defaults to the branch checked out in the workflow.
+  base: String?
+
+  /// A fork of the checked out parent repository to which the pull request branch will be pushed. e.g. `owner/repo-fork`. The pull request will be created to merge the fork's branch into the parent's base.
+  `push-to-fork`: String?
+
+  /// The title of the pull request.
+  ///
+  /// Default if unspecified: `"Changes by create-pull-request action"`
+  title: String?
+
+  /// The body of the pull request.
+  ///
+  /// Default if unspecified: `"Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action"`
+  body: String?
+
+  /// The path to a file containing the pull request body. Takes precedence over `body`.
+  `body-path`: String?
+
+  /// A comma or newline separated list of labels.
+  hidden labelsList: Listing<String>?
+
+  /// A comma or newline separated list of labels.
+  ///
+  /// To set as a [Listing], use [labelsList].
+  labels: String? = labelsList?.join("\n")
+
+  /// A comma or newline separated list of assignees (GitHub usernames).
+  hidden assigneesList: Listing<String>?
+
+  /// A comma or newline separated list of assignees (GitHub usernames).
+  ///
+  /// To set as a [Listing], use [assigneesList].
+  assignees: String? = assigneesList?.join("\n")
+
+  /// A comma or newline separated list of reviewers (GitHub usernames) to request a review from.
+  hidden reviewersList: Listing<String>?
+
+  /// A comma or newline separated list of reviewers (GitHub usernames) to request a review from.
+  ///
+  /// To set as a [Listing], use [reviewersList].
+  reviewers: String? = reviewersList?.join("\n")
+
+  /// A comma or newline separated list of GitHub teams to request a review from. Note that a `repo` scoped Personal Access Token (PAT) may be required.
+  hidden `team-reviewers-list`: Listing<String>?
+
+  /// A comma or newline separated list of GitHub teams to request a review from. Note that a `repo` scoped Personal Access Token (PAT) may be required.
+  ///
+  /// To set as a [Listing], use [team-reviewers-list].
+  `team-reviewers`: String? = `team-reviewers-list`?.join("\n")
+
+  /// The number of the milestone to associate the pull request with.
+  milestone: String?
+
+  /// Create a draft pull request. It is not possible to change draft status after creation except through the web interface
+  ///
+  /// Default if unspecified: `false`
+  draft: Boolean?
+}
