@@ -178,7 +178,7 @@ examples {
       bar: String?
     }
     
-    typealias Foo = Any
+    typealias Foo = Null
     
     """
   }
@@ -263,7 +263,7 @@ examples {
       gecos: String?
     
       /// Optional comma-separated string of groups to add the user to.
-      groups: (String|Listing<String>(!isEmpty)|Mapping<String(matches(Regex("^.+$"))), Any?>)?
+      groups: (String|Listing<String>(!isEmpty)|Mapping<String(matches(Regex("^.+$"))), Null?>)?
     
       /// Optional home dir for user. Default: ``/home/<username>``
       ///
