@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ module org.json_schema.contrib.tests.TypesGenerator
 amends "pkl:test"
 
 import "@jsonschema/JsonSchema.pkl"
-import "../internal/TypesGenerator.pkl"
+
 import "../internal/Type.pkl"
+import "../internal/TypesGenerator.pkl"
 
 examples {
   ["numbers"] {
@@ -33,11 +34,15 @@ examples {
     TypesGenerator.generateTypeNode((numberSchema) { minimum = 0 }, Map()).render("")
     TypesGenerator.generateTypeNode((numberSchema) { exclusiveMinimum = -1 }, Map()).render("")
     TypesGenerator.generateTypeNode((numberSchema) { multipleOf = 1 }, Map()).render("")
-    TypesGenerator.generateTypeNode((numberSchema) { minimum = 0; maximum = 255; multipleOf = 1 }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode((numberSchema) { minimum = 0; maximum = 255; multipleOf = 1 }, Map())
+      .render("")
   }
   ["number literals"] {
     TypesGenerator.generateTypeNode(new JsonSchema { `const` = 5 }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { 5; 6; 7 } }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { enum = new Listing { 5; 6; 7 } }, Map())
+      .render("")
   }
   ["strings"] {
     local stringSchema: JsonSchema = new {
@@ -47,15 +52,21 @@ examples {
     TypesGenerator.generateTypeNode((stringSchema) { minLength = 1 }, Map()).render("")
     TypesGenerator.generateTypeNode((stringSchema) { minLength = 5 }, Map()).render("")
     TypesGenerator.generateTypeNode((stringSchema) { maxLength = 10 }, Map()).render("")
-    TypesGenerator.generateTypeNode((stringSchema) { minLength = 5; maxLength = 10 }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode((stringSchema) { minLength = 5; maxLength = 10 }, Map())
+      .render("")
     TypesGenerator.generateTypeNode((stringSchema) { pattern = "[a-z]" }, Map()).render("")
     TypesGenerator.generateTypeNode((stringSchema) { format = "uri" }, Map()).render("")
     TypesGenerator.generateTypeNode((stringSchema) { format = "regex" }, Map()).render("")
   }
   ["string literals"] {
-    TypesGenerator.generateTypeNode(new JsonSchema { type = "string"; `const` = "Hello" }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { type = "string"; `const` = "Hello" }, Map())
+      .render("")
     TypesGenerator.generateTypeNode(new JsonSchema { `const` = "Hello" }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { "Bart"; "Lisa" } }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { enum = new Listing { "Bart"; "Lisa" } }, Map())
+      .render("")
   }
   ["booleans"] {
     TypesGenerator.generateTypeNode(new JsonSchema { type = "boolean" }, Map()).render("")
@@ -63,8 +74,12 @@ examples {
   ["boolean literals"] {
     TypesGenerator.generateTypeNode(new JsonSchema { `const` = true }, Map()).render("")
     TypesGenerator.generateTypeNode(new JsonSchema { `const` = false }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { false } }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { true; false } }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { enum = new Listing { false } }, Map())
+      .render("")
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { enum = new Listing { true; false } }, Map())
+      .render("")
   }
   ["arrays"] {
     local arraySchema: JsonSchema = new {
@@ -72,98 +87,160 @@ examples {
     }
     TypesGenerator.generateTypeNode((arraySchema) { minLength = 5 }, Map()).render("")
     TypesGenerator.generateTypeNode((arraySchema) { maxLength = 10 }, Map()).render("")
-    TypesGenerator.generateTypeNode((arraySchema) { minLength = 5; maxLength = 10 }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode((arraySchema) { minLength = 5; maxLength = 10 }, Map())
+      .render("")
     TypesGenerator.generateTypeNode((arraySchema) { uniqueItems = true }, Map()).render("")
-    TypesGenerator.generateTypeNode((arraySchema) {
-      items {
-        type = "string"
-      }
-    }, Map()).render("")
-    TypesGenerator.generateTypeNode((arraySchema) {
-      items {
-        type = "string"
-        minLength = 1
-      }
-    }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(
+        (arraySchema) {
+          items {
+            type = "string"
+          }
+        },
+        Map()
+      )
+      .render("")
+    TypesGenerator
+      .generateTypeNode(
+        (arraySchema) {
+          items {
+            type = "string"
+            minLength = 1
+          }
+        },
+        Map()
+      )
+      .render("")
   }
   ["mappings"] {
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = "object"
-      additionalProperties {
-        type = "string"
-      }
-    }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = "object"
-      patternProperties {
-        ["[a-z]"] {
-          type = "number"
-        }
-      }
-    }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = "object"
+          additionalProperties {
+            type = "string"
+          }
+        },
+        Map()
+      )
+      .render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = "object"
+          patternProperties {
+            ["[a-z]"] {
+              type = "number"
+            }
+          }
+        },
+        Map()
+      )
+      .render("")
   }
   ["nullables"] {
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = new Listing { "string"; "null" }
-      minLength = 10
-    }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = new Listing { "string"; "number"; "null" }
-      minLength = 10
-      minimum = 10
-    }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = new Listing { "string"; "null" }
+          minLength = 10
+        },
+        Map()
+      )
+      .render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = new Listing { "string"; "number"; "null" }
+          minLength = 10
+          minimum = 10
+        },
+        Map()
+      )
+      .render("")
   }
   ["unions"] {
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      oneOf {
+    TypesGenerator
+      .generateTypeNode(
         new JsonSchema {
-          type = "string"
+          oneOf {
+            new JsonSchema {
+              type = "string"
+              minLength = 5
+            }
+            new JsonSchema {
+              type = "number"
+              multipleOf = 10
+            }
+          }
+        },
+        Map()
+      )
+      .render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = new Listing { "string"; "number" }
           minLength = 5
-        }
-        new JsonSchema {
-          type = "number"
           multipleOf = 10
-        }
-      }
-    }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = new Listing { "string"; "number" }
-      minLength = 5
-      multipleOf = 10
-    }, Map()).render("")
+        },
+        Map()
+      )
+      .render("")
   }
   ["not"] {
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = "string"
-      not {
-        `const` = "foo"
-      }
-    }, Map()).render("")
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = "string"
-      not {
-        minLength = 5
-        maxLength = 10
-      }
-    }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = "string"
+          not {
+            `const` = "foo"
+          }
+        },
+        Map()
+      )
+      .render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = "string"
+          not {
+            minLength = 5
+            maxLength = 10
+          }
+        },
+        Map()
+      )
+      .render("")
   }
   ["null"] {
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = "null"
-    }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(
+        new JsonSchema {
+          type = "null"
+        },
+        Map()
+      )
+      .render("")
   }
   ["allOf"] {
-    TypesGenerator.generateTypeNode(new JsonSchema {
-      type = "string"
-      allOf {
+    TypesGenerator
+      .generateTypeNode(
         new JsonSchema {
-          minLength = 5
-        }
-        new JsonSchema {
-          maxLength = 10
-        }
-      }
-    }, Map()).render("")
+          type = "string"
+          allOf {
+            new JsonSchema {
+              minLength = 5
+            }
+            new JsonSchema {
+              maxLength = 10
+            }
+          }
+        },
+        Map()
+      )
+      .render("")
   }
   ["types from $ref"] {
     local schema: JsonSchema = new {
@@ -184,9 +261,15 @@ examples {
     // $ref's get resolved from the root schema. For this test, a root schema gets set up and the child property
     // "properties.bar" has its type generated.
     new TypesGenerator { enclosingModuleName = "TheFoo" }
-      .generateTypeNode(schema.properties!!["bar"], Map(schema.definitions!!["foo"] as JsonSchema, new Type { name = "Foo"; moduleName = "TheFoo" }))
+      .generateTypeNode(
+        schema.properties!!["bar"],
+        Map(schema.definitions!!["foo"] as JsonSchema,
+            new Type { name = "Foo"; moduleName = "TheFoo" })
+      )
       .render("")
-    TypesGenerator.generateTypeNode(new JsonSchema { $ref = "#/not/resolveable"; $$baseSchema = schema }, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { $ref = "#/not/resolveable"; $$baseSchema = schema }, Map())
+      .render("")
   }
   ["boolean schemas"] {
     TypesGenerator.generateTypeNode(true, Map()).render("")
