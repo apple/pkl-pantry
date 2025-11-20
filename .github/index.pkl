@@ -20,6 +20,7 @@ import "@gha/actions/Common.pkl"
 import "@gha/actions/Setup.pkl"
 import "@gha/Context.pkl"
 import "@gha/Workflow.pkl"
+import "@pkl.impl.ghactions/steps/SetupPkl.pkl"
 
 triggerPackageDocsBuild = "main"
 
@@ -46,6 +47,8 @@ local buildAndTest: Workflow = new {
             cache = "gradle"
           }
         }
+        // pkl cli used for ../packages/pkl.tar/examples/test_examples.sh
+        new SetupPkl { version = "0.30.0" }.step
         new {
           run = "./gradlew build"
         }
