@@ -399,6 +399,6 @@ const function maybeAppend(cond: Boolean, makeBuffer: () -> Buffer): (Buffer) ->
 /// Pad (with zero bytes) some [Bytes] to a multiple of 512 bytes.
 local const function padToBlock(buffer: Bytes): Buffer(length % blockLength == 0) =
   if (buffer.length != 0)
-    buffer.toList() + nul(blockLength - (buffer.length % blockLength))
+    buffer.toList() + if(buffer.length % blockLength == 0) List() else nul(blockLength - (buffer.length % blockLength))
   else
     List()

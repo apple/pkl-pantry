@@ -20,6 +20,10 @@ archive: tar.FileSystem = new {
   ["regularFile.txt"] {
     text = "this is a regular file"
   }
+  ["exactlyOneBlock.txt"] {
+    // exactly the size of a block to test padding code
+    text = "HI".repeat(256)
+  }
   ["someDir/regularFile.txt"] = this["regularFile.txt"]
   ["someDir/with/path/long/enough/to/need/a/ustar/prefix/which/is/actually/quite/long/apparently/regularFile.txt"] =
     this["regularFile.txt"]
