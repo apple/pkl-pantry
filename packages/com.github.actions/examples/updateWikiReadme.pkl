@@ -33,7 +33,7 @@ jobs {
     name = "Update Wiki Readme"
     `runs-on` = "ubuntu-latest"
     steps {
-      catalog.`actions/checkout@v5`
+      catalog.`actions/checkout@v6`
       (catalog.`actions/setup-go@v5`) {
         with {
           `go-version` = "1.17.7"

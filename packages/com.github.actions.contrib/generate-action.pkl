@@ -13,12 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Generates a TypedStep that calls out to a GitHub Action.
+/// Generates a typed step that calls out to a GitHub Action.
 ///
 /// The types for an action can be enhanced with types from typesafegithub.
 /// It will look either at the repo's `action-types.yml` file, or within
-/// [github-actions-typing-catalog](https://github.com/typesafegithub/github-actions-typing-catalog) to determine the
-/// corresponding types.
+/// [github-actions-typing-catalog](https://github.com/typesafegithub/github-actions-typing-catalog)
+/// to determine the corresponding types.
 ///
 /// If actions are missing in either of these sources, use the programmatic [ActionGenerator] instead.
 ///

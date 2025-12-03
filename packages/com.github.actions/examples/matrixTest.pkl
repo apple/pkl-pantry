@@ -54,7 +54,7 @@ jobs {
       }
     }
     steps {
-      catalog.`actions/checkout@v5`
+      catalog.`actions/checkout@v6`
       new {
         name = "Run on ${{ matrix.os }}"
         run = "echo Hello World"

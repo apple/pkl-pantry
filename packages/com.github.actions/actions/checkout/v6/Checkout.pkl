@@ -14,13 +14,13 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 /// Checkout a Git repository at a particular version
-module com.github.actions.actions.checkout.v5.Checkout
+module com.github.actions.actions.checkout.v6.Checkout
 
 extends ".../AbstractTypedStep.pkl"
 
 fixed action: "actions/checkout"
 
-fixed version: "v5"
+fixed version: "v6"
 
 with: With
 

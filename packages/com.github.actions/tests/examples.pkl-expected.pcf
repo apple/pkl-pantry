@@ -25,7 +25,7 @@ examples {
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
-        - uses: actions/checkout@v5
+        - uses: actions/checkout@v6
           with: {}
         - name: Run on ${{ matrix.os }}
           run: echo Hello World
@@ -144,7 +144,7 @@ examples {
           name: production
         steps:
         - name: Checkout
-          uses: actions/checkout@v5
+          uses: actions/checkout@v6
           with:
             ref: develop
             token: ${{ secrets.GITHUB_TOKEN }}
@@ -166,7 +166,7 @@ examples {
         - name: date
           run: date
         - name: Checkout
-          uses: actions/checkout@v5
+          uses: actions/checkout@v6
           with:
             ref: develop
         - name: Slack
@@ -194,7 +194,7 @@ examples {
         name: Update Wiki Readme
         runs-on: ubuntu-latest
         steps:
-        - uses: actions/checkout@v5
+        - uses: actions/checkout@v6
           with: {}
         - uses: actions/setup-go@v5
           with:

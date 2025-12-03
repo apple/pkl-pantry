@@ -81,7 +81,7 @@ jobs {
       name = "production"
     }
     steps {
-      (catalog.`actions/checkout@v5`) {
+      (catalog.`actions/checkout@v6`) {
         name = "Checkout"
         with {
           ref = "develop"
@@ -120,7 +120,7 @@ jobs {
         name = "date"
         run = "date"
       }
-      (catalog.`actions/checkout@v5`) {
+      (catalog.`actions/checkout@v6`) {
         name = "Checkout"
         with {
           ref = "develop"

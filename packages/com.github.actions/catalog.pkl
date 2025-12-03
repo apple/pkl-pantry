@@ -19,7 +19,7 @@ open module com.github.actions.catalog
 import "actions/cache/restore/v4/CacheRestore.pkl" as CacheRestoreV4
 import "actions/cache/save/v4/CacheSave.pkl" as CacheSaveV4
 import "actions/cache/v4/Cache.pkl" as CacheV4
-import "actions/checkout/v5/Checkout.pkl" as CheckoutV5
+import "actions/checkout/v6/Checkout.pkl" as CheckoutV6
 import "actions/configure-pages/v5/ConfigurePages.pkl" as ConfigurePagesV5
 import "actions/create-github-app-token/v2/CreateGithubAppToken.pkl" as CreateGithubAppTokenV2
 import "actions/create-release/v1/CreateRelease.pkl" as CreateReleaseV1
@@ -47,7 +47,7 @@ import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPages
 `actions/cache@v4`: CacheV4
 
 /// Checkout a Git repository at a particular version
-`actions/checkout@v5`: CheckoutV5
+`actions/checkout@v6`: CheckoutV6
 
 /// A GitHub Action to enable Pages, extract various metadata about a site, and configure some supported static site generators.
 `actions/configure-pages@v5`: ConfigurePagesV5

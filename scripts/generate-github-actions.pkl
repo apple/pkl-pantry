@@ -26,6 +26,8 @@ import "@com.github.actions.contrib/ActionGenerator.pkl"
 import "@syntax/ClassOrModuleNode.pkl"
 import "@syntax/TypeNode.pkl"
 
+import* "actionTypes/**.pkl" as extraActionTypes
+
 local yamlParser = new yaml.Parser { mode = "1.2" }
 
 hidden fixed adjustments: Mapping<
@@ -58,14 +60,17 @@ hidden fixed adjustments: Mapping<
 
 // noinspection UnresolvedElement
 function getLatestVersion(action: String): String =
-  let (ownerAndRepo = action.split("/").take(2).join("/"))
-  let (
-    resource =
-      read(
-        "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(ownerAndRepo)/metadata.yml"
-      )
-  )
-    yamlParser.parse(resource).versionsWithTypings.toList().last
+  if (action == "actions/checkout")
+    "v6"
+  else
+    let (ownerAndRepo = action.split("/").take(2).join("/"))
+    let (
+      resource =
+        read(
+          "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(ownerAndRepo)/metadata.yml"
+        )
+    )
+      yamlParser.parse(resource).versionsWithTypings.toList().last
 
 local coreActions: Listing<String> = new {
   "actions/cache"
@@ -106,6 +111,7 @@ function generateAction(action: String): Mapping<String, FileOutput> =
   let (
     generated = (coreGenerator) {
       actionName = action
+      actionTypes = extraActionTypes.getOrNull("actionTypes/\(action).pkl")
       local actionWithoutVersion = action.substring(0, action.indexOf("@"))
       adjustments = module.adjustments.getOrNull(actionWithoutVersion)
     }
