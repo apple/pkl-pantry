@@ -19,7 +19,7 @@ import "@syntax/ModuleNode.pkl"
 import "@syntax/TypeNode.pkl"
 
 import* "@com.github.actions.community/*/**.pkl" as allCatalogActions
-import* "@com.github.actions/actions/**.pkl" as allCoreActions
+import* "@com.github.actions/actions/*/**.pkl" as allCoreActions
 
 class ActionMeta {
   path: String
@@ -29,7 +29,7 @@ class ActionMeta {
   fixed reflectedModule = reflect.Module(mod)
   fixed importPath = path.replaceFirst(stripPrefix, "")
   fixed parts = importPath.split("/")
-  fixed org = parts.first
+  fixed org = parts[0]
   fixed repoName = parts[1]
   fixed version = parts[2]
   fixed subpath = parts.sublist(3, parts.length - 1).join("/")
@@ -89,7 +89,7 @@ local coreCatalog: ModuleNode = new {
       }
       name {
         parts {
-          for (part in "com.github.actions.catalog".split(".")) {
+          for (part in "com.github.actions.actions.catalog".split(".")) {
             new { value = part }
           }
         }

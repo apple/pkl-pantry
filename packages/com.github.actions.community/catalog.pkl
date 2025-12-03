@@ -1,18 +1,3 @@
-//===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//===----------------------------------------------------------------------===//
 /// Index module of all actions in this catalog, plus core actions.
 open module com.github.actions.community.catalog
 
@@ -22,51 +7,23 @@ import "actions-rs/audit-check/v1/AuditCheck.pkl" as AuditCheckV1
 import "actions-rs/cargo/v1/Cargo.pkl" as CargoV1
 import "actions-rs/clippy-check/v1/ClippyCheck.pkl" as ClippyCheckV1
 import "actions-rs/toolchain/v1/Toolchain.pkl" as ToolchainV1
-import "aws-actions/amazon-ecr-login/v1/AmazonEcrLogin.pkl" as AmazonEcrLoginV1
+import "actions-rust-lang/setup-rust-toolchain/v1/SetupRustToolchain.pkl" as SetupRustToolchainV1
 import "aws-actions/amazon-ecr-login/v2/AmazonEcrLogin.pkl" as AmazonEcrLoginV2
-import
-  "aws-actions/amazon-ecs-deploy-task-definition/v1/AmazonEcsDeployTaskDefinition.pkl"
-  as AmazonEcsDeployTaskDefinitionV1
-import
-  "aws-actions/amazon-ecs-render-task-definition/v1/AmazonEcsRenderTaskDefinition.pkl"
-  as AmazonEcsRenderTaskDefinitionV1
-import
-  "aws-actions/configure-aws-credentials/v1/ConfigureAwsCredentials.pkl"
-  as ConfigureAwsCredentialsV1
-import
-  "aws-actions/configure-aws-credentials/v2/ConfigureAwsCredentials.pkl"
-  as ConfigureAwsCredentialsV2
-import
-  "aws-actions/configure-aws-credentials/v3/ConfigureAwsCredentials.pkl"
-  as ConfigureAwsCredentialsV3
-import
-  "aws-actions/configure-aws-credentials/v4/ConfigureAwsCredentials.pkl"
-  as ConfigureAwsCredentialsV4
+import "aws-actions/amazon-ecs-deploy-task-definition/v1/AmazonEcsDeployTaskDefinition.pkl" as AmazonEcsDeployTaskDefinitionV1
+import "aws-actions/amazon-ecs-render-task-definition/v1/AmazonEcsRenderTaskDefinition.pkl" as AmazonEcsRenderTaskDefinitionV1
+import "aws-actions/configure-aws-credentials/v4/ConfigureAwsCredentials.pkl" as ConfigureAwsCredentialsV4
 import "azure/docker-login/v1/DockerLogin.pkl" as DockerLoginV1
 import "azure/login/v1/Login.pkl" as LoginV1
-import "azure/webapps-deploy/v2/WebappsDeploy.pkl" as WebappsDeployV2
 import "azure/webapps-deploy/v3/WebappsDeploy.pkl" as WebappsDeployV3
-import "codecov/codecov-action/v3/CodecovAction.pkl" as CodecovActionV3
 import "codecov/codecov-action/v4/CodecovAction.pkl" as CodecovActionV4
-import "docker/build-push-action/v2/BuildPushAction.pkl" as BuildPushActionV2
-import "docker/build-push-action/v3/BuildPushAction.pkl" as BuildPushActionV3
-import "docker/build-push-action/v4/BuildPushAction.pkl" as BuildPushActionV4
+import "dawidd6/action-download-artifact/v11/ActionDownloadArtifact.pkl" as ActionDownloadArtifactV11
 import "docker/build-push-action/v5/BuildPushAction.pkl" as BuildPushActionV5
-import "docker/login-action/v1/LoginAction.pkl" as LoginActionV1
-import "docker/login-action/v2/LoginAction.pkl" as LoginActionV2
 import "docker/login-action/v3/LoginAction.pkl" as LoginActionV3
-import "docker/metadata-action/v4/MetadataAction.pkl" as MetadataActionV4
 import "docker/metadata-action/v5/MetadataAction.pkl" as MetadataActionV5
-import "docker/setup-buildx-action/v1/SetupBuildxAction.pkl" as SetupBuildxActionV1
-import "docker/setup-buildx-action/v2/SetupBuildxAction.pkl" as SetupBuildxActionV2
 import "docker/setup-buildx-action/v3/SetupBuildxAction.pkl" as SetupBuildxActionV3
 import "docker/setup-qemu-action/v2/SetupQemuAction.pkl" as SetupQemuActionV2
-import
-  "enricomi/publish-unit-test-result-action/v2/PublishUnitTestResultAction.pkl"
-  as PublishUnitTestResultActionV2
+import "enricomi/publish-unit-test-result-action/v2/PublishUnitTestResultAction.pkl" as PublishUnitTestResultActionV2
 import "peter-evans/create-issue-from-file/v4/CreateIssueFromFile.pkl" as CreateIssueFromFileV4
-import "peter-evans/create-pull-request/v4/CreatePullRequest.pkl" as CreatePullRequestV4
-import "peter-evans/create-pull-request/v5/CreatePullRequest.pkl" as CreatePullRequestV5
 import "peter-evans/create-pull-request/v6/CreatePullRequest.pkl" as CreatePullRequestV6
 
 /// Run cargo audit and check for security advisories
@@ -81,8 +38,9 @@ import "peter-evans/create-pull-request/v6/CreatePullRequest.pkl" as CreatePullR
 /// Install the Rust toolchain
 `actions-rs/toolchain@v1`: ToolchainV1
 
-/// Logs in the local Docker client to one or more Amazon ECR Private registries or an Amazon ECR Public registry
-`aws-actions/amazon-ecr-login@v1`: AmazonEcrLoginV1
+/// Setup specific Rust versions with caching pre-configured.
+/// It provides problem matchers for cargo and rustfmt issues.
+`actions-rust-lang/setup-rust-toolchain@v1`: SetupRustToolchainV1
 
 /// Logs in the local Docker client to one or more Amazon ECR Private registries or an Amazon ECR Public registry
 `aws-actions/amazon-ecr-login@v2`: AmazonEcrLoginV2
@@ -92,15 +50,6 @@ import "peter-evans/create-pull-request/v6/CreatePullRequest.pkl" as CreatePullR
 
 /// Inserts a container image URI into a container definition in an Amazon ECS task definition JSON file, creating a new file.
 `aws-actions/amazon-ecs-render-task-definition@v1`: AmazonEcsRenderTaskDefinitionV1
-
-/// Configure AWS credential and region environment variables for use with the AWS CLI and AWS SDKs
-`aws-actions/configure-aws-credentials@v1`: ConfigureAwsCredentialsV1
-
-/// Configure AWS credential and region environment variables for use with the AWS CLI and AWS SDKs
-`aws-actions/configure-aws-credentials@v2`: ConfigureAwsCredentialsV2
-
-/// Configures AWS credentials for use in subsequent steps in a GitHub Action workflow
-`aws-actions/configure-aws-credentials@v3`: ConfigureAwsCredentialsV3
 
 /// Configures AWS credentials for use in subsequent steps in a GitHub Action workflow
 `aws-actions/configure-aws-credentials@v4`: ConfigureAwsCredentialsV4
@@ -112,49 +61,22 @@ import "peter-evans/create-pull-request/v6/CreatePullRequest.pkl" as CreatePullR
 `azure/login@v1`: LoginV1
 
 /// Deploy Web Apps/Containerized Web Apps to Azure. github.com/Azure/Actions
-`azure/webapps-deploy@v2`: WebappsDeployV2
-
-/// Deploy Web Apps/Containerized Web Apps to Azure. github.com/Azure/Actions
 `azure/webapps-deploy@v3`: WebappsDeployV3
-
-/// GitHub Action that uploads coverage reports for your repository to codecov.io
-`codecov/codecov-action@v3`: CodecovActionV3
 
 /// GitHub Action that uploads coverage reports for your repository to codecov.io
 `codecov/codecov-action@v4`: CodecovActionV4
 
-/// Build and push Docker images with Buildx
-`docker/build-push-action@v2`: BuildPushActionV2
-
-/// Build and push Docker images with Buildx
-`docker/build-push-action@v3`: BuildPushActionV3
-
-/// Build and push Docker images with Buildx
-`docker/build-push-action@v4`: BuildPushActionV4
+/// Download and extract an artifact associated with given workflow and commit or other criteria
+`dawidd6/action-download-artifact@v11`: ActionDownloadArtifactV11
 
 /// Build and push Docker images with Buildx
 `docker/build-push-action@v5`: BuildPushActionV5
 
 /// GitHub Action to login against a Docker registry
-`docker/login-action@v1`: LoginActionV1
-
-/// GitHub Action to login against a Docker registry
-`docker/login-action@v2`: LoginActionV2
-
-/// GitHub Action to login against a Docker registry
 `docker/login-action@v3`: LoginActionV3
 
 /// GitHub Action to extract metadata (tags, labels) for Docker
-`docker/metadata-action@v4`: MetadataActionV4
-
-/// GitHub Action to extract metadata (tags, labels) for Docker
 `docker/metadata-action@v5`: MetadataActionV5
-
-/// Set up Docker Buildx
-`docker/setup-buildx-action@v1`: SetupBuildxActionV1
-
-/// Set up Docker Buildx
-`docker/setup-buildx-action@v2`: SetupBuildxActionV2
 
 /// Set up Docker Buildx
 `docker/setup-buildx-action@v3`: SetupBuildxActionV3
@@ -167,12 +89,6 @@ import "peter-evans/create-pull-request/v6/CreatePullRequest.pkl" as CreatePullR
 
 /// An action to create an issue using content from a file
 `peter-evans/create-issue-from-file@v4`: CreateIssueFromFileV4
-
-/// Creates a pull request for changes to your repository in the actions workspace
-`peter-evans/create-pull-request@v4`: CreatePullRequestV4
-
-/// Creates a pull request for changes to your repository in the actions workspace
-`peter-evans/create-pull-request@v5`: CreatePullRequestV5
 
 /// Creates a pull request for changes to your repository in the actions workspace
 `peter-evans/create-pull-request@v6`: CreatePullRequestV6

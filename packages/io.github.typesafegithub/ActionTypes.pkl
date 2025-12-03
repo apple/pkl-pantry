@@ -28,48 +28,19 @@ outputs: Mapping<String(matches(Regex("^[_a-zA-Z][a-zA-Z0-9_-]*$"))), Property>?
 
 typealias TypeName = "string" | "boolean" | "integer" | "float" | "enum" | "list"
 
-abstract class AbstractProperty {
+class Property {
   type: TypeName
+
+  name: String(type is "integer" | "enum")?
+
+  `named-values`: Mapping<String, Int>(type == "integer")?
+
+  separator: String(type == "list")?
+
+  `list-item`: Property(type == "list")?
+
+  `allowed-values`: Listing<String>(type == "enum")?
 }
-
-class StringProperty extends AbstractProperty {
-  type: "string"
-}
-
-class BooleanProperty extends AbstractProperty {
-  type: "boolean"
-}
-
-class IntegerProperty extends AbstractProperty {
-  type: "integer"
-
-  name: String?
-
-  `named-values`: Mapping<String, Int>?
-}
-
-class FloatProperty extends AbstractProperty {
-  type: "float"
-}
-
-class ListProperty extends AbstractProperty {
-  type = "list"
-
-  separator: String
-
-  `list-item`: AbstractProperty
-}
-
-class EnumProperty extends AbstractProperty {
-  type: "enum"
-
-  `allowed-values`: Listing<String>
-
-  name: String?
-}
-
-typealias Property =
-  StringProperty | BooleanProperty | IntegerProperty | FloatProperty | EnumProperty | ListProperty
 
 output {
   renderer = new YamlRenderer {}

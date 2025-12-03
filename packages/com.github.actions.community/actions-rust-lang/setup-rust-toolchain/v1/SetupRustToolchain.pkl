@@ -1,0 +1,117 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Setup specific Rust versions with caching pre-configured.
+/// It provides problem matchers for cargo and rustfmt issues.
+module com.github.actions.community.`actions-rust-lang`.`setup-rust-toolchain`.v1.SetupRustToolchain
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "actions-rust-lang/setup-rust-toolchain"
+
+fixed version: "v1"
+
+with: With
+
+class With {
+  /// Comma-separated list of Rust toolchain specifications. Last version becomes the default. -- see https://rust-lang.github.io/rustup/concepts/toolchains.html#toolchain-specification
+  hidden toolchainList: Listing<String>?
+
+  /// Comma-separated list of Rust toolchain specifications. Last version becomes the default. -- see https://rust-lang.github.io/rustup/concepts/toolchains.html#toolchain-specification
+  ///
+  /// To set as a [Listing], use [toolchainList].
+  toolchain: String? = toolchainList?.join(",")
+
+  /// Target triple to install for this toolchain
+  target: String?
+
+  /// Comma-separated list of components to be additionally installed
+  hidden componentsList: Listing<String>?
+
+  /// Comma-separated list of components to be additionally installed
+  ///
+  /// To set as a [Listing], use [componentsList].
+  components: String? = componentsList?.join(",")
+
+  /// Automatically configure Rust cache
+  ///
+  /// Default if unspecified: `"true"`
+  cache: Boolean?
+
+  /// Paths to multiple Cargo workspaces and their target directories, separated by newlines.
+  hidden `cache-workspaces-list`: Listing<String>?
+
+  /// Paths to multiple Cargo workspaces and their target directories, separated by newlines.
+  ///
+  /// To set as a [Listing], use [`cache-workspaces-list`].
+  `cache-workspaces`: String? = `cache-workspaces-list`?.join("\n")
+
+  /// Additional non workspace directories to be cached, separated by newlines.
+  hidden `cache-directories-list`: Listing<String>?
+
+  /// Additional non workspace directories to be cached, separated by newlines.
+  ///
+  /// To set as a [Listing], use [`cache-directories-list`].
+  `cache-directories`: String? = `cache-directories-list`?.join("\n")
+
+  /// Cache even if the build fails.
+  ///
+  /// Default if unspecified: `"true"`
+  `cache-on-failure`: Boolean?
+
+  /// An additional cache key that is added alongside the automatic `job`-based cache key and can be used to further differentiate jobs.
+  `cache-key`: String?
+
+  /// A cache key that is used instead of the automatic `job`-based key, and is stable over multiple jobs.
+  `cache-shared-key`: String?
+
+  /// Determines whether to cache ${CARGO_HOME}/bin.
+  ///
+  /// Default if unspecified: `"true"`
+  `cache-bin`: Boolean?
+
+  /// Determines which provider to use for caching. Options are github, buildjet, or warpbuild. Defaults to github.
+  ///
+  /// Default if unspecified: `"github"`
+  `cache-provider`: ("github" | "buildjet" | "warpbuild")?
+
+  /// Determines which crates are cached. If `true` all crates will be cached, otherwise only dependent crates will be cached.
+  ///
+  /// Default if unspecified: `"false"`
+  `cache-all-crates`: Boolean?
+
+  /// Determines which crates are cached. If `true` all crates will be cached, otherwise only dependent crates will be cached.
+  ///
+  /// Default if unspecified: `"false"`
+  `cache-workspace-crates`: Boolean?
+
+  /// Enable the Rust problem matcher
+  ///
+  /// Default if unspecified: `"true"`
+  matcher: Boolean?
+
+  /// set RUSTFLAGS environment variable, set to empty string to avoid overwriting build.rustflags
+  ///
+  /// Default if unspecified: `"-D warnings"`
+  rustflags: String?
+
+  /// Setup the last installed toolchain as the default via `rustup override`
+  ///
+  /// Default if unspecified: `"true"`
+  `override`: Boolean?
+
+  /// Specify path from root directory to the Rust source directory. By default root directory will be used.
+  `rust-src-dir`: String?
+}

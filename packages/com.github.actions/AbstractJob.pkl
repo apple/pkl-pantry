@@ -36,99 +36,98 @@ name: String?
 /// Identify any jobs that must complete successfully before this job will run.
 ///
 /// It can be a string or array of strings.
-/// If a job fails or is skipped, all jobs that need it are skipped unless the jobs use a conditional expression that
-/// causes the job to continue.
-/// If a run contains a series of jobs that need each other, a failure or skip applies to all jobs in the dependency
-/// chain from the point of failure or skip onwards. If you would like a job to run even if a job it is dependent on
-/// did not succeed, use the `always()` conditional expression in `jobs.<job_id>.if`.
-///
-/// See: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds>
+/// If a job fails or is skipped, all jobs that need it are skipped unless the jobs use a
+/// conditional expression that causes the job to continue.
+/// If a run contains a series of jobs that need each other, a failure or skip applies to all jobs
+/// in the dependency chain from the point of failure or skip onwards.
+/// If you would like a job to run even if a job it is dependent on did not succeed, use the
+/// `always()` conditional expression in `jobs.<job_id>.if`.
+/// See:
+/// <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds>
 needs: (String | *Listing<String>)?
 
 /// Ensure that only a single job or workflow using the same concurrency group will run at a time.
 ///
-/// A concurrency group can be any string or expression. Allowed expression contexts: `github`, `inputs`, `vars`,
-/// `needs`, `strategy`, and `matrix`.
+/// A concurrency group can be any string or expression.
+/// Allowed expression contexts: `github`, `inputs`, `vars`, `needs`, `strategy`, and `matrix`.
 /// For more information about expressions, see
 /// [Evaluate expressions in workflows and actions](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions).
-///
 /// You can also specify concurrency at the workflow level.
 /// For more information, see [module.concurrency].
+/// This means that there can be at most one running and one pending job in a concurrency group at
+/// any time.
+/// When a concurrent job or workflow is queued, if another job or workflow using the same
+/// concurrency group in the repository is in progress, the queued job or workflow will be pending.
+/// Any existing pending job or workflow in the same concurrency group, if it exists, will be
+/// canceled and the new queued job or workflow will take its place.
+/// To also cancel any currently running job or workflow in the same concurrency group, specify
+/// `cancel-in-progress = true`.
+/// To conditionally cancel currently running jobs or workflows in the same concurrency group, you
+/// can specify [cancel-in-progress] as an expression with any of the allowed expression contexts.
 ///
-/// This means that there can be at most one running and one pending job in a concurrency group at any time.
-/// When a concurrent job or workflow is queued, if another job or workflow using the same concurrency group in the
-/// repository is in progress, the queued job or workflow will be pending.
-/// Any existing pending job or workflow in the same concurrency group, if it exists, will be canceled and the new
-/// queued job or workflow will take its place.
-///
-/// To also cancel any currently running job or workflow in the same concurrency group, specify `cancel-in-progress = true`.
-/// To conditionally cancel currently running jobs or workflows in the same concurrency group, you can specify
-/// [cancel-in-progress] as an expression with any of the allowed expression contexts.
-///
-/// Note:
-///
-/// The concurrency group name is case insensitive. For example, `prod` and `Prod` will be treated as the same concurrency group.
-/// Ordering is not guaranteed for jobs or workflow runs using concurrency groups. Jobs or workflow runs in the same concurrency group are handled in an arbitrary order.
+/// Note: The concurrency group name is case insensitive.
+/// For example, `prod` and `Prod` will be treated as the same concurrency group.
+/// Ordering is not guaranteed for jobs or workflow runs using concurrency groups.
+/// Jobs or workflow runs in the same concurrency group are handled in an arbitrary order.
 ///
 /// Docs: <https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations>
 concurrency: (Workflow.Concurrency | String)?
 
 /// Use `jobs.<job_id>.strategy` to use a matrix strategy for your jobs.
 ///
-/// A matrix strategy lets you use variables in a single job definition to automatically create multiple job runs that
-/// are based on the combinations of the variables.
-/// For example, you can use a matrix strategy to test your code in multiple versions of a language or on multiple
-/// operating systems.
-///
+/// A matrix strategy lets you use variables in a single job definition to automatically create
+/// multiple job runs that are based on the combinations of the variables.
+/// For example, you can use a matrix strategy to test your code in multiple versions of a language
+/// or on multiple operating systems.
 /// For more information, see
 /// [Running variations of jobs in a workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations).
-///
-/// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstrategy>
+/// Docs:
+/// <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstrategy>
 strategy: Strategy?
 
-/// For a specific job, you can use `jobs.<job_id>.permissions` to modify the default permissions granted to the
-/// `GITHUB_TOKEN`, adding or removing access as required, so that you only allow the minimum required access.
-/// For more information, see Use `GITHUB_TOKEN` for authentication in workflows.
+/// For a specific job, you can use `jobs.<job_id>.permissions` to modify the default permissions
+/// granted to the `GITHUB_TOKEN`, adding or removing access as required, so that you only allow
+/// the minimum required access.
 ///
-/// By specifying the permission within a job definition, you can configure a different set of permissions for the
-/// `GITHUB_TOKEN` for each job, if required.
+/// For more information, see Use `GITHUB_TOKEN` for authentication in workflows.
+/// By specifying the permission within a job definition, you can configure a different set of
+/// permissions for the `GITHUB_TOKEN` for each job, if required.
 /// Alternatively, you can specify the permissions for all jobs in the workflow.
 /// For information on defining permissions at the workflow level, see [module.permissions].
-///
-/// For each of the available permissions, shown in the table below, you can assign one of the access levels:
-/// read (if applicable), write, or none. write includes read. If you specify the access for any of these permissions,
-/// all of those that are not specified are set to none.
-///
-/// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idpermissions>
+/// For each of the available permissions, shown in the table below, you can assign one of the
+/// access levels: read (if applicable), write, or none.
+/// write includes read.
+/// If you specify the access for any of these permissions, all of those that are not specified are
+/// set to none.
+/// Docs:
+/// <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idpermissions>
 permissions: (*Workflow.Permissions | "read-all" | "write-all")?
 
 /// Use `jobs.<job_id>.runs-on` to define the type of machine to run the job on.
 ///
-/// The destination machine can be either a GitHub-hosted runner, larger runner, or a self-hosted runner.
-/// You can target runners based on the labels assigned to them, or their group membership, or a combination of these.
-///
+/// The destination machine can be either a GitHub-hosted runner, larger runner, or a self-hosted
+/// runner.
+/// You can target runners based on the labels assigned to them, or their group membership, or a
+/// combination of these.
 /// You can provide runs-on as:
-///
 /// * A single string
 /// * A single variable containing a string
 /// * An array of strings, variables containing strings, or a combination of both
 /// * A key-value pair using the group or labels keys
-/// * If you specify an array of strings or variables, your workflow will execute on any runner that matches all of the
-///   specified runs-on values.
-///   For example, here the job will only run on a self-hosted runner that has the labels `linux`, `x64`, and `gpu`:
-///
+/// * If you specify an array of strings or variables, your workflow will execute on any runner
+///   that matches all of the specified runs-on values.
+///   For example, here the job will only run on a self-hosted runner that has the labels `linux`,
+///   `x64`, and `gpu`:
 ///   ```
 ///   `runs-on` { "self-hosted"; "linux"; "x64"; "gpu" }
 ///   ```
-///
-///   For more information, see [Choosing self-hosted runners](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#choosing-self-hosted-runners).
-///
-/// * You can mix strings and variables in an array. For example:
-///
+///   For more information, see
+///   [Choosing self-hosted runners](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#choosing-self-hosted-runners).
+/// * You can mix strings and variables in an array.
+///   For example:
 ///   ```
 ///   `runs-on` { "self-hosted"; "${{ inputs.chosen-os }}" }
 ///   ```
-///
 /// If you would like to run your workflow on multiple machines, use [strategy].
 `runs-on`: (MachineLabel | *Listing<MachineLabel>)?(util.isExclusive(this, uses))
 
@@ -163,37 +162,40 @@ typealias MachineLabel =
 /// For more information, see
 /// [env](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#env) and
 /// [jobs.<job_id>.env](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idenv).
-///
-/// When more than one environment variable is defined with the same name, GitHub uses the most specific variable. For example, an environment variable defined in a step will override job and workflow environment variables with the same name, while the step executes. An environment variable defined for a job will override a workflow variable with the same name, while the job executes.
-///
-/// Public actions may specify expected variables in the README file. If you are setting a secret or sensitive value, such as a password or token, you must set secrets using the secrets context. For more information, see Contexts reference.
+/// When more than one environment variable is defined with the same name, GitHub uses the most
+/// specific variable.
+/// For example, an environment variable defined in a step will override job and workflow
+/// environment variables with the same name, while the step executes.
+/// An environment variable defined for a job will override a workflow variable with the same name,
+/// while the job executes.
+/// Public actions may specify expected variables in the README file.
+/// If you are setting a secret or sensitive value, such as a password or token, you must set
+/// secrets using the secrets context.
+/// For more information, see Contexts reference.
 env: Workflow.EnvironmentVariables?
 
 /// Craetes a map of outputs for a job.
 ///
 /// Job outputs are available to all downstream jobs that depend on this job.
 /// For more information on defining job dependencies, see [needs].
-///
 /// Outputs can be a maximum of 1 MB per job.
 /// The total of all outputs in a workflow run can be a maximum of 50 MB.
 /// Size is approximated based on UTF-16 encoding.
-///
 /// Job outputs containing expressions are evaluated on the runner at the end of each job.
 /// Outputs containing secrets are redacted on the runner and not sent to GitHub Actions.
-///
-/// If an output is skipped because it may contain a secret, you will see the following warning message:
-/// "Skip output {output.Key} since it may contain secret."
+/// If an output is skipped because it may contain a secret, you will see the following warning
+/// message: "Skip output {output.Key} since it may contain secret."
 /// For more information on how to handle secrets, please refer to the
 /// [Example: Masking and passing a secret between jobs or workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#example-masking-and-passing-a-secret-between-jobs-or-workflows).
-///
 /// To use job outputs in a dependent job, you can use the needs context.
-/// For more information, see [Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context).
+/// For more information, see
+/// [Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context).
 outputs: Mapping<String, String>?
 
 /// Define the environment that the job references.
 ///
-/// You can provide the environment as only the environment `name`, or as an environment object with the `name` and
-/// `url`.
+/// You can provide the environment as only the environment `name`, or as an environment object with
+/// the `name` and `url`.
 /// The URL maps to environment_url in the deployments API.
 /// For more information about the deployments API, see
 /// [REST API endpoints for repositories](https://docs.github.com/en/rest/repos?apiVersion=2022-11-28#deployments).
@@ -201,21 +203,22 @@ environment: (*Environment | String)?
 
 /// A job contains a sequence of tasks called steps.
 ///
-/// Steps can run commands, run setup tasks, or run an action in your repository, a public repository, or an action
-/// published in a Docker registry.
+/// Steps can run commands, run setup tasks, or run an action in your repository, a public
+/// repository, or an action published in a Docker registry.
 /// Not all steps run actions, but all actions run as a step.
-/// Each step runs in its own process in the runner environment and has access to the workspace and filesystem.
-/// Because steps run in their own process, changes to environment variables are not preserved between steps.
+/// Each step runs in its own process in the runner environment and has access to the workspace and
+/// filesystem.
+/// Because steps run in their own process, changes to environment variables are not preserved
+/// between steps.
 /// GitHub provides built-in steps to set up and complete a job.
-///
-/// GitHub only displays the first 1,000 checks, however, you can run an unlimited number of steps as long as you are
-/// within the workflow usage limits.
+/// GitHub only displays the first 1,000 checks, however, you can run an unlimited number of steps
+/// as long as you are within the workflow usage limits.
 steps: Listing<*Step | AbstractTypedStep>
 
 /// A container to run any steps in a job that don't already specify a container.
 ///
-/// If you have steps that use both script and container actions, the container actions will run
-/// as sibling containers on the same network with the same volume mounts.
+/// If you have steps that use both script and container actions, the container actions will run as
+/// sibling containers on the same network with the same volume mounts.
 /// If you do not set a container, all steps will run directly on the host specified by runs-on
 /// unless a step refers to an action configured to run in a container.
 container: (String | *Container)?
@@ -231,31 +234,32 @@ defaults: Defaults?
 /// Additional containers to host services for a job in a workflow.
 ///
 /// These are useful for creating databases or cache services like redis.
-///
-/// The runner on the virtual machine will automatically create a network and manage the life
-/// cycle of the service containers.
+/// The runner on the virtual machine will automatically create a network and manage the life cycle
+/// of the service containers.
 /// When you use a service container for a job or your step uses container actions, you don't need
-/// to set port information to access the service. Docker automatically exposes all ports between
-/// containers on the same network.
+/// to set port information to access the service.
+/// Docker automatically exposes all ports between containers on the same network.
 /// When both the job and the action run in a container, you can directly reference the container
-/// by its hostname. The hostname is automatically mapped to the service name.
+/// by its hostname.
+/// The hostname is automatically mapped to the service name.
 /// When a step does not use a container action, you must access the service using localhost and
 /// bind the ports.
 services: Mapping<String, Container>?
 
-/// The location and version of a reusable workflow file to run as a job. Use one of the following syntaxes:
+/// The location and version of a reusable workflow file to run as a job.
 ///
-/// * `{owner}/{repo}/.github/workflows/{filename}@{ref}` for reusable workflows in public and private repositories.
+/// Use one of the following syntaxes:
+/// * `{owner}/{repo}/.github/workflows/{filename}@{ref}` for reusable workflows in public and
+///   private repositories.
 /// * `./.github/workflows/{filename}` for reusable workflows in the same repository.
-///
 /// In the first option, `{ref}` can be a SHA, a release tag, or a branch name.
-/// If a release tag and a branch have the same name, the release tag takes precedence over the branch name.
+/// If a release tag and a branch have the same name, the release tag takes precedence over the
+/// branch name.
 /// Using the commit SHA is the safest option for stability and security.
 /// For more information, see
 /// [Secure use reference](https://docs.github.com/en/actions/reference/security/secure-use#reusing-third-party-workflows).
-///
-/// If you use the second syntax option (without `{owner}/{repo}` and `@{ref}`) the called workflow is from the same
-/// commit as the caller workflow.
+/// If you use the second syntax option (without `{owner}/{repo}` and `@{ref}`) the called workflow
+/// is from the same commit as the caller workflow.
 /// Ref prefixes such as `refs/heads` and `refs/tags` are not allowed.
 /// You cannot use contexts or expressions in this keyword.
 uses: String(matches(Regex("(.+/)+(.+)\\.(ya?ml)(@.+)?")))?
@@ -265,14 +269,12 @@ class Strategy {
   ///
   /// For more information, see
   /// [Running variations of jobs in a workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations).
-  ///
   /// A matrix will generate a maximum of 256 jobs per workflow run.
   /// This limit applies to both GitHub-hosted and self-hosted runners.
-  ///
-  /// The variables that you define become properties in the matrix context, and you can reference the property in
-  /// other areas of your workflow file.
-  ///
-  /// For more information, see [Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts).
+  /// The variables that you define become properties in the matrix context, and you can reference
+  /// the property in other areas of your workflow file.
+  /// For more information, see
+  /// [Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts).
   matrix: Mapping<String, Listing<String | *Dynamic | Object>>
   `fail-fast`: (Boolean | String)?
   `max-parallel`: (Number | String)?
@@ -291,8 +293,7 @@ class Defaults {
 }
 
 class DefaultsRun {
-  /// Override the default shell settings in the runner's operating system using the shell
-  /// keyword.
+  /// Override the default shell settings in the runner's operating system using the shell keyword.
   shell: AbstractStep.Shell?
 
   /// The working directory of where to run the command.

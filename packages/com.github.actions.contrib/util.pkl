@@ -39,29 +39,30 @@ function toActionTypes(raw: Mapping): ActionTypes =
     }
 
 function toProperty(raw: Mapping): ActionTypes.Property =
-  let (typeName = raw["type"] as ActionTypes.TypeName)
-  let (
-    clazz =
-      if (typeName == "string")
-        ActionTypes.StringProperty
-      else if (typeName == "boolean")
-        ActionTypes.BooleanProperty
-      else if (typeName == "integer")
-        ActionTypes.IntegerProperty
-      else if (typeName == "float")
-        ActionTypes.FloatProperty
-      else if (typeName == "enum")
-        ActionTypes.EnumProperty
-      else
-        ActionTypes.ListProperty
-  )
-    if (clazz == ActionTypes.ListProperty)
-      new ActionTypes.ListProperty {
-        separator = raw["separator"]
-        `list-item` = toProperty(raw["list-item"])
-      }
-    else
-      deepToTyped.apply(clazz, raw) as ActionTypes.Property
+  deepToTyped.apply(ActionTypes.Property, raw) as ActionTypes.Property
+//   let (typeName = raw["type"] as ActionTypes.TypeName)
+//   let (
+//     clazz =
+//       if (typeName == "string")
+//         ActionTypes.StringProperty
+//       else if (typeName == "boolean")
+//         ActionTypes.BooleanProperty
+//       else if (typeName == "integer")
+//         ActionTypes.IntegerProperty
+//       else if (typeName == "float")
+//         ActionTypes.FloatProperty
+//       else if (typeName == "enum")
+//         ActionTypes.EnumProperty
+//       else
+//         ActionTypes.ListProperty
+//   )
+//     if (clazz == ActionTypes.ListProperty)
+//       new ActionTypes.ListProperty {
+//         separator = raw["separator"]
+//         `list-item` = toProperty(raw["list-item"])
+//       }
+//     else
+//       deepToTyped.apply(clazz, raw) as ActionTypes.Property
 
 /// Renders the string in pascal case.
 ///

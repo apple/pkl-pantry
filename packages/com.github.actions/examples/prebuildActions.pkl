@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 amends "../Workflow.pkl"
 
-import "../catalog.pkl"
+import "../actions/catalog.pkl"
 
 name = "Check prebuild actions"
 

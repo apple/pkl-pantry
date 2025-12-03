@@ -19,5 +19,6 @@ dependencies {
   ["com.github.actions.contrib"] = import("../packages/com.github.actions.contrib/PklProject")
   ["com.github.actions"] = import("../packages/com.github.actions/PklProject")
   ["com.github.actions.community"] = import("../packages/com.github.actions.community/PklProject")
+  ["io.github.typesafegithub"] = import("../packages/io.github.typesafegithub/PklProject")
   ["syntax"] = import("../packages/pkl.experimental.syntax/PklProject")
 }

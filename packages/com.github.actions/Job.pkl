@@ -14,19 +14,22 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 /// A workflow run is made up of one or more jobs, which run in parallel by default.
-/// To run jobs sequentially, you can define dependencies on other jobs using the `jobs.<job_id>.needs` keyword.
 ///
+/// To run jobs sequentially, you can define dependencies on other jobs using the
+/// `jobs.<job_id>.needs` keyword.
 /// Each job runs in a runner environment specified by runs-on.
-///
 /// You can run an unlimited number of jobs as long as you are within the workflow usage limits.
-/// For more information, see [Billing and usage](https://docs.github.com/en/actions/concepts/billing-and-usage) for
-/// GitHub-hosted runners and [Actions limits](https://docs.github.com/en/actions/reference/limits) for self-hosted runner usage limits.
-///
-/// If you need to find the unique identifier of a job running in a workflow run, you can use the GitHub API.
+/// For more information, see
+/// [Billing and usage](https://docs.github.com/en/actions/concepts/billing-and-usage) for
+/// GitHub-hosted runners and
+/// [Actions limits](https://docs.github.com/en/actions/reference/limits) for self-hosted runner
+/// usage limits.
+/// If you need to find the unique identifier of a job running in a workflow run, you can use the
+/// GitHub API.
 /// For more information, see
 /// [REST API endpoints for GitHub Actions](https://docs.github.com/en/rest/actions?apiVersion=2022-11-28#workflow-jobs).
-///
-/// Documentation: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobs>
+/// Documentation:
+/// <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobs>
 module com.github.actions.Job
 
 extends "AbstractJob.pkl"
@@ -34,21 +37,19 @@ extends "AbstractJob.pkl"
 /// A map of inputs that are passed to the called workflow.
 ///
 /// Any inputs that you pass must match the input specifications defined in the called workflow.
-///
-/// Unlike `jobs.<job_id>.steps[*].with`, the inputs you pass with `jobs.<job_id>.with` are not available as
-/// environment variables in the called workflow.
+/// Unlike `jobs.<job_id>.steps[*].with`, the inputs you pass with `jobs.<job_id>.with` are not
+/// available as environment variables in the called workflow.
 /// Instead, you can reference the inputs by using the inputs context.
-///
-/// Documentation: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idwith>
+/// Documentation:
+/// <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idwith>
 with: Mapping<String, String | Number | Boolean>?
 
 /// A map of secrets that are passed to the called workflow.
 ///
 /// Any secrets that you pass must match the names defined in the called workflow.
-///
 /// Use the `inherit` keyword pass all the calling workflow's secrets to the called workflow.
-/// This includes all secrets the calling workflow has access to, namely organization, repository, and environment
-/// secrets.
-/// The `inherit` keyword can be used to pass secrets across repositories within the same organization, or across
-/// organizations within the same enterprise.
+/// This includes all secrets the calling workflow has access to, namely organization, repository,
+/// and environment secrets.
+/// The `inherit` keyword can be used to pass secrets across repositories within the same
+/// organization, or across organizations within the same enterprise.
 secrets: ("inherit" | *Mapping<String, String | Number | Boolean>)?

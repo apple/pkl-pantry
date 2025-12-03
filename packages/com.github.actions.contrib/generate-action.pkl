@@ -53,6 +53,8 @@ adjustments: Mapping<String, Mixin<ClassOrModuleNode.PropertyDefinitionNode>>?
 
 moduleNamePrefix: String = ""
 
+pathPrefix: String?
+
 abstractTypedStepModule: String?
 
 local const actionNameRegex = Regex(#"([^/]+)/([^/]+)(?:/(.+))?@(v\d+)"#)
@@ -110,7 +112,7 @@ local actionTypesYaml =
       """
     )
 
-fixed actionTypes: ActionTypes =
+actionTypes: ActionTypes =
   let (parsed = yamlParser.parse(actionTypesYaml) as Mapping)
     util.toActionTypes(parsed)
 
@@ -137,10 +139,10 @@ local const function toTypeNode(actionType: ActionTypes.Property): TypeNode =
     DeclaredTypeNode("Int")
   else if (actionType.type == "float")
     DeclaredTypeNode("Float")
-  else if (actionType is ActionTypes.EnumProperty)
+  else if (actionType.type == "enum")
     new TypeNode.UnionTypeNode {
       members {
-        for (_value in actionType.`allowed-values`) {
+        for (_value in actionType.`allowed-values`!!) {
           new TypeNode.StringLiteralTypeNode {
             value = _value
           }
@@ -150,9 +152,7 @@ local const function toTypeNode(actionType: ActionTypes.Property): TypeNode =
   else
     (DeclaredTypeNode("Listing")) {
       typeArguments {
-        local node = actionType as ActionTypes.ListProperty
-        // noinspection TypeMismatch
-        toTypeNode(node.`list-item`)
+        toTypeNode(actionType.`list-item`!!)
       }
     }
 
@@ -173,7 +173,7 @@ class InputProperty {
   fixed isRequired = input.required == true && input.default == null
 
   effectiveInputName: String =
-    if (inputType is ActionTypes.ListProperty)
+    if (inputType.type == "list")
       // mirror the casing style of these properties
       if (self.name.contains("-"))
         "\(self.name)-list"
@@ -218,7 +218,7 @@ class InputProperty {
     name {
       value = effectiveInputName
     }
-    when (inputType is ActionTypes.ListProperty) {
+    when (inputType.type == "list") {
       modifiers {
         "hidden"
       }
@@ -249,7 +249,7 @@ class InputProperty {
         _propertyNode
 
   fixed _outputPropertyNode: ClassOrModuleNode.PropertyDefinitionNode? =
-    if (inputType is ActionTypes.ListProperty)
+    if (inputType.type == "list")
       new {
         name {
           value = self.name
@@ -290,7 +290,7 @@ class InputProperty {
             arguments {
               new ExpressionNode.StringExpressionNode {
                 stringParts {
-                  inputType.separator
+                  inputType.separator!!
                 }
               }
             }
@@ -339,7 +339,9 @@ fixed moduleNode: ModuleNode = new {
     moduleHeader {
       name {
         parts {
-          ...moduleNamePrefix.split(".").map((it) -> new IdentifierNode { value = it })
+          when (!moduleNamePrefix.isEmpty) {
+            ...moduleNamePrefix.split(".").map((it) -> new IdentifierNode { value = it })
+          }
           for (path in modulePath) {
             new { value = path }
           }
@@ -411,9 +413,13 @@ fixed moduleNode: ModuleNode = new {
   }
 }
 
+fixed files: Mapping<String, FileOutput> = new {
+  // noinspection TypeMismatch
+  ["\(pathPrefix.ifNonNull((it) -> it + "/" ?? ""))\(modulePath.join("/"))/\(moduleName).pkl"] =
+    moduleNode.output
+}
+
 output {
   text = throw("I must be called using the `-m` flag.")
-  files {
-    ["\(modulePath.join("/"))/\(moduleName).pkl"] = moduleNode.output
-  }
+  files = module.files
 }

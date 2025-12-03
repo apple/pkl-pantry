@@ -33,7 +33,8 @@ image: String
 
 /// Additional Docker container resource options.
 ///
-/// For a list of options, see https://docs.docker.com/engine/reference/commandline/create/#options.
+/// For a list of options, see
+/// https://docs.docker.com/engine/reference/commandline/create/#options.
 options: String?
 
 /// Sets an array of ports to expose on the container.
@@ -42,11 +43,10 @@ ports: Listing<UInt16 | String>(!isEmpty)?
 /// Sets an array of volumes for the container to use.
 ///
 /// You can use volumes to share data between services or other steps in a job.
-///
 /// You can specify named Docker volumes, anonymous Docker volumes, or bind mounts on the host.
 /// To specify a volume, you specify the source and destination path: <source>:<destinationPath>
-/// The <source> is a volume name or an absolute path on the host machine, and <destinationPath> is
-/// an absolute path in the container.
+/// The <source> is a volume name or an absolute path on the host machine, and <destinationPath>
+/// is an absolute path in the container.
 volumes: Listing<String>(!isEmpty)?
 
 class Credentials {

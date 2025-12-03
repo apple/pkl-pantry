@@ -1,0 +1,78 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Cache artifacts like dependencies and build outputs to improve workflow execution time
+module com.github.actions.actions.cache.v4.Cache
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "actions/cache"
+
+fixed version: "v4"
+
+with: With
+
+class With {
+  /// A list of files, directories, and wildcard patterns to cache and restore
+  hidden pathList: Listing<String>
+
+  /// A list of files, directories, and wildcard patterns to cache and restore
+  ///
+  /// To set as a [Listing], use [pathList].
+  path: String = pathList.join("\n")
+
+  /// An explicit key for restoring and saving the cache
+  key: String
+
+  /// An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.
+  hidden `restore-keys-list`: Listing<String>?
+
+  /// An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.
+  ///
+  /// To set as a [Listing], use [`restore-keys-list`].
+  `restore-keys`: String? = `restore-keys-list`?.join("\n")
+
+  /// The chunk size used to split up large files during upload, in bytes
+  `upload-chunk-size`: Int?
+
+  /// An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms
+  ///
+  /// Default if unspecified: `"false"`
+  enableCrossOsArchive: Boolean?
+
+  /// Fail the workflow if cache entry is not found
+  ///
+  /// Default if unspecified: `"false"`
+  `fail-on-cache-miss`: Boolean?
+
+  /// Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache
+  ///
+  /// Default if unspecified: `"false"`
+  `lookup-only`: Boolean?
+
+  /// Run the post step to save the cache even if another step before fails
+  ///
+  /// Default if unspecified: `"false"`
+  @Deprecated {
+    message =
+      """
+      save-always does not work as intended and will be removed in a future release.
+      A separate `actions/cache/restore` step should be used instead.
+      See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+
+      """
+  }
+  `save-always`: Boolean?
+}

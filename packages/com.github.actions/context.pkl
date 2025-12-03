@@ -47,36 +47,34 @@ class GitHub {
   ///
   /// GitHub removes special characters, and uses the name `__run` when the current step runs a
   /// script without an `id`.
-  /// If you use the same action more than once in the same job, the name will include a suffix
-  /// with the sequence number with underscore before it.
-  /// For example, the first script you run will have the name `__run`, and the second script will
-  /// be named `__run_2`.
+  /// If you use the same action more than once in the same job, the name will include a suffix with
+  /// the sequence number with underscore before it.
+  /// For example, the first script you run will have the name `__run`, and the second script will be
+  /// named `__run_2`.
   /// Similarly, the second invocation of `actions/checkout` will be `actionscheckout2`.
   const action: "${{ github.action }}"
 
   /// The path where an action is located.
   ///
   /// This property is only supported in composite actions.
-  /// You can use this path to access files located in the same repository as the action, for
-  /// example by changing directories to the path: `cd ${{ github.action_path }}`.
+  /// You can use this path to access files located in the same repository as the action, for example
+  /// by changing directories to the path: `cd ${{ github.action_path }}`.
   const actionPath: "${{ github.action_path }}"
 
   /// For a step executing an action, this is the ref of the action being executed.
   ///
   /// For example, `v2`.
-  ///
   /// Do not use in the `run` keyword.
-  /// To make this context work with composite actions, reference it within the `env` context of
-  /// the composite action.
+  /// To make this context work with composite actions, reference it within the `env` context of the
+  /// composite action.
   const actionRef: "${{ github.action_ref }}"
 
   /// For a step executing an action, this is the owner and repository name of the action.
   ///
   /// For example, `actions/checkout`.
-  ///
   /// Do not use in the `run` keyword.
-  /// To make this context work with composite actions, reference it within the `env` context of
-  /// the composite action.
+  /// To make this context work with composite actions, reference it within the `env` context of the
+  /// composite action.
   const actionRepository: "${{ github.action_repository }}"
 
   /// For a composite action, the current result of the composite action.
@@ -120,8 +118,8 @@ class GitHub {
   const headRef: "${{ github.head_ref }}"
 
   /// The
-  /// [`job_id`](/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_id)
-  /// of the current job.
+  /// [`job_id`](/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_id) of the
+  /// current job.
   ///
   /// Note: This context property is set by the Actions runner, and is only available within the
   /// execution `steps` of a job.
@@ -152,12 +150,11 @@ class GitHub {
   ///
   /// This value matches the branch or tag name shown on GitHub.
   /// For example, `feature-branch-1`.
-  ///
   /// For pull requests, the format is `<pr_number>/merge`.
   const refName: "${{ github.ref_name }}"
 
-  /// `true` if branch protections or rulesets are configured for the ref that triggered the
-  /// workflow run.
+  /// `true` if branch protections or rulesets are configured for the ref that triggered the workflow
+  /// run.
   const refProtected: "${{ github.ref_protected }}"
 
   /// The type of ref that triggered the workflow run.

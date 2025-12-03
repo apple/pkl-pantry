@@ -1,0 +1,142 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Download and extract an artifact associated with given workflow and commit or other criteria
+module com.github.actions.community.dawidd6.`action-download-artifact`.v11.ActionDownloadArtifact
+
+extends "@com.github.actions/AbstractTypedStep.pkl"
+
+fixed action: "dawidd6/action-download-artifact"
+
+fixed version: "v11"
+
+with: With
+
+class With {
+  /// GitHub token
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  github_token: String?
+
+  /// Workflow name.
+  ///
+  /// If not specified, will be inferred from run_id (if run_id is specified), or will be the current workflow
+  workflow: String?
+
+  /// Most recent workflow matching all other criteria will be looked up instead of using the current workflow
+  ///
+  /// https://docs.github.com/de/rest/actions/workflow-runs?apiVersion=2022-11-28#list-workflow-runs-for-a-repository
+  ///
+  /// Default if unspecified: `false`
+  workflow_search: Boolean?
+
+  /// Wanted status or conclusion to search for in recent runs
+  ///
+  /// https://docs.github.com/de/rest/actions/workflow-runs?apiVersion=2022-11-28#list-workflow-runs-for-a-workflow
+  ///
+  /// Default if unspecified: `"success"`
+  workflow_conclusion: (
+    "failure"
+      | "success"
+      | "neutral"
+      | "cancelled"
+      | "skipped"
+      | "timed_out"
+      | "action_required"
+      | "completed"
+      | "in_progress"
+      | "queued"
+      | ""
+  )?
+
+  /// Repository name with owner (like actions/checkout)
+  ///
+  /// Default if unspecified: `"${{ github.repository }}"`
+  repo: String?
+
+  /// Pull request number
+  pr: String?
+
+  /// Commit hash
+  commit: String?
+
+  /// Branch name
+  branch: String?
+
+  /// Commit hash or branch name
+  ref: String?
+
+  /// Event type
+  event: String?
+
+  /// Workflow run id
+  run_id: Int?
+
+  /// Workflow run number
+  run_number: Int?
+
+  /// Artifact name (download all artifacts if not specified)
+  name: String?
+
+  /// Treat artifact name as a regular expression and download only artifacts with matching names
+  ///
+  /// Default if unspecified: `false`
+  name_is_regexp: Boolean?
+
+  /// Where to unpack the artifact
+  ///
+  /// Default if unspecified: `"./"`
+  path: String?
+
+  /// Allow forks
+  ///
+  /// Default if unspecified: `false`
+  allow_forks: Boolean?
+
+  /// Check workflow run whether it has an artifact
+  ///
+  /// Default if unspecified: `false`
+  check_artifacts: Boolean?
+
+  /// Search workflow runs for artifact with specified name
+  ///
+  /// Default if unspecified: `false`
+  search_artifacts: Boolean?
+
+  /// Choose to skip unpacking the downloaded artifact(s)
+  ///
+  /// Default if unspecified: `false`
+  skip_unpack: Boolean?
+
+  /// Check the existence of artifact(s) without downloading
+  dry_run: Boolean?
+
+  /// Choose how to exit the action if no artifact is found
+  ///
+  /// fail, warn or ignore
+  ///
+  /// Default if unspecified: `"fail"`
+  if_no_artifact_found: ("fail" | "warn" | "ignore")?
+
+  /// Use system provided `unzip` utility instead of JS library for unpacking
+  ///
+  /// Default if unspecified: `false`
+  use_unzip: Boolean?
+
+  /// If multiple artifacts are found with `name_is_regexp` set to `true`, merge them into one directory
+  ///
+  /// Default if unspecified: `false`
+  merge_multiple: Boolean?
+}

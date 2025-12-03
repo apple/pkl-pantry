@@ -41,27 +41,29 @@ extends "AbstractStep.pkl"
 fixed uses: String = List(action, sha ?? version).filterNonNull().join("@")
 
 /// Selects an action to run as part of a step in your job.
+///
 /// An action is a reusable unit of code.
-/// You can use an action defined in the same repository as the workflow, a public repository, or in a published
-/// Docker container image.
+/// You can use an action defined in the same repository as the workflow, a public repository, or in
+/// a published Docker container image.
 abstract hidden fixed action: String
 
 /// The version of the action to run.
 ///
 /// For typed steps, the type of [with] is associated with the major version of the action, so
 /// subclasses should specify a fixed version
+/// It is strongly recommend to include the version of the action you are using by specifying a Git
+/// ref, SHA, or Docker tag.
 ///
-/// It is strongly recommend to include the version of the action you are using by specifying a
-/// Git ref, SHA, or Docker tag.
 /// Use [sha] to specify a specific SHA to use in place of the version.
-/// If you don't specify a version, it could break your workflows or cause unexpected behavior when the action owner
-/// publishes an update.
+/// If you don't specify a version, it could break your workflows or cause unexpected behavior when
+/// the action owner publishes an update.
 ///
 /// * Using the commit SHA of a released action version is the safest for stability and security.
-/// * If the action publishes major version tags, you should expect to receive critical fixes and security patches
-///   while still retaining compatibility. Note that this behavior is at the discretion of the action's author.
-/// * Using the default branch of an action may be convenient, but if someone releases a new major version with a
-///   breaking change, your workflow could break.
+/// * If the action publishes major version tags, you should expect to receive critical fixes and
+///   security patches while still retaining compatibility.
+///   Note that this behavior is at the discretion of the action's author.
+/// * Using the default branch of an action may be convenient, but if someone releases a new major
+///   version with a breaking change, your workflow could break.
 abstract hidden fixed version: String?
 
 /// Use a specific SHA of the action instead of a potentially floating Git ref.

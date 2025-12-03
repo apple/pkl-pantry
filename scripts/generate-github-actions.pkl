@@ -27,6 +27,7 @@ import "@syntax/ClassOrModuleNode.pkl"
 import "@syntax/TypeNode.pkl"
 
 import "enricomi.pkl"
+import "extraActions.pkl"
 
 local yamlParser = new yaml.Parser { mode = "1.2" }
 
@@ -59,14 +60,14 @@ hidden fixed adjustments: Mapping<
 }
 
 // noinspection UnresolvedElement
-function getVersions(action: String): Listing<String> =
+function getLatestVersion(action: String): String =
   let (
     resource =
       read(
         "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(action)/metadata.yml"
       )
   )
-    yamlParser.parse(resource).versionsWithTypings
+    yamlParser.parse(resource).versionsWithTypings.toList().last
 
 local coreActions: Listing<String> = new {
   "actions/cache"
@@ -111,66 +112,51 @@ local catalogActions: Listing<String> = new {
   "docker/setup-buildx-action"
   "docker/setup-qemu-action"
   // Currently throws; `https://raw.githubusercontent.com/ruby/setup-ruby/refs/tags/v1/action.yml` is not a valid URL.
-  // "ruby/setup-ruby"
+  //   "ruby/setup-ruby"
 }
 
 local allCoreVersions: Listing<String> = new {
   for (action in coreActions) {
-    for (version in getVersions(action)) {
-      "\(action)@\(version)"
-    }
+    "\(action)@\(getLatestVersion(action))"
   }
 }
 
 local allCommunityActions: Listing<String> = new {
   for (action in catalogActions) {
-    for (version in getVersions(action)) {
-      "\(action)@\(version)"
-    }
+    "\(action)@\(getLatestVersion(action))"
   }
 }
 
 local coreGenerator = (generate) {
   moduleNamePrefix = "com.github.actions"
   abstractTypedStepModule = ".../AbstractTypedStep.pkl"
+  pathPrefix = "packages/com.github.actions"
 }
 
 local communityGenerator = (generate) {
   moduleNamePrefix = "com.github.actions.community"
   abstractTypedStepModule = "@com.github.actions/AbstractTypedStep.pkl"
+  pathPrefix = "packages/com.github.actions.community"
 }
 
 output {
   files {
     for (action in allCoreVersions) {
-      for (
-        fileName, fileOutput in
-          (coreGenerator) {
-            actionName = action
-            local actionWithoutVersion = action.substring(0, action.indexOf("@"))
-            adjustments = module.adjustments.getOrNull(actionWithoutVersion)
-          }
-            .output
-            .files!!
-      ) {
-        ["packages/com.github.actions/\(fileName)"] = fileOutput
-      }
+      ...(coreGenerator) {
+        actionName = action
+        local actionWithoutVersion = action.substring(0, action.indexOf("@"))
+        adjustments = module.adjustments.getOrNull(actionWithoutVersion)
+      }.files
     }
     for (action in allCommunityActions) {
-      for (
-        fileName, fileOutput in
-          (communityGenerator) {
-            actionName = action
-            local actionWithoutVersion = action.substring(0, action.indexOf("@"))
-            adjustments = module.adjustments.getOrNull(actionWithoutVersion)
-          }
-            .output
-            .files!!
-      ) {
-        ["packages/com.github.actions.community/\(fileName)"] = fileOutput
-      }
+      ...(communityGenerator) {
+        actionName = action
+        local actionWithoutVersion = action.substring(0, action.indexOf("@"))
+        adjustments = module.adjustments.getOrNull(actionWithoutVersion)
+      }.files
     }
     ["packages/com.github.actions.community/enricomi/publish-unit-test-result-action/v2/PublishUnitTestResultAction.pkl"] =
       enricomi.output
+    ...extraActions.files
   }
 }

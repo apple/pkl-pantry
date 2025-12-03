@@ -15,9 +15,7 @@
 //===----------------------------------------------------------------------===//
 amends "../Workflow.pkl"
 
-import "../Action.pkl"
-import "../catalog.pkl"
-import "../context.pkl"
+import "../actions/catalog.pkl"
 
 name = "PrintHelloWorld"
 
@@ -59,7 +57,7 @@ permissions {
 }
 
 env {
-  ["PR_NUMBER"] = context.github.event("number")
+  ["PR_NUMBER"] = module.context.github.event("number")
   ["SOME_INT"] = 3
   ["SOME_FLOAT"] = 3.2
   ["SOME_BOOL"] = true
@@ -87,7 +85,7 @@ jobs {
         name = "Checkout"
         with {
           ref = "develop"
-          token = context.secrets("GITHUB_TOKEN")
+          token = module.context.secrets("GITHUB_TOKEN")
         }
       }
       new {

@@ -16,15 +16,11 @@
 /// Abstract class of jobs to call with typesafe inputs.
 ///
 /// To define a type-safe job, define a new class/module that extends this module.
-///
 /// Example:
 /// ```
 /// module MyJob
-///
 /// uses = "foo.yml"
-///
 /// with: With
-///
 /// class With {
 ///   name: String
 /// }
@@ -41,8 +37,8 @@ abstract with: Typed
 /// Any secrets that you pass must match the names defined in the called workflow.
 ///
 /// Use the `inherit` keyword pass all the calling workflow's secrets to the called workflow.
-/// This includes all secrets the calling workflow has access to, namely organization, repository, and environment
-/// secrets.
-/// The `inherit` keyword can be used to pass secrets across repositories within the same organization, or across
-/// organizations within the same enterprise.
+/// This includes all secrets the calling workflow has access to, namely organization, repository,
+/// and environment secrets.
+/// The `inherit` keyword can be used to pass secrets across repositories within the same
+/// organization, or across organizations within the same enterprise.
 secrets: ("inherit" | Typed)?
