@@ -19,5 +19,5 @@
 amends "../basePklProject.pkl"
 
 package {
-  version = "1.0.0"
+  version = read("VERSION.txt").text.trim()
 }

@@ -18,7 +18,6 @@ import "pkl:reflect"
 import "@syntax/ModuleNode.pkl"
 import "@syntax/TypeNode.pkl"
 
-import* "@com.github.actions.community/*/**.pkl" as allCatalogActions
 import* "@com.github.actions/actions/*/**.pkl" as allCoreActions
 
 class ActionMeta {
@@ -31,8 +30,12 @@ class ActionMeta {
   fixed parts = importPath.split("/")
   fixed org = parts[0]
   fixed repoName = parts[1]
-  fixed version = parts[2]
-  fixed subpath = parts.sublist(3, parts.length - 1).join("/")
+  fixed subpath =
+    if (parts.length == 3)
+      ""
+    else
+      (parts.sublist(2, parts.length - 2).join("/"))
+  fixed version = parts[parts.length - 2]
   fixed moduleName = parts.last.replaceLast(".pkl", "")
   fixed importTypeName = "\(moduleName)\(version.capitalize())"
 
@@ -108,55 +111,9 @@ local coreCatalog: ModuleNode = new {
   }
 }
 
-local thirdPartyActionMetas: List<ActionMeta> =
-  allCatalogActions
-    .toMap()
-    .entries
-    .map((it) -> new ActionMeta {
-      path = it.key
-      mod = it.value
-      stripPrefix = "@com.github.actions.community/"
-    })
-
-local thirdPartyCatalog: ModuleNode = new {
-  declaration {
-    docComment {
-      value =
-        """
-        Index module of all actions in this catalog, plus core actions.
-        """
-    }
-    moduleHeader {
-      modifiers { "open" }
-      moduleExtendsOrAmendsClause {
-        type = "extends"
-        extendedModule = "@com.github.actions/catalog.pkl"
-      }
-      name {
-        parts {
-          for (part in "com.github.actions.community.catalog".split(".")) {
-            new { value = part }
-          }
-        }
-      }
-    }
-  }
-  imports {
-    for (meta in thirdPartyActionMetas) {
-      meta.importNode
-    }
-  }
-  properties {
-    for (meta in thirdPartyActionMetas) {
-      meta.classProperty
-    }
-  }
-}
-
 output {
   text = throw("You must use `-m`.")
   files {
     ["packages/com.github.actions/catalog.pkl"] = coreCatalog.output
-    ["packages/com.github.actions.community/catalog.pkl"] = thirdPartyCatalog.output
   }
 }

@@ -13,39 +13,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Run clippy and annotate the diff with errors and warnings
-module com.github.actions.community.`actions-rs`.`clippy-check`.v1.ClippyCheck
+/// Save Cache artifacts like dependencies and build outputs to improve workflow execution time
+module com.github.actions.actions.cache.save.v4.CacheSave
 
-extends "@com.github.actions/AbstractTypedStep.pkl"
+extends ".../AbstractTypedStep.pkl"
 
-fixed action: "actions-rs/clippy-check"
+fixed action: "actions/cache/save"
 
-fixed version: "v1"
+fixed version: "v4"
 
 with: With
 
 class With {
-  /// GitHub token
-  token: String
+  /// A list of files, directories, and wildcard patterns to cache
+  hidden pathList: Listing<String>
 
-  /// Toolchain to use (without the `+` sign, ex. `nightly`)
-  toolchain: String?
-
-  /// Arguments for the cargo command
-  hidden argsList: Listing<String>?
-
-  /// Arguments for the cargo command
+  /// A list of files, directories, and wildcard patterns to cache
   ///
-  /// To set as a [Listing], use [argsList].
-  args: String? = argsList?.join(" ")
+  /// To set as a [Listing], use [pathList].
+  path: String = pathList.join("\n")
 
-  /// Use cross instead of cargo
-  ///
-  /// Default if unspecified: `false`
-  `use-cross`: Boolean?
+  /// An explicit key for saving the cache
+  key: String
 
-  /// Display name of the created GitHub check. Must be unique across several actions-rs/clippy-check invocations.
+  /// The chunk size used to split up large files during upload, in bytes
+  `upload-chunk-size`: Int?
+
+  /// An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms
   ///
-  /// Default if unspecified: `"clippy"`
-  name: String?
+  /// Default if unspecified: `"false"`
+  enableCrossOsArchive: Boolean?
 }

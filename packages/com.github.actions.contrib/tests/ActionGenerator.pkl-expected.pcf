@@ -1,0 +1,108 @@
+examples {
+  ["typed action inputs"] {
+    #"""
+    /// Cache artifacts like dependencies and build outputs to improve workflow execution time
+    module actions.cache.v4.Cache
+    
+    extends "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@1.0.0#/AbstractTypedStep.pkl"
+    
+    fixed action: "actions/cache"
+    
+    fixed version: "v4"
+    
+    with: With
+    
+    class With {
+      /// A list of files, directories, and wildcard patterns to cache and restore
+      hidden pathList: Listing<String>
+    
+      /// A list of files, directories, and wildcard patterns to cache and restore
+      ///
+      /// To set as a [Listing], use [pathList].
+      path: String = pathList.join("\n")
+    
+      /// An explicit key for restoring and saving the cache
+      key: String
+    
+      /// An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.
+      hidden `restore-keys-list`: Listing<String>?
+    
+      /// An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.
+      ///
+      /// To set as a [Listing], use [`restore-keys-list`].
+      `restore-keys`: String? = `restore-keys-list`?.join("\n")
+    
+      /// The chunk size used to split up large files during upload, in bytes
+      `upload-chunk-size`: Int?
+    
+      /// An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms
+      enableCrossOsArchive: Boolean?
+    
+      /// Fail the workflow if cache entry is not found
+      `fail-on-cache-miss`: Boolean?
+    
+      /// Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache
+      `lookup-only`: Boolean?
+    
+      /// Run the post step to save the cache even if another step before fails
+      @Deprecated {
+        message = """
+      save-always does not work as intended and will be removed in a future release.
+      A separate `actions/cache/restore` step should be used instead.
+      See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+      """
+      }
+      `save-always`: Boolean?
+    }
+    
+    """#
+  }
+  ["untyped action inputs"] {
+    #"""
+    /// Cache artifacts like dependencies and build outputs to improve workflow execution time
+    module actions.cache.v4.Cache
+    
+    extends "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@1.0.0#/AbstractTypedStep.pkl"
+    
+    fixed action: "actions/cache"
+    
+    fixed version: "v4"
+    
+    with: With
+    
+    class With {
+      /// A list of files, directories, and wildcard patterns to cache and restore
+      path: String|Boolean|Number
+    
+      /// An explicit key for restoring and saving the cache
+      key: String|Boolean|Number
+    
+      /// An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.
+      `restore-keys`: (String|Boolean|Number)?
+    
+      /// The chunk size used to split up large files during upload, in bytes
+      `upload-chunk-size`: (String|Boolean|Number)?
+    
+      /// An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms
+      enableCrossOsArchive: (String|Boolean|Number)?
+    
+      /// Fail the workflow if cache entry is not found
+      `fail-on-cache-miss`: (String|Boolean|Number)?
+    
+      /// Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache
+      `lookup-only`: (String|Boolean|Number)?
+    
+      /// Run the post step to save the cache even if another step before fails
+      @Deprecated {
+        message = """
+      save-always does not work as intended and will be removed in a future release.
+      A separate `actions/cache/restore` step should be used instead.
+      See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+      """
+      }
+      `save-always`: (String|Boolean|Number)?
+    }
+    
+    """#
+  }
+}

@@ -16,6 +16,8 @@
 /// Index module of all actions within the `actions/` GitHub org.
 open module com.github.actions.actions.catalog
 
+import "actions/cache/restore/v4/CacheRestore.pkl" as CacheRestoreV4
+import "actions/cache/save/v4/CacheSave.pkl" as CacheSaveV4
 import "actions/cache/v4/Cache.pkl" as CacheV4
 import "actions/checkout/v5/Checkout.pkl" as CheckoutV5
 import "actions/configure-pages/v5/ConfigurePages.pkl" as ConfigurePagesV5
@@ -34,6 +36,12 @@ import "actions/setup-python/v6/SetupPython.pkl" as SetupPythonV6
 import "actions/stale/v9/Stale.pkl" as StaleV9
 import "actions/upload-artifact/v4/UploadArtifact.pkl" as UploadArtifactV4
 import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPagesArtifactV3
+
+/// Restore Cache artifacts like dependencies and build outputs to improve workflow execution time
+`actions/cache/restore@v4`: CacheRestoreV4
+
+/// Save Cache artifacts like dependencies and build outputs to improve workflow execution time
+`actions/cache/save@v4`: CacheSaveV4
 
 /// Cache artifacts like dependencies and build outputs to improve workflow execution time
 `actions/cache@v4`: CacheV4

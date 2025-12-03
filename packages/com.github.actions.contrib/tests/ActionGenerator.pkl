@@ -1,0 +1,156 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module com.github.actions.contrib.tests.`generate-action`
+
+amends "pkl:test"
+
+import "@com.github.actions/Action.pkl"
+import "@io.github.typesafegithub/ActionTypes.pkl"
+
+import "../ActionGenerator.pkl"
+
+local cacheAction: Action = new {
+  name = "Cache"
+  description =
+    "Cache artifacts like dependencies and build outputs to improve workflow execution time"
+  author = "GitHub"
+  inputs {
+    ["path"] {
+      description = "A list of files, directories, and wildcard patterns to cache and restore"
+      required = true
+    }
+    ["key"] {
+      description = "An explicit key for restoring and saving the cache"
+      required = true
+    }
+    ["restore-keys"] {
+      description =
+        "An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case."
+      required = false
+    }
+    ["upload-chunk-size"] {
+      description = "The chunk size used to split up large files during upload, in bytes"
+      required = false
+    }
+    ["enableCrossOsArchive"] {
+      description =
+        "An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms"
+      required = false
+    }
+    ["fail-on-cache-miss"] {
+      description = "Fail the workflow if cache entry is not found"
+      required = false
+    }
+    ["lookup-only"] {
+      description =
+        "Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache"
+      required = false
+    }
+    ["save-always"] {
+      description = "Run the post step to save the cache even if another step before fails"
+      required = false
+      deprecationMessage =
+        """
+        save-always does not work as intended and will be removed in a future release.
+        A separate `actions/cache/restore` step should be used instead.
+        See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+
+        """
+    }
+  }
+  outputs {
+    ["cache-hit"] {
+      description = "A boolean value to indicate an exact match was found for the primary key"
+    }
+  }
+  runs {
+    using = "node20"
+    main = "dist/restore/index.js"
+    post = "dist/save/index.js"
+    `post-if` = "success()"
+  }
+  branding {
+    icon = "archive"
+    color = "gray-dark"
+  }
+}
+
+local cacheActionType: ActionTypes = new {
+  inputs {
+    ["path"] {
+      type = "list"
+      separator =
+        """
+
+
+        """
+      `list-item` {
+        type = "string"
+      }
+    }
+    ["key"] {
+      type = "string"
+    }
+    ["restore-keys"] {
+      type = "list"
+      separator =
+        """
+
+
+        """
+      `list-item` {
+        type = "string"
+      }
+    }
+    ["upload-chunk-size"] {
+      type = "integer"
+    }
+    ["enableCrossOsArchive"] {
+      type = "boolean"
+    }
+    ["fail-on-cache-miss"] {
+      type = "boolean"
+    }
+    ["lookup-only"] {
+      type = "boolean"
+    }
+    ["save-always"] {
+      type = "boolean"
+    }
+  }
+  outputs {
+    ["cache-hit"] {
+      type = "boolean"
+    }
+  }
+}
+
+examples {
+  ["typed action inputs"] {
+    new ActionGenerator {
+      actionName = "actions/cache@v4"
+      action = cacheAction
+      actionTypes = cacheActionType
+    }.result
+  }
+  ["untyped action inputs"] {
+    new ActionGenerator {
+      actionName = "actions/cache@v4"
+      action = cacheAction
+      discoverActionTypes = false
+    }.result
+  }
+}

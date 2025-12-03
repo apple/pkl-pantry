@@ -22,12 +22,9 @@ module com.github.actions.contrib.`generate-catalog`
 
 import "pkl:yaml"
 
-import "@com.github.actions.contrib/generate-action.pkl" as generate
+import "@com.github.actions.contrib/ActionGenerator.pkl"
 import "@syntax/ClassOrModuleNode.pkl"
 import "@syntax/TypeNode.pkl"
-
-import "enricomi.pkl"
-import "extraActions.pkl"
 
 local yamlParser = new yaml.Parser { mode = "1.2" }
 
@@ -61,16 +58,19 @@ hidden fixed adjustments: Mapping<
 
 // noinspection UnresolvedElement
 function getLatestVersion(action: String): String =
+  let (ownerAndRepo = action.split("/").take(2).join("/"))
   let (
     resource =
       read(
-        "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(action)/metadata.yml"
+        "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(ownerAndRepo)/metadata.yml"
       )
   )
     yamlParser.parse(resource).versionsWithTypings.toList().last
 
 local coreActions: Listing<String> = new {
   "actions/cache"
+  "actions/cache/save"
+  "actions/cache/restore"
   "actions/checkout"
   "actions/configure-pages"
   "actions/create-github-app-token"
@@ -90,73 +90,36 @@ local coreActions: Listing<String> = new {
   "actions/upload-pages-artifact"
 }
 
-// NOTE: enricomi is handled separately
-local catalogActions: Listing<String> = new {
-  "peter-evans/create-issue-from-file"
-  "peter-evans/create-pull-request"
-  "actions-rs/audit-check"
-  "actions-rs/cargo"
-  "actions-rs/clippy-check"
-  "actions-rs/toolchain"
-  "aws-actions/amazon-ecr-login"
-  "aws-actions/amazon-ecs-deploy-task-definition"
-  "aws-actions/amazon-ecs-render-task-definition"
-  "aws-actions/configure-aws-credentials"
-  "azure/docker-login"
-  "azure/login"
-  "azure/webapps-deploy"
-  "codecov/codecov-action"
-  "docker/build-push-action"
-  "docker/login-action"
-  "docker/metadata-action"
-  "docker/setup-buildx-action"
-  "docker/setup-qemu-action"
-  // Currently throws; `https://raw.githubusercontent.com/ruby/setup-ruby/refs/tags/v1/action.yml` is not a valid URL.
-  //   "ruby/setup-ruby"
-}
-
 local allCoreVersions: Listing<String> = new {
   for (action in coreActions) {
     "\(action)@\(getLatestVersion(action))"
   }
 }
 
-local allCommunityActions: Listing<String> = new {
-  for (action in catalogActions) {
-    "\(action)@\(getLatestVersion(action))"
-  }
-}
-
-local coreGenerator = (generate) {
+local coreGenerator: ActionGenerator = new {
   moduleNamePrefix = "com.github.actions"
-  abstractTypedStepModule = ".../AbstractTypedStep.pkl"
+  githubActionsPackageName = "..."
   pathPrefix = "packages/com.github.actions"
 }
 
-local communityGenerator = (generate) {
-  moduleNamePrefix = "com.github.actions.community"
-  abstractTypedStepModule = "@com.github.actions/AbstractTypedStep.pkl"
-  pathPrefix = "packages/com.github.actions.community"
-}
+function generateAction(action: String): Mapping<String, FileOutput> =
+  let (
+    generated = (coreGenerator) {
+      actionName = action
+      local actionWithoutVersion = action.substring(0, action.indexOf("@"))
+      adjustments = module.adjustments.getOrNull(actionWithoutVersion)
+    }
+  )
+    new {
+      ["packages/com.github.actions/\(generated.modulePath.join("/"))/\(generated.moduleName).pkl"] {
+        text = generated.result
+      }
+    }
 
 output {
   files {
     for (action in allCoreVersions) {
-      ...(coreGenerator) {
-        actionName = action
-        local actionWithoutVersion = action.substring(0, action.indexOf("@"))
-        adjustments = module.adjustments.getOrNull(actionWithoutVersion)
-      }.files
+      ...generateAction(action)
     }
-    for (action in allCommunityActions) {
-      ...(communityGenerator) {
-        actionName = action
-        local actionWithoutVersion = action.substring(0, action.indexOf("@"))
-        adjustments = module.adjustments.getOrNull(actionWithoutVersion)
-      }.files
-    }
-    ["packages/com.github.actions.community/enricomi/publish-unit-test-result-action/v2/PublishUnitTestResultAction.pkl"] =
-      enricomi.output
-    ...extraActions.files
   }
 }

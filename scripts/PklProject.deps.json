@@ -25,11 +25,6 @@
       "type": "local",
       "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/io.github.typesafegithub@1.0.0",
       "path": "../packages/io.github.typesafegithub"
-    },
-    "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions.community@1": {
-      "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions.community@1.0.0",
-      "path": "../packages/com.github.actions.community"
     }
   }
 }
