@@ -14,7 +14,7 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 /// Index module of all actions within the `actions/` GitHub org.
-open module com.github.actions.actions.catalog
+open module com.github.actions.catalog
 
 import "actions/cache/restore/v4/CacheRestore.pkl" as CacheRestoreV4
 import "actions/cache/save/v4/CacheSave.pkl" as CacheSaveV4

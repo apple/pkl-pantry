@@ -92,7 +92,7 @@ local coreCatalog: ModuleNode = new {
       }
       name {
         parts {
-          for (part in "com.github.actions.actions.catalog".split(".")) {
+          for (part in "com.github.actions.catalog".split(".")) {
             new { value = part }
           }
         }
