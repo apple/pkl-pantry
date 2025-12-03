@@ -1,3 +1,18 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
 /// Index module of all actions in this catalog, plus core actions.
 open module com.github.actions.community.catalog
 
@@ -9,20 +24,30 @@ import "actions-rs/clippy-check/v1/ClippyCheck.pkl" as ClippyCheckV1
 import "actions-rs/toolchain/v1/Toolchain.pkl" as ToolchainV1
 import "actions-rust-lang/setup-rust-toolchain/v1/SetupRustToolchain.pkl" as SetupRustToolchainV1
 import "aws-actions/amazon-ecr-login/v2/AmazonEcrLogin.pkl" as AmazonEcrLoginV2
-import "aws-actions/amazon-ecs-deploy-task-definition/v1/AmazonEcsDeployTaskDefinition.pkl" as AmazonEcsDeployTaskDefinitionV1
-import "aws-actions/amazon-ecs-render-task-definition/v1/AmazonEcsRenderTaskDefinition.pkl" as AmazonEcsRenderTaskDefinitionV1
-import "aws-actions/configure-aws-credentials/v4/ConfigureAwsCredentials.pkl" as ConfigureAwsCredentialsV4
+import
+  "aws-actions/amazon-ecs-deploy-task-definition/v1/AmazonEcsDeployTaskDefinition.pkl"
+  as AmazonEcsDeployTaskDefinitionV1
+import
+  "aws-actions/amazon-ecs-render-task-definition/v1/AmazonEcsRenderTaskDefinition.pkl"
+  as AmazonEcsRenderTaskDefinitionV1
+import
+  "aws-actions/configure-aws-credentials/v4/ConfigureAwsCredentials.pkl"
+  as ConfigureAwsCredentialsV4
 import "azure/docker-login/v1/DockerLogin.pkl" as DockerLoginV1
 import "azure/login/v1/Login.pkl" as LoginV1
 import "azure/webapps-deploy/v3/WebappsDeploy.pkl" as WebappsDeployV3
 import "codecov/codecov-action/v4/CodecovAction.pkl" as CodecovActionV4
-import "dawidd6/action-download-artifact/v11/ActionDownloadArtifact.pkl" as ActionDownloadArtifactV11
+import
+  "dawidd6/action-download-artifact/v11/ActionDownloadArtifact.pkl"
+  as ActionDownloadArtifactV11
 import "docker/build-push-action/v5/BuildPushAction.pkl" as BuildPushActionV5
 import "docker/login-action/v3/LoginAction.pkl" as LoginActionV3
 import "docker/metadata-action/v5/MetadataAction.pkl" as MetadataActionV5
 import "docker/setup-buildx-action/v3/SetupBuildxAction.pkl" as SetupBuildxActionV3
 import "docker/setup-qemu-action/v2/SetupQemuAction.pkl" as SetupQemuActionV2
-import "enricomi/publish-unit-test-result-action/v2/PublishUnitTestResultAction.pkl" as PublishUnitTestResultActionV2
+import
+  "enricomi/publish-unit-test-result-action/v2/PublishUnitTestResultAction.pkl"
+  as PublishUnitTestResultActionV2
 import "peter-evans/create-issue-from-file/v4/CreateIssueFromFile.pkl" as CreateIssueFromFileV4
 import "peter-evans/create-pull-request/v6/CreatePullRequest.pkl" as CreatePullRequestV6
 
