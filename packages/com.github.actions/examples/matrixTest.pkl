@@ -14,7 +14,7 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 amends "../Workflow.pkl"
-import "../actions/catalog.pkl"
+import "../catalog.pkl"
 
 name = "Matrix Test"
 

@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 amends "../Workflow.pkl"
 
-import "../actions/catalog.pkl"
+import "../catalog.pkl"
 
 name = "PrintHelloWorld"
 
