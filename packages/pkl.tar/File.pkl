@@ -35,9 +35,10 @@ local typealias Block = Buffer(length == blockLength)
 /// Pax archive extended header data fields.
 typealias PaxFields = Mapping<PosixPortableString(!contains("=")), String>
 
-local const ustarMaxLinkLength: UInt = 100
 local const ustarMaxUidGid: UInt = 2 ** 21 as UInt
 local const ustarMaxSizeTimestamp: UInt = 2 ** 33 as UInt
+local const ustarMaxPathNameLinkLength: UInt = 100
+local const ustarMaxPathPrefix: UInt = 155
 
 /// File type marker, also known as `linkflag`.
 fixed type: Char
@@ -86,7 +87,7 @@ function makeHeader(path: String, pax: tar.Pax?): Block = makeBaseHeader(path, p
 function makeBaseHeader(path: String, pax: tar.Pax?): Block =
   let (pathParts = splitFilename(path, pax))
     List(
-      pathParts.first, // name [0, 100)
+      pathParts.name, // name [0, 100)
       formatOctal(info!!.mode, 8), // mode [100, 108)
       formatOctal(validateNumericField(info!!.uid, ustarMaxUidGid, "uid", pax), 8), // uid [108, 116)
       formatOctal(validateNumericField(info!!.gid, ustarMaxUidGid, "gid", pax), 8), // gid [116, 124)
@@ -100,14 +101,14 @@ function makeBaseHeader(path: String, pax: tar.Pax?): Block =
       ), // mtime [136, 148)
       nul(8), // cksum [148, 156)
       List(typeByte), // typeflag [156, 157)
-      nul(100), // linkname [157, 257)
+      nul(ustarMaxPathNameLinkLength), // linkname [157, 257)
       magic, // magic [257, 263)
       version, // version [263, 265)
       validateStringField(info!!.uname, 32, "uname", pax), // uname [265, 297)
       validateStringField(info!!.gname, 32, "gname", pax), // gname [297, 329)
       nul(8), // devmajor [329, 337)
       nul(8), // devminor [337, 345)
-      pathParts.second, // prefix [345, 500)
+      pathParts.prefix, // prefix [345, 500)
       nul(12) // padding [500, 512)
     ).flatten()
 
@@ -118,7 +119,7 @@ function makePax(path: String, pax: tar.Pax): Buffer(length % blockLength == 0) 
   let (
     paxHeader = new ExtendedHeader {
       paxFields = (self.paxFields) {
-        when (splitFilename(path, pax) == null) {
+        when (splitFilename(path, pax).overflow) {
           ["path"] = path
         }
       }
@@ -227,7 +228,7 @@ open class Link extends File {
   target: String
 
   paxFields {
-    when (target.encodeToBytes("UTF-8").length > ustarMaxLinkLength) {
+    when (target.encodeToBytes("UTF-8").length > ustarMaxPathNameLinkLength) {
       ["linkpath"] = target
     }
   }
@@ -235,7 +236,7 @@ open class Link extends File {
   local self = this
 
   function makeHeader(path: String, pax: tar.Pax?): Block =
-    let (linkName = validateStringField(target, ustarMaxLinkLength, "linkname", pax))
+    let (linkName = validateStringField(target, ustarMaxPathNameLinkLength, "linkname", pax))
       self.makeBaseHeader(path, pax).replaceRange(157, 257, linkName)
 }
 
@@ -304,6 +305,12 @@ const function nul(length: Int): Buffer = if (length <= 0) List() else List(0).r
 local const function formatOctal(value: UInt, size: UInt): Buffer(length == size) =
   value.toRadixString(8).padStart(size - 1, "0").encodeToBytes("UTF-8").toList() + List(0)
 
+local class FilePathPieces {
+  name: Buffer(length == ustarMaxPathNameLinkLength)
+  prefix: Buffer(length == ustarMaxPathPrefix) = nul(ustarMaxPathPrefix)
+  overflow: Boolean = false
+}
+
 /// Split a file path into the two fields UStar uses.
 ///
 ///
@@ -318,30 +325,29 @@ local const function formatOctal(value: UInt, size: UInt): Buffer(length == size
 /// meet the above length constraints.
 ///
 /// Pax format archives will truncate the prefix from the beginning for paths that are too long.
-local const function splitFilename(
-  path: String,
-  pax: tar.Pax?
-): Pair<Buffer(length == 100), Buffer(length == 155)>? =
+local const function splitFilename(path: String, pax: tar.Pax?): FilePathPieces =
   let (_ = validateStringField(path, null, "path", pax))
-  let (name = path.encodeToBytes("UTF-8").toList())
-    if (name.length <= 100)
-      Pair(name + nul(100 - name.length), nul(155))
+  let (_name = path.encodeToBytes("UTF-8").toList())
+    if (_name.length <= ustarMaxPathNameLinkLength)
+      new { name = _name + nul(ustarMaxPathNameLinkLength - _name.length) }
     else
-      // suffix is the longest suffix under 100 bytes that starts after a /
-      let (suffix = name.takeLast(100).dropWhile((char) -> char != 0x2f).drop(1))
-      // prefix is the rest of the string not including the joining /
-      let (fullPrefix = name.dropLast(suffix.length + 1))
-      let (prefix = fullPrefix.takeLast(155))
-        if (fullPrefix.length > 155)
-          if (pax == null)
-            throw("Path `\(path)` too long for UStar archive")
-          else
-            null
-        else
-          Pair(
-            suffix + nul(100 - suffix.length),
-            prefix + nul(155 - prefix.length)
-          )
+      // suffix is the longest suffix under ustarMaxPathNameLinkLength bytes that starts after a /
+      let (
+        suffix =
+          _name.takeLast(ustarMaxPathNameLinkLength).dropWhile((char) -> char != 0x2f).drop(1)
+      )
+      // _prefix is the rest of the string not including the joining /
+      let (fullPrefix = _name.dropLast(suffix.length + 1))
+      let (_prefix = fullPrefix.takeLast(ustarMaxPathPrefix))
+        new {
+          name = suffix + nul(ustarMaxPathNameLinkLength - suffix.length)
+          prefix = _prefix + nul(ustarMaxPathPrefix - _prefix.length)
+          overflow =
+            if (fullPrefix.length > ustarMaxPathPrefix && pax == null)
+              throw("Path `\(path)` too long for UStar archive")
+            else
+              fullPrefix.length > ustarMaxPathPrefix
+        }
 
 /// When producing a UStar archive, validate strings consists of legal POSIX portable characters.
 ///
@@ -399,6 +405,10 @@ const function maybeAppend(cond: Boolean, makeBuffer: () -> Buffer): (Buffer) ->
 /// Pad (with zero bytes) some [Bytes] to a multiple of 512 bytes.
 local const function padToBlock(buffer: Bytes): Buffer(length % blockLength == 0) =
   if (buffer.length != 0)
-    buffer.toList() + if(buffer.length % blockLength == 0) List() else nul(blockLength - (buffer.length % blockLength))
+    buffer.toList()
+      + if (buffer.length % blockLength == 0)
+        List()
+      else
+        nul(blockLength - (buffer.length % blockLength))
   else
     List()

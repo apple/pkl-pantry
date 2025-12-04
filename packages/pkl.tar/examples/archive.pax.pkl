@@ -25,6 +25,9 @@ archive {
   ["\(superLongPathPrefix)/regularFile.txt"] {
     text = "this is a regular file"
   }
+  ["this/path/is/long/enough/to/be/too/long/for/ustar/entirely/and/it/needs/the/name/in/the/pax/header/\(superLongPathPrefix)/regularFile.txt"] {
+    text = "this is a regular file"
+  }
   ["\(superLongPathPrefix)/someDir/regularFile.txt"] = this["regularFile.txt"]
   ["\(superLongPathPrefix)/someDir/hardLink.txt"] = new File.Link {
     target = "\(superLongPathParent)/regularFile.txt"
