@@ -261,9 +261,22 @@ val prepareReleases by
     }
   }
 
+val testTarExamples by
+  tasks.registering(Exec::class) {
+    executable = file("packages/pkl.tar/examples/test_examples.sh").absolutePath
+
+    inputs.files(fileTree("packages/pkl.tar/"))
+
+    val outputFile = layout.buildDirectory.file("testTarExample.txt")
+    outputs.file(outputFile)
+
+    doLast { outputFile.get().asFile.writeText("OK") }
+  }
+
 tasks.test {
   useJUnitPlatform()
   dependsOn(createPackages)
+  dependsOn(testTarExamples)
 }
 
 tasks.build { dependsOn(prepareReleases) }

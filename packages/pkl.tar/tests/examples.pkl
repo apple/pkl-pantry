@@ -1,0 +1,77 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.tar.tests.examples
+
+amends "pkl:test"
+
+examples {
+  for (path, mod in import*("../examples/archive.*.pkl")) {
+    [path] {
+      viz(mod.output.bytes)
+    }
+  }
+}
+
+/// Debug visualizaton for [Bytes].
+///
+/// Procedure:
+/// 1. Divide the buffer into chunks of 512 bytes, rendered separated by an empty line.
+/// 2. Divide each chunk into lines of 64 bytes.
+/// 3. Divide each line into words of 4 bytes, rendered separated by a space.
+/// 4. At the end of each line, print the String representation of the line's bytes.
+///   * Whitespace characters and \0 are replaced with spaces.
+///   * Non-ASCII characters are replaced with `?`.
+local function viz(bytes: Bytes | List<UInt8>): String =
+  let (buf = if (bytes is Bytes) bytes.toList() else bytes)
+    if (buf.length > 512)
+      vizBlock(buf.take(512)) + "\n\n" + viz(buf.drop(512))
+    else if (buf.length == 512)
+      vizBlock(buf)
+    else
+      buf.toBytes().hex
+
+local function vizBlock(str: List<UInt8>(length == 512)): String =
+  List(
+    vizWords(str.sublist(0, 64)),
+    vizWords(str.sublist(64, 128)),
+    vizWords(str.sublist(128, 192)),
+    vizWords(str.sublist(192, 256)),
+    vizWords(str.sublist(256, 320)),
+    vizWords(str.sublist(320, 384)),
+    vizWords(str.sublist(384, 448)),
+    vizWords(str.sublist(448, 512))
+  ).join("\n")
+
+local function vizWords(str: List<UInt8>(length % 8 == 0)): String =
+  let (
+    decoded =
+      str
+        .map((char) ->
+          if (char == 0x00 || char == 0x09 || char == 0x0a || char == 0x0d) // \0, \t, \n, \r
+            0x20 // space
+          else if (!char.isBetween(0x0007, 0x000d) && !char.isBetween(0x0020, 0x007e))
+            0x3f // ?
+          else
+            char
+        )
+        .toBytes()
+        .decodeToString("UTF-8")
+        .dropLastWhile((char) -> char == " ")
+  )
+    IntSeq(0, str.length ~/ 4 - 1)
+      .fold(List(), (res, i) -> res.add(str.sublist(i * 4, i * 4 + 4).toBytes().hex))
+      .join(" ")
+      + " \(decoded)"
