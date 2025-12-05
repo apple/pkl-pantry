@@ -114,16 +114,14 @@ val projectDirs: List<File> =
 
 val outputDir = layout.buildDirectory
 
-pkl {
-  project {
-    resolvers { register("resolveProjects") { projectDirectories.from(projectDirs) } }
-    packagers {
-      register("createPackages") {
-        projectDirectories.from(projectDirs)
-        outputPath.set(outputDir.dir("generated/packages/%{name}/%{version}"))
-        junitReportsDir.set(outputDir.dir("test-results"))
-      }
-    }
+pkl.project {
+  resolvers.register("resolveProjects") { projectDirectories.from(projectDirs) }
+
+  packagers.register("createPackages") {
+    projectDirectories.from(projectDirs)
+    outputPath = outputDir.dir("generated/packages/%{name}/%{version}")
+    allowedResources = listOf("file:", "pkl:", "https:", "prop:", "packaage:", "projectpackage:")
+    junitReportsDir = outputDir.dir("test-results")
   }
 }
 

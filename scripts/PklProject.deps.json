@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "resolvedDependencies": {
+    "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1.0.0",
+      "path": "../packages/com.github.actions.contrib"
+    },
+    "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1.1.1",
+      "path": "../packages/pkl.experimental.deepToTyped"
+    },
+    "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.1.0",
+      "path": "../packages/pkl.experimental.syntax"
+    },
+    "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.0.0",
+      "path": "../packages/com.github.actions"
+    },
+    "package://pkg.pkl-lang.org/pkl-pantry/io.github.typesafegithub@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/io.github.typesafegithub@1.0.0",
+      "path": "../packages/io.github.typesafegithub"
+    }
+  }
+}

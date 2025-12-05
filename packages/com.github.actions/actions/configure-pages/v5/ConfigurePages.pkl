@@ -1,0 +1,43 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// A GitHub Action to enable Pages, extract various metadata about a site, and configure some supported static site generators.
+module com.github.actions.actions.`configure-pages`.v5.ConfigurePages
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "actions/configure-pages"
+
+fixed version: "v5"
+
+with: With
+
+class With {
+  /// Optional static site generator to attempt to configure: "nuxt", "next", "gatsby", or "sveltekit"
+  static_site_generator: ("nuxt" | "next" | "gatsby" | "sveltekit")?
+
+  /// Optional file path to static site generator configuration file
+  generator_config_file: String?
+
+  /// GitHub token
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  token: String?
+
+  /// Try to enable Pages for the repository if it is not already enabled. This option requires a token other than `GITHUB_TOKEN` to be provided. In the context of a Personal Access Token, the `repo` scope or Pages write permission is required. In the context of a GitHub App, the `administration:write` and `pages:write` permissions are required.
+  ///
+  /// Default if unspecified: `"false"`
+  enablement: Boolean?
+}
