@@ -32,7 +32,7 @@ local yamlParser = new yaml.Parser { mode = "1.2" }
 
 hidden fixed adjustments: Mapping<
   String,
-  Mapping<String, Mixin<ClassOrModuleNode.PropertyDefinitionNode>>
+  Mapping<String, Mixin<ClassOrModuleNode.PropertyDefinitionNode>>,
 > = new {
   ["actions/checkout"] {
     ["submodules"] {
@@ -60,23 +60,19 @@ hidden fixed adjustments: Mapping<
 
 // noinspection UnresolvedElement
 function getLatestVersion(action: String): String =
-  if (action == "actions/checkout")
-    "v6"
-  else
-    let (ownerAndRepo = action.split("/").take(2).join("/"))
-    let (
-      resource =
-        read(
-          "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(ownerAndRepo)/metadata.yml"
-        )
-    )
-      yamlParser.parse(resource).versionsWithTypings.toList().last
+  let (ownerAndRepo = action.split("/").take(2).join("/"))
+  let (
+    resource =
+      read(
+        "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(ownerAndRepo)/metadata.yml"
+      )
+  )
+    yamlParser.parse(resource).versionsWithTypings.toList().last
 
 local coreActions: Listing<String> = new {
   "actions/cache"
   "actions/cache/save"
   "actions/cache/restore"
-  "actions/checkout"
   "actions/configure-pages"
   "actions/create-github-app-token"
   "actions/create-release"
@@ -96,6 +92,7 @@ local coreActions: Listing<String> = new {
 }
 
 local allCoreVersions: Listing<String> = new {
+  "actions/checkout@v6"
   for (action in coreActions) {
     "\(action)@\(getLatestVersion(action))"
   }
