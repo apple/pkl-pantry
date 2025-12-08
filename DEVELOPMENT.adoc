@@ -1,0 +1,14 @@
+= Development
+
+== Generating actions within `com.github.actions`
+
+The link:scripts/generate-github.sh[generate-github.sh] script generates all actions within the link:packages/com.github.actions/actions/[] subdirectory.
+The script fetches action types from https://github.com/typesafegithub/github-actions-typing-catalog[github-actions-typing-catalog] if available.
+
+Sometimes, the latest version isn't available in that catalog.
+In these cases, the types for that action must be added directly to link:scripts/actionTypes/[].
+To do so:
+
+1. Move the action out of `coreActions` and into `allCoreVersions`, with that version pinned
+2. Add a typing for this module within link:scripts/actionTypes/actions/[], which amends `amends "@io.github.typesafegithub/ActionTypes.pkl"`.
+3. Re-run the link:scripts/generate-github.sh[generate script].

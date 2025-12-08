@@ -95,6 +95,7 @@ function getLatestVersion(action: String): String =
     else
       inferredLatestVersion
 
+// For details on how this works, see DEVELOPMENT.adoc
 local coreActions: Listing<String> = new {
   "actions/cache"
   "actions/cache/save"
