@@ -16,75 +16,61 @@
 amends "@io.github.typesafegithub/ActionTypes.pkl"
 
 inputs {
-  ["repository"] {
+  ["name"] {
     type = "string"
-  }
-  ["ref"] {
-    type = "string"
-  }
-  ["token"] {
-    type = "string"
-  }
-  ["ssh-key"] {
-    type = "string"
-  }
-  ["ssh-known-hosts"] {
-    type = "string"
-  }
-  ["ssh-strict"] {
-    type = "boolean"
-  }
-  ["persist-credentials"] {
-    type = "boolean"
   }
   ["path"] {
-    type = "string"
-  }
-  ["clean"] {
-    type = "boolean"
-  }
-  ["fetch-depth"] {
-    type = "integer"
-    `named-values` {
-      ["Infinite"] = 0
+    type = "list"
+    separator =
+      """
+
+
+      """
+    `list-item` {
+      type = "string"
     }
   }
-  ["show-progress"] {
+  ["if-no-files-found"] {
+    type = "enum"
+    name = "BehaviorIfNoFilesFound"
+    `allowed-values` {
+      "warn"
+      "error"
+      "ignore"
+    }
+  }
+  ["retention-days"] {
+    type = "integer"
+    name = "RetentionPeriod"
+    `named-values` {
+      ["Default"] = 0
+    }
+  }
+  ["compression-level"] {
+    type = "integer"
+    name = "CompressionLevel"
+    `named-values` {
+      ["NoCompression"] = 0
+      ["BestSpeed"] = 1
+      ["DefaultCompression"] = 6
+      ["BestCompression"] = 9
+    }
+  }
+  ["overwrite"] {
     type = "boolean"
   }
-  ["lfs"] {
+  ["include-hidden-files"] {
     type = "boolean"
-  }
-  ["submodules"] {
-    type = "boolean"
-  }
-  ["set-safe-directory"] {
-    type = "boolean"
-  }
-  ["github-server-url"] {
-    type = "string"
-  }
-  ["sparse-checkout"] {
-    type = "boolean"
-  }
-  ["sparse-checkout-cone-mode"] {
-    type = "boolean"
-  }
-  ["fetch-tags"] {
-    type = "boolean"
-  }
-  ["ssh-user"] {
-    type = "string"
-  }
-  ["filter"] {
-    type = "string"
   }
 }
 outputs {
-  ["ref"] {
+  ["artifact-id"] {
+    type = "integer"
+  }
+  ["artifact-url"] {
     type = "string"
   }
-  ["commit"] {
+  ["artifact-digest"] {
     type = "string"
   }
 }

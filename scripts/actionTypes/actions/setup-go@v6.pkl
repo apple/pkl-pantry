@@ -16,75 +16,37 @@
 amends "@io.github.typesafegithub/ActionTypes.pkl"
 
 inputs {
-  ["repository"] {
+  ["go-version"] {
     type = "string"
   }
-  ["ref"] {
+  ["go-version-file"] {
     type = "string"
+  }
+  ["check-latest"] {
+    type = "boolean"
   }
   ["token"] {
     type = "string"
   }
-  ["ssh-key"] {
-    type = "string"
-  }
-  ["ssh-known-hosts"] {
-    type = "string"
-  }
-  ["ssh-strict"] {
+  ["cache"] {
     type = "boolean"
   }
-  ["persist-credentials"] {
-    type = "boolean"
-  }
-  ["path"] {
+  ["cache-dependency-path"] {
     type = "string"
   }
-  ["clean"] {
-    type = "boolean"
-  }
-  ["fetch-depth"] {
-    type = "integer"
-    `named-values` {
-      ["Infinite"] = 0
+  ["architecture"] {
+    type = "enum"
+    `allowed-values` {
+      "x86"
+      "x64"
     }
-  }
-  ["show-progress"] {
-    type = "boolean"
-  }
-  ["lfs"] {
-    type = "boolean"
-  }
-  ["submodules"] {
-    type = "boolean"
-  }
-  ["set-safe-directory"] {
-    type = "boolean"
-  }
-  ["github-server-url"] {
-    type = "string"
-  }
-  ["sparse-checkout"] {
-    type = "boolean"
-  }
-  ["sparse-checkout-cone-mode"] {
-    type = "boolean"
-  }
-  ["fetch-tags"] {
-    type = "boolean"
-  }
-  ["ssh-user"] {
-    type = "string"
-  }
-  ["filter"] {
-    type = "string"
   }
 }
 outputs {
-  ["ref"] {
+  ["go-version"] {
     type = "string"
   }
-  ["commit"] {
-    type = "string"
+  ["cache-hit"] {
+    type = "boolean"
   }
 }

@@ -58,7 +58,21 @@ hidden fixed adjustments: Mapping<
   }
 }
 
-// noinspection UnresolvedElement
+function determineLatestTagFromGit(action: String): String =
+  let (parts = action.split("/"))
+  let (
+    gitOutput =
+      read("https://github.com/\(parts[0])/\(parts[1]).git/info/refs?service=git-upload-pack")
+  )
+    gitOutput.text
+      .split("\n")
+      .mapNonNull((it) ->
+        Regex("refs/tags/(v\\d+)$").findMatchesIn(it)?.getOrNull(0)?.groups?.getOrNull(1)?.value
+      )
+      .sortBy((it) -> it.drop(1).toInt())
+      .last!!
+
+    // noinspection UnresolvedElement
 function getLatestVersion(action: String): String =
   let (ownerAndRepo = action.split("/").take(2).join("/"))
   let (
@@ -67,7 +81,19 @@ function getLatestVersion(action: String): String =
         "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(ownerAndRepo)/metadata.yml"
       )
   )
-    yamlParser.parse(resource).versionsWithTypings.toList().last
+  let (inferredLatestVersion = yamlParser.parse(resource).versionsWithTypings.toList().last)
+  let (latestVersionFromGit = determineLatestTagFromGit(action))
+    if (inferredLatestVersion != latestVersionFromGit)
+      throw(
+        """
+        github-actions-typing-catalog has an outdated version of \(action).
+
+        Latest: \(latestVersionFromGit)
+        Catalog version: \(inferredLatestVersion)
+        """
+      )
+    else
+      inferredLatestVersion
 
 local coreActions: Listing<String> = new {
   "actions/cache"
@@ -77,22 +103,22 @@ local coreActions: Listing<String> = new {
   "actions/create-github-app-token"
   "actions/create-release"
   "actions/deploy-pages"
-  "actions/download-artifact"
-  "actions/first-interaction"
-  "actions/github-script"
-  "actions/labeler"
-  "actions/setup-dotnet"
-  "actions/setup-go"
   "actions/setup-java"
-  "actions/setup-node"
   "actions/setup-python"
-  "actions/stale"
-  "actions/upload-artifact"
-  "actions/upload-pages-artifact"
 }
 
 local allCoreVersions: Listing<String> = new {
   "actions/checkout@v6"
+  "actions/download-artifact@v6"
+  "actions/first-interaction@v3"
+  "actions/setup-dotnet@v5"
+  "actions/github-script@v7"
+  "actions/labeler@v6"
+  "actions/setup-go@v6"
+  "actions/setup-node@v6"
+  "actions/stale@v10"
+  "actions/upload-artifact@v5"
+  "actions/upload-pages-artifact@v4"
   for (action in coreActions) {
     "\(action)@\(getLatestVersion(action))"
   }

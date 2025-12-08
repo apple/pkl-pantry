@@ -25,17 +25,26 @@ import "actions/create-github-app-token/v2/CreateGithubAppToken.pkl" as CreateGi
 import "actions/create-release/v1/CreateRelease.pkl" as CreateReleaseV1
 import "actions/deploy-pages/v4/DeployPages.pkl" as DeployPagesV4
 import "actions/download-artifact/v5/DownloadArtifact.pkl" as DownloadArtifactV5
+import "actions/download-artifact/v6/DownloadArtifact.pkl" as DownloadArtifactV6
 import "actions/first-interaction/v1/FirstInteraction.pkl" as FirstInteractionV1
+import "actions/first-interaction/v3/FirstInteraction.pkl" as FirstInteractionV3
 import "actions/github-script/v7/GithubScript.pkl" as GithubScriptV7
 import "actions/labeler/v5/Labeler.pkl" as LabelerV5
+import "actions/labeler/v6/Labeler.pkl" as LabelerV6
 import "actions/setup-dotnet/v4/SetupDotnet.pkl" as SetupDotnetV4
+import "actions/setup-dotnet/v5/SetupDotnet.pkl" as SetupDotnetV5
 import "actions/setup-go/v5/SetupGo.pkl" as SetupGoV5
+import "actions/setup-go/v6/SetupGo.pkl" as SetupGoV6
 import "actions/setup-java/v5/SetupJava.pkl" as SetupJavaV5
 import "actions/setup-node/v4/SetupNode.pkl" as SetupNodeV4
+import "actions/setup-node/v6/SetupNode.pkl" as SetupNodeV6
 import "actions/setup-python/v6/SetupPython.pkl" as SetupPythonV6
 import "actions/stale/v9/Stale.pkl" as StaleV9
+import "actions/stale/v10/Stale.pkl" as StaleV10
 import "actions/upload-artifact/v4/UploadArtifact.pkl" as UploadArtifactV4
+import "actions/upload-artifact/v5/UploadArtifact.pkl" as UploadArtifactV5
 import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPagesArtifactV3
+import "actions/upload-pages-artifact/v4/UploadPagesArtifact.pkl" as UploadPagesArtifactV4
 
 /// Restore Cache artifacts like dependencies and build outputs to improve workflow execution time
 `actions/cache/restore@v4`: CacheRestoreV4
@@ -64,8 +73,14 @@ import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPages
 /// Download a build artifact that was previously uploaded in the workflow by the upload-artifact action
 `actions/download-artifact@v5`: DownloadArtifactV5
 
+/// Download a build artifact that was previously uploaded in the workflow by the upload-artifact action
+`actions/download-artifact@v6`: DownloadArtifactV6
+
 /// Greet new contributors when they create their first issue or open their first pull request
 `actions/first-interaction@v1`: FirstInteractionV1
+
+/// Greet first-time contributors when they open an issue or PR
+`actions/first-interaction@v3`: FirstInteractionV3
 
 /// Run simple scripts using the GitHub client
 `actions/github-script@v7`: GithubScriptV7
@@ -73,11 +88,20 @@ import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPages
 /// Automatically label new pull requests based on the paths of files being changed
 `actions/labeler@v5`: LabelerV5
 
+/// Automatically label new pull requests based on the paths of files being changed
+`actions/labeler@v6`: LabelerV6
+
 /// Used to build and publish .NET source. Set up a specific version of the .NET and authentication to private NuGet repository
 `actions/setup-dotnet@v4`: SetupDotnetV4
 
+/// Used to build and publish .NET source. Set up a specific version of the .NET and authentication to private NuGet repository
+`actions/setup-dotnet@v5`: SetupDotnetV5
+
 /// Setup a Go environment and add it to the PATH
 `actions/setup-go@v5`: SetupGoV5
+
+/// Setup a Go environment and add it to the PATH
+`actions/setup-go@v6`: SetupGoV6
 
 /// Set up a specific version of the Java JDK and add the command-line tools to the PATH
 `actions/setup-java@v5`: SetupJavaV5
@@ -85,8 +109,14 @@ import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPages
 /// Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH.
 `actions/setup-node@v4`: SetupNodeV4
 
+/// Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH.
+`actions/setup-node@v6`: SetupNodeV6
+
 /// Set up a specific version of Python and add the command-line tools to the PATH.
 `actions/setup-python@v6`: SetupPythonV6
+
+/// Close issues and pull requests with no recent activity
+`actions/stale@v10`: StaleV10
 
 /// Close issues and pull requests with no recent activity
 `actions/stale@v9`: StaleV9
@@ -94,5 +124,11 @@ import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPages
 /// Upload a build artifact that can be used by subsequent workflow steps
 `actions/upload-artifact@v4`: UploadArtifactV4
 
+/// Upload a build artifact that can be used by subsequent workflow steps
+`actions/upload-artifact@v5`: UploadArtifactV5
+
 /// A composite action that prepares your static assets to be deployed to GitHub Pages
 `actions/upload-pages-artifact@v3`: UploadPagesArtifactV3
+
+/// A composite action that prepares your static assets to be deployed to GitHub Pages
+`actions/upload-pages-artifact@v4`: UploadPagesArtifactV4

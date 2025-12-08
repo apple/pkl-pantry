@@ -16,75 +16,49 @@
 amends "@io.github.typesafegithub/ActionTypes.pkl"
 
 inputs {
-  ["repository"] {
+  ["script"] {
     type = "string"
   }
-  ["ref"] {
+  ["github-token"] {
     type = "string"
   }
-  ["token"] {
-    type = "string"
-  }
-  ["ssh-key"] {
-    type = "string"
-  }
-  ["ssh-known-hosts"] {
-    type = "string"
-  }
-  ["ssh-strict"] {
+  ["debug"] {
     type = "boolean"
   }
-  ["persist-credentials"] {
-    type = "boolean"
-  }
-  ["path"] {
+  ["user-agent"] {
     type = "string"
   }
-  ["clean"] {
-    type = "boolean"
-  }
-  ["fetch-depth"] {
-    type = "integer"
-    `named-values` {
-      ["Infinite"] = 0
+  ["previews"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
     }
   }
-  ["show-progress"] {
-    type = "boolean"
+  ["result-encoding"] {
+    type = "enum"
+    name = "Encoding"
+    `allowed-values` {
+      "string"
+      "json"
+    }
   }
-  ["lfs"] {
-    type = "boolean"
+  ["retries"] {
+    type = "integer"
   }
-  ["submodules"] {
-    type = "boolean"
+  ["retry-exempt-status-codes"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "integer"
+    }
   }
-  ["set-safe-directory"] {
-    type = "boolean"
-  }
-  ["github-server-url"] {
-    type = "string"
-  }
-  ["sparse-checkout"] {
-    type = "boolean"
-  }
-  ["sparse-checkout-cone-mode"] {
-    type = "boolean"
-  }
-  ["fetch-tags"] {
-    type = "boolean"
-  }
-  ["ssh-user"] {
-    type = "string"
-  }
-  ["filter"] {
+  ["base-url"] {
     type = "string"
   }
 }
 outputs {
-  ["ref"] {
-    type = "string"
-  }
-  ["commit"] {
+  ["result"] {
     type = "string"
   }
 }

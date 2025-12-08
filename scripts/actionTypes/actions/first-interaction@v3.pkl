@@ -13,15 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../basePklProject.pkl"
+amends "@io.github.typesafegithub/ActionTypes.pkl"
 
-dependencies {
-  ["com.github.actions"] = import("../com.github.actions/PklProject")
-  ["io.github.typesafegithub"] = import("../io.github.typesafegithub/PklProject")
-  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
-  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
-}
-
-package {
-  version = "1.0.1"
+inputs {
+  ["repo_token"] {
+    type = "string"
+  }
+  ["issue_message"] {
+    type = "string"
+  }
+  ["pr_message"] {
+    type = "string"
+  }
 }
