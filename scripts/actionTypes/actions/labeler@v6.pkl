@@ -16,75 +16,43 @@
 amends "@io.github.typesafegithub/ActionTypes.pkl"
 
 inputs {
-  ["repository"] {
+  ["repo-token"] {
     type = "string"
   }
-  ["ref"] {
+  ["configuration-path"] {
     type = "string"
   }
-  ["token"] {
-    type = "string"
-  }
-  ["ssh-key"] {
-    type = "string"
-  }
-  ["ssh-known-hosts"] {
-    type = "string"
-  }
-  ["ssh-strict"] {
+  ["sync-labels"] {
     type = "boolean"
   }
-  ["persist-credentials"] {
+  ["dot"] {
     type = "boolean"
   }
-  ["path"] {
-    type = "string"
-  }
-  ["clean"] {
-    type = "boolean"
-  }
-  ["fetch-depth"] {
-    type = "integer"
-    `named-values` {
-      ["Infinite"] = 0
+  ["pr-number"] {
+    type = "list"
+    separator =
+      """
+
+
+      """
+    `list-item` {
+      type = "string"
     }
-  }
-  ["show-progress"] {
-    type = "boolean"
-  }
-  ["lfs"] {
-    type = "boolean"
-  }
-  ["submodules"] {
-    type = "boolean"
-  }
-  ["set-safe-directory"] {
-    type = "boolean"
-  }
-  ["github-server-url"] {
-    type = "string"
-  }
-  ["sparse-checkout"] {
-    type = "boolean"
-  }
-  ["sparse-checkout-cone-mode"] {
-    type = "boolean"
-  }
-  ["fetch-tags"] {
-    type = "boolean"
-  }
-  ["ssh-user"] {
-    type = "string"
-  }
-  ["filter"] {
-    type = "string"
   }
 }
 outputs {
-  ["ref"] {
-    type = "string"
+  ["new-labels"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
+    }
   }
-  ["commit"] {
-    type = "string"
+  ["all-labels"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
+    }
   }
 }

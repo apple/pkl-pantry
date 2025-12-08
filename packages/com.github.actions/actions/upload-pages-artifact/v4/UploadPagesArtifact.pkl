@@ -13,15 +13,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../basePklProject.pkl"
+/// A composite action that prepares your static assets to be deployed to GitHub Pages
+module com.github.actions.actions.`upload-pages-artifact`.v4.UploadPagesArtifact
 
-dependencies {
-  ["com.github.actions"] = import("../com.github.actions/PklProject")
-  ["io.github.typesafegithub"] = import("../io.github.typesafegithub/PklProject")
-  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
-  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
-}
+extends ".../AbstractTypedStep.pkl"
 
-package {
-  version = "1.0.1"
+fixed action: "actions/upload-pages-artifact"
+
+fixed version: "v4"
+
+with: With
+
+class With {
+  /// Artifact name
+  ///
+  /// Default if unspecified: `"github-pages"`
+  name: String?
+
+  /// Path of the directory containing the static assets.
+  ///
+  /// Default if unspecified: `"_site/"`
+  path: String?
+
+  /// Duration after which artifact will expire in days.
+  ///
+  /// Default if unspecified: `"1"`
+  `retention-days`: Int?
 }

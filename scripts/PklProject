@@ -20,4 +20,5 @@ dependencies {
   ["com.github.actions"] = import("../packages/com.github.actions/PklProject")
   ["io.github.typesafegithub"] = import("../packages/io.github.typesafegithub/PklProject")
   ["syntax"] = import("../packages/pkl.experimental.syntax/PklProject")
+  ["deepToTyped"] = import("../packages/pkl.experimental.deepToTyped/PklProject")
 }

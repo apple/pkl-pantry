@@ -241,10 +241,12 @@ permissions: (*Permissions | "read-all" | "write-all")?
 ///
 /// For more information, see
 /// [REST API endpoints for GitHub Actions](https://docs.github.com/en/rest/actions?apiVersion=2022-11-28#workflow-jobs).
-jobs: Mapping<String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_-]*"))), Job>(!isEmpty)
+jobs: Jobs
 
 /// The contextual values available within a GitHub Action.
 hidden const context: Context
+
+typealias Jobs = Mapping<String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_-]*"))), Job>(!isEmpty)
 
 /// A job within a workflow run.
 typealias Job = *JobModule | AbstractTypedJob

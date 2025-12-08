@@ -16,75 +16,37 @@
 amends "@io.github.typesafegithub/ActionTypes.pkl"
 
 inputs {
-  ["repository"] {
+  ["name"] {
     type = "string"
   }
-  ["ref"] {
-    type = "string"
-  }
-  ["token"] {
-    type = "string"
-  }
-  ["ssh-key"] {
-    type = "string"
-  }
-  ["ssh-known-hosts"] {
-    type = "string"
-  }
-  ["ssh-strict"] {
-    type = "boolean"
-  }
-  ["persist-credentials"] {
-    type = "boolean"
+  ["artifact-ids"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
+    }
   }
   ["path"] {
     type = "string"
   }
-  ["clean"] {
-    type = "boolean"
-  }
-  ["fetch-depth"] {
-    type = "integer"
-    `named-values` {
-      ["Infinite"] = 0
-    }
-  }
-  ["show-progress"] {
-    type = "boolean"
-  }
-  ["lfs"] {
-    type = "boolean"
-  }
-  ["submodules"] {
-    type = "boolean"
-  }
-  ["set-safe-directory"] {
-    type = "boolean"
-  }
-  ["github-server-url"] {
+  ["pattern"] {
     type = "string"
   }
-  ["sparse-checkout"] {
+  ["merge-multiple"] {
     type = "boolean"
   }
-  ["sparse-checkout-cone-mode"] {
-    type = "boolean"
-  }
-  ["fetch-tags"] {
-    type = "boolean"
-  }
-  ["ssh-user"] {
+  ["github-token"] {
     type = "string"
   }
-  ["filter"] {
+  ["repository"] {
+    type = "string"
+  }
+  ["run-id"] {
     type = "string"
   }
 }
 outputs {
-  ["ref"] {
-    type = "string"
-  }
-  ["commit"] {
+  ["download-path"] {
     type = "string"
   }
 }

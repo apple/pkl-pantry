@@ -13,15 +13,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../basePklProject.pkl"
+/// Greet first-time contributors when they open an issue or PR
+module com.github.actions.actions.`first-interaction`.v3.FirstInteraction
 
-dependencies {
-  ["com.github.actions"] = import("../com.github.actions/PklProject")
-  ["io.github.typesafegithub"] = import("../io.github.typesafegithub/PklProject")
-  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
-  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
-}
+extends ".../AbstractTypedStep.pkl"
 
-package {
-  version = "1.0.1"
+fixed action: "actions/first-interaction"
+
+fixed version: "v3"
+
+with: With
+
+class With {
+  /// Comment to post on an individual's first issue
+  issue_message: String?
+
+  /// Comment to post on an individual's first pull request
+  pr_message: String?
+
+  /// Token with permissions to post issue and PR comments
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  repo_token: String?
 }

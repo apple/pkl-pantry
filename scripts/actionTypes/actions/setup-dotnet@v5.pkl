@@ -16,75 +16,52 @@
 amends "@io.github.typesafegithub/ActionTypes.pkl"
 
 inputs {
-  ["repository"] {
+  ["dotnet-version"] {
     type = "string"
   }
-  ["ref"] {
-    type = "string"
-  }
-  ["token"] {
-    type = "string"
-  }
-  ["ssh-key"] {
-    type = "string"
-  }
-  ["ssh-known-hosts"] {
-    type = "string"
-  }
-  ["ssh-strict"] {
-    type = "boolean"
-  }
-  ["persist-credentials"] {
-    type = "boolean"
-  }
-  ["path"] {
-    type = "string"
-  }
-  ["clean"] {
-    type = "boolean"
-  }
-  ["fetch-depth"] {
-    type = "integer"
-    `named-values` {
-      ["Infinite"] = 0
+  ["dotnet-quality"] {
+    type = "enum"
+    name = "DotNetQuality"
+    `allowed-values` {
+      "daily"
+      "signed"
+      "validated"
+      "preview"
+      "ga"
     }
   }
-  ["show-progress"] {
-    type = "boolean"
-  }
-  ["lfs"] {
-    type = "boolean"
-  }
-  ["submodules"] {
-    type = "boolean"
-  }
-  ["set-safe-directory"] {
-    type = "boolean"
-  }
-  ["github-server-url"] {
+  ["global-json-file"] {
     type = "string"
   }
-  ["sparse-checkout"] {
-    type = "boolean"
-  }
-  ["sparse-checkout-cone-mode"] {
-    type = "boolean"
-  }
-  ["fetch-tags"] {
-    type = "boolean"
-  }
-  ["ssh-user"] {
+  ["source-url"] {
     type = "string"
   }
-  ["filter"] {
+  ["owner"] {
     type = "string"
+  }
+  ["config-file"] {
+    type = "string"
+  }
+  ["cache"] {
+    type = "boolean"
+  }
+  ["cache-dependency-path"] {
+    type = "list"
+    separator =
+      """
+
+
+      """
+    `list-item` {
+      type = "string"
+    }
   }
 }
 outputs {
-  ["ref"] {
-    type = "string"
+  ["cache-hit"] {
+    type = "boolean"
   }
-  ["commit"] {
+  ["dotnet-version"] {
     type = "string"
   }
 }

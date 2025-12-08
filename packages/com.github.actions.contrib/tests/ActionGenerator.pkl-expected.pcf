@@ -4,7 +4,7 @@ examples {
     /// Cache artifacts like dependencies and build outputs to improve workflow execution time
     module actions.cache.v4.Cache
     
-    extends "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@1.0.0#/AbstractTypedStep.pkl"
+    extends "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@1.1.0#/AbstractTypedStep.pkl"
     
     fixed action: "actions/cache"
     
@@ -62,7 +62,7 @@ examples {
     /// Cache artifacts like dependencies and build outputs to improve workflow execution time
     module actions.cache.v4.Cache
     
-    extends "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@1.0.0#/AbstractTypedStep.pkl"
+    extends "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@1.1.0#/AbstractTypedStep.pkl"
     
     fixed action: "actions/cache"
     

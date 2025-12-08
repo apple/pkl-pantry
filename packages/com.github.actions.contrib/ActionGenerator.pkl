@@ -381,7 +381,17 @@ local inputs: Listing<InputProperty> = new {
     new {
       name = propName
       input = actionInput
-      inputType = effectiveActionTypes?.inputs?.getOrNull(propName)
+      inputType =
+        if (effectiveActionTypes != null)
+          if (effectiveActionTypes.inputs?.containsKey(propName) == false)
+            let (
+              _ = trace("Incomplete action types: missing type for \(propName) for \(actionName)")
+            )
+              null
+          else
+            effectiveActionTypes.inputs!![propName]
+        else
+          null
       adjustments = module.adjustments
     }
   }
