@@ -1,0 +1,1029 @@
+//===----------------------------------------------------------------------===//
+// This file contains code originally based off of github.com/StefMa/pkl-gha.
+//
+// Original license:
+//
+// MIT License
+//
+// Copyright (c) 2024 Stefan M.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// A Pkl template for writing GitHub Action workflows.
+///
+/// This module provides a set of definitions for GitHub Action workflows,
+/// including triggers, jobs, steps, and environment variables.
+///
+/// ## Using context
+///
+/// There is a helper for referencing
+/// [context](https://docs.github.com/en/actions/reference/workflows-and-actions/context) values directly off of the
+/// this module.
+///
+/// When amending `Workflow`, the context can be referenced using `module.context`.
+///
+/// Example:
+///
+///     amends "@com.github.actions/Workflow.pkl"
+///
+///     jobs {
+///       ["build"] {
+///         `runs-on` = "ubuntu-latest"
+///         steps {
+///           new {
+///             run =
+///               """
+///               echo "My ref is \(module.context.github.ref)"
+///               """
+///           }
+///         }
+///       }
+///     }
+///
+/// ## Using typed steps
+///
+/// Pkl provides helpers to steps which call into externally defined actions in a typesafe way.
+/// For example, it provides code assistance for calling the `actions/checkout` action while
+/// providing completions and typechecking for each input.
+///
+/// These steps are defined as classes (or modules) that extend module [AbstractTypedStep].
+///
+/// ### Using the catalog
+///
+/// This package includes a catalog of typed steps, within the `actions/` subpath.
+/// Additionally, the `catalog.pkl` module is an index module of all catalogs.
+///
+/// To use a catalog item, simply import `catalog.pkl` when defining a workspace.
+/// For example:
+///
+///     amends "@com.github.actions/Workflow.pkl"
+///
+///     import "@com.github.actions/catalog.pkl"
+///
+///     jobs {
+///       ["build"] {
+///         `runs-on` = "ubuntu-latest"
+///         steps {
+///           // use the checkout action without any further parameterization
+///           catalog.`actions/checkout@v6`
+///
+///           // use the cache/restore action with some extra parameters
+///           (catalog.`actions/cache/restore@v4`) {
+///             with {
+///               key = "my-cache-key"
+///               pathList { "foo"; "bar" }
+///             }
+///           }
+///         }
+///       }
+///     }
+///
+/// ### Generating more action types
+///
+/// It is possible to generate more action types, using the `generate-action` script from the
+/// `com.github.actions.contrib` package.
+///
+/// These actions turn into their own modules, and should be checked into source code.
+/// For further instructions, see its
+/// [documentation](https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib/current/generate-action/index.html).
+/** gha-fork */
+module com.github.actions.Workflow
+
+import "AbstractTypedJob.pkl"
+import "context.pkl" as Context
+import "Job.pkl" as JobModule
+
+name: String
+
+local const onIsSet = (on: On) ->
+  on.branch_protection_rule != null
+    || on.check_run != null
+    || on.check_suite != null
+    || on.create != null
+    || on.`delete` != null
+    || on.deployment != null
+    || on.deployment_status != null
+    || on.discussion != null
+    || on.discussion_comment != null
+    || on.fork != null
+    || on.gollum != null
+    || on.issue_comment != null
+    || on.issues != null
+    || on.label != null
+    || on.merge_group != null
+    || on.milestone != null
+    || on.page_build != null
+    || on.project != null
+    || on.project_card != null
+    || on.project_column != null
+    || on.public != null
+    || on.pull_request != null
+    || on.pull_request_review != null
+    || on.pull_request_review_comment != null
+    || on.pull_request_target != null
+    || on.push != null
+    || on.registry_package != null
+    || on.release != null
+    || on.repository_dispatch != null
+    || on.schedule != null
+    || on.status != null
+    || on.watch != null
+    || on.workflow_call != null
+    || on.workflow_dispatch != null
+    || on.workflow_run != null
+
+on: On(onIsSet)
+
+/// A map of variables that are available to the steps of all jobs in the workflow.
+///
+/// You can also set variables that are only available to the steps of a single job or to a single
+/// step.
+/// For more information, see [DefaultJob.env] and [Step.env].
+/// When more than one environment variable is defined with the same name, GitHub uses the most
+/// specific variable.
+/// For example, an environment variable defined in a step will override job and workflow
+/// environment variables with the same name, while the step executes.
+/// An environment variable defined for a job will override a workflow variable with the same name,
+/// while the job executes.
+env: EnvironmentVariables?
+
+/// Use concurrency to ensure that only a single job or workflow using the same concurrency group
+/// will run at a time.
+///
+/// A concurrency group can be any string or expression.
+/// The expression can only use
+/// [`github`](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#github-context),
+/// [`inputs`](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#inputs-context)
+/// and
+/// [`vars`](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#vars-context)
+/// contexts.
+/// For more information about expressions, see
+/// [Evaluate expressions in workflows and actions](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions).
+/// You can also specify concurrency at the job level.
+/// For more information, see [BaseJob.concurrency].
+/// This means that there can be at most one running and one pending job in a concurrency group at
+/// any time.
+/// When a concurrent job or workflow is queued, if another job or workflow using the same
+/// concurrency group in the repository is in progress, the queued job or workflow will be pending.
+/// Any existing pending job or workflow in the same concurrency group, if it exists, will be
+/// canceled and the new queued job or workflow will take its place.
+/// To also cancel any currently running job or workflow in the same concurrency group, specify
+/// cancel-in-progress: true.
+/// To conditionally cancel currently running jobs or workflows in the same concurrency group, you
+/// can specify cancel-in-progress as an expression with any of the allowed expression contexts.
+concurrency: Concurrency?
+
+/// You can use permissions to modify the default permissions granted to the `GITHUB_TOKEN`, adding
+/// or removing access as required, so that you only allow the minimum required access.
+///
+/// For more information, see
+/// [Use GITHUB_TOKEN for authentication in workflows](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token#permissions-for-the-github_token).
+/// You can use permissions either as a top-level key, to apply to all jobs in the workflow, or
+/// within specific jobs.
+/// When you add the permissions key within a specific job, all actions and run commands within that
+/// job that use the `GITHUB_TOKEN` gain the access rights you specify.
+/// For more information, see [BaseJob.permissions].
+/// Owners of an organization can restrict write access for the `GITHUB_TOKEN` at the repository
+/// level.
+/// For more information, see
+/// [Disabling or limiting GitHub Actions for your organization](https://docs.github.com/en/organizations/managing-organization-settings/disabling-or-limiting-github-actions-for-your-organization#setting-the-permissions-of-the-github_token-for-your-organization).
+/// When a workflow is triggered by the `pull_request_target` event, the `GITHUB_TOKEN` is granted
+/// read/write repository permission, even when it is triggered from a public fork.
+/// For more information, see
+/// [Events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request_target).
+permissions: (*Permissions | "read-all" | "write-all")?
+
+/// A workflow run is made up of one or more jobs, which run in parallel by default.
+///
+/// To run jobs sequentially, you can define dependencies on other jobs using the
+/// [needs][BaseJob.needs] keyword.
+/// Each job runs in a runner environment specified by runs-on.
+/// You can run an unlimited number of jobs as long as you are within the workflow usage limits.
+/// For more information, see
+/// [Billing and usage](https://docs.github.com/en/actions/concepts/billing-and-usage) for
+/// GitHub-hosted runners and
+/// [Actions limits](https://docs.github.com/en/actions/reference/limits) for self-hosted runner
+/// usage limits.
+/// If you need to find the unique identifier of a job running in a workflow run, you can use the
+/// GitHub API.
+///
+/// For more information, see
+/// [REST API endpoints for GitHub Actions](https://docs.github.com/en/rest/actions?apiVersion=2022-11-28#workflow-jobs).
+jobs: Mapping<String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_-]*"))), Job>(!isEmpty)
+
+/// The contextual values available within a GitHub Action.
+hidden const context: Context
+
+/// A job within a workflow run.
+typealias Job = *JobModule | AbstractTypedJob
+
+/// A step within a job.
+typealias Step = JobModule.Step
+
+// region Trigger
+abstract class Trigger {
+  /// Define the type of activity that will trigger a workflow run.
+  ///
+  /// Most GitHub events are triggered by more than one type of activity.
+  /// For example, the label is triggered when a label is created, edited, or deleted.
+  /// The types keyword enables you to narrow down activity that causes the workflow to run.
+  /// When only one activity type triggers a webhook event, the types keyword is unnecessary.
+  /// You can use an array of event types.
+  ///
+  /// For more information about each event and their activity types, see
+  /// [Events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#available-events).
+  types: Listing<String>?
+}
+
+/// The base trigger, with no event types associated
+class BaseTrigger extends Trigger {
+  types: Listing<nothing>?
+}
+
+class BranchProtectionRule extends Trigger {
+  types: Listing<BranchProtectionRuleType>?
+}
+
+typealias BranchProtectionRuleType = "created" | "edited" | "deleted"
+
+class CheckRun extends Trigger {
+  types: Listing<CheckRunType>?
+}
+
+typealias CheckRunType = "created" | "rerequested" | "completed" | "requested_action"
+
+class CheckSuite extends Trigger {
+  types: Listing<CheckSuiteType>?
+}
+typealias CheckSuiteType = "completed" | "requested" | "rerequested"
+
+class Discussion extends Trigger {
+  types: Listing<DiscussionType>?
+}
+typealias DiscussionType =
+  "created"
+    | "edited"
+    | "deleted"
+    | "transferred"
+    | "pinned"
+    | "unpinned"
+    | "labeled"
+    | "unlabeled"
+    | "locked"
+    | "unlocked"
+    | "category_changed"
+    | "answered"
+    | "unanswered"
+
+class DiscussionComment extends Trigger {
+  types: Listing<DiscussionCommentType>?
+}
+typealias DiscussionCommentType = "created" | "edited" | "deleted"
+
+class IssueComment extends Trigger {
+  types: Listing<IssueCommentType>?
+}
+typealias IssueCommentType = "created" | "edited" | "deleted"
+
+class Issues extends Trigger {
+  types: Listing<IssuesType>?
+}
+typealias IssuesType =
+  "opened"
+    | "edited"
+    | "deleted"
+    | "transferred"
+    | "pinned"
+    | "unpinned"
+    | "closed"
+    | "reopened"
+    | "assigned"
+    | "unassigned"
+    | "labeled"
+    | "unlabeled"
+    | "locked"
+    | "unlocked"
+    | "milestoned"
+    | "demilestoned"
+
+class Label extends Trigger {
+  types: Listing<LabelType>?
+}
+typealias LabelType = "created" | "edited" | "deleted"
+
+class MergeGroup extends Trigger {
+  types: Listing<MergeGroupType>?
+}
+typealias MergeGroupType = "checked_requested"
+
+class Milestone extends Trigger {
+  types: Listing<MilestoneType>?
+}
+typealias MilestoneType = "created" | "closed" | "opened" | "edited" | "deleted"
+
+class Project extends Trigger {
+  types: Listing<ProjectType>?
+}
+typealias ProjectType = "created" | "updated" | "closed" | "reopened" | "edited" | "deleted"
+
+class ProjectCard extends Trigger {
+  types: Listing<ProjectCardType>?
+}
+typealias ProjectCardType = "created" | "moved" | "converted" | "edited" | "deleted"
+
+class ProjectColumn extends Trigger {
+  types: Listing<ProjectColumnType>?
+}
+typealias ProjectColumnType = "created" | "updated" | "moved" | "deleted"
+
+class PullRequest extends Trigger {
+  types: Listing<PullRequestType>?
+
+  /// Use the branches filter when you want to include branch name patterns or when you want to both
+  /// include and exclude branch names patterns.
+  ///
+  /// Accepts glob patterns that use characters like `*`, `**`, `+`, `?`, `!` and others to match
+  /// more than one branch name.
+  /// If a name contains any of these characters and you want a literal match, you need to escape
+  /// each of these special characters with `\`.
+  /// For more information about glob patterns, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  /// See
+  /// <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpull_requestpull_request_targetbranchesbranches-ignore>
+  branches: Listing<String>?
+
+  /// Use the branches-ignore filter when you only want to exclude branch name patterns.
+  ///
+  /// You cannot use both the branches and branches-ignore filters for the same event in a workflow.
+  ///
+  /// Accepts glob patterns that use characters like `*`, `**`, `+`, `?`, `!` and others to match
+  /// more than one branch name.
+  /// If a name contains any of these characters and you want a literal match, you need to escape
+  /// each of these special characters with `\`.
+  ///
+  /// For more information about glob patterns, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  ///
+  /// See <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpull_requestpull_request_targetbranchesbranches-ignore>
+  `branches-ignore`: Listing<String>(branches == null)?
+
+  /// Use the paths filter when you want to include file path patterns or when you want to both
+  /// include and exclude file path patterns.
+  ///
+  /// Accepts glob patterns that use the `*` and `**` wildcard characters to match more than one
+  /// path name.
+  /// For more information, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  paths: Listing<String>?
+
+  /// Use the paths-ignore filter when you only want to exclude file path patterns.
+  ///
+  /// You cannot use both the paths and paths-ignore filters for the same event in a workflow.
+  /// If you want to both include and exclude path patterns for a single event, use the paths filter
+  /// prefixed with the `!` character to indicate which paths should be excluded.
+  ///
+  /// Accepts glob patterns that use the `*` and `**` wildcard characters to match more than one
+  /// path name.
+  /// For more information, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  `paths-ignore`: Listing<String>(paths == null)?
+}
+
+typealias PullRequestType =
+  "assigned"
+    | "unassigned"
+    | "review_requested"
+    | "review_request_removed"
+    | "labeled"
+    | "unlabeled"
+    | "opened"
+    | "edited"
+    | "closed"
+    | "reopened"
+    | "synchronize"
+    | "ready_for_review"
+    | "locked"
+    | "unlocked"
+    | "ready_for_review"
+    | "converted_to_draft"
+    | "demilestoned"
+    | "milestoned"
+    | "review_requested"
+    | "review_request_removed"
+    | "auto_merge_enabled"
+    | "auto_merge_disabled"
+
+class PullRequestReview extends Trigger {
+  types: Listing<PullRequestReviewType>?
+}
+typealias PullRequestReviewType = "submitted" | "edited" | "dismissed"
+
+class PullRequestReviewComment extends Trigger {
+  types: Listing<PullRequestReviewCommentType>?
+}
+typealias PullRequestReviewCommentType = "created" | "edited" | "deleted"
+
+typealias PullRequestTargetType =
+  "assigned"
+    | "unassigned"
+    | "labeled"
+    | "unlabeled"
+    | "opened"
+    | "edited"
+    | "closed"
+    | "reopened"
+    | "synchronize"
+    | "converted_to_draft"
+    | "ready_for_review"
+    | "locked"
+    | "unlocked"
+    | "review_requested"
+    | "review_request_removed"
+    | "auto_merge_enabled"
+    | "auto_merge_disabled"
+
+class Push extends Trigger {
+  /// Use the `branches` filter when you want to include branch name patterns or when you want to
+  /// both include and exclude branch names patterns.
+  ///
+  /// Accepts glob patterns that use characters like `*`, `**`, `+`, `?`, `!` and others to match
+  /// more than one branch or tag name.
+  /// If a name contains any of these characters and you want a literal match, you need to escape
+  /// each of these special characters with `\`.
+  ///
+  /// For more information about glob patterns, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  branches: Listing<String>?
+
+  /// Use the `branches-ignore` filter when you only want to exclude branch name patterns.
+  ///
+  /// You cannot use both the [branches] and [`branches-ignore`] filters for the same event in a
+  /// workflow.
+  ///
+  /// Accepts glob patterns that use characters like `*`, `**`, `+`, `?`, `!` and others to match
+  /// more than one branch or tag name.
+  /// If a name contains any of these characters and you want a literal match, you need to escape
+  /// each of these special characters with `\`.
+  ///
+  /// For more information about glob patterns, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  `branches-ignore`: Listing<String>(branches == null)?
+
+  /// Use the tags filter when you want to include tag name patterns or when you want to both include and exclude tag
+  /// names patterns.
+  ///
+  /// Accepts glob patterns that use characters like `*`, `**`, `+`, `?`, `!` and others to match more than one branch
+  /// or tag name.
+  /// If a name contains any of these characters and you want a literal match, you need to escape each of these special
+  /// characters with `\`.
+  ///
+  /// For more information about glob patterns, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  tags: Listing<String>?
+
+  /// Use the tags-ignore filter when you only want to exclude tag name patterns.
+  /// You cannot use both the [tags] and [tags-ignore] filters for the same event in a workflow.
+  ///
+  /// Accepts glob patterns that use characters like `*`, `**`, `+`, `?`, `!` and others to match more than one branch
+  /// or tag name.
+  /// If a name contains any of these characters and you want a literal match, you need to escape each of these special
+  /// characters with `\`.
+  ///
+  /// For more information about glob patterns, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  `tags-ignore`: Listing<String>(tags == null)?
+
+  /// Use the paths filter when you want to include file path patterns or when you want to both include and exclude file
+  /// path patterns.
+  ///
+  /// Accepts glob patterns that use the `*` and `**` wildcard characters to match more than one path name.
+  /// For more information, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  paths: Listing<String>?
+
+  /// Use the paths-ignore filter when you only want to exclude file path patterns.
+  ///
+  /// You cannot use both the paths and paths-ignore filters for the same event in a workflow.
+  /// If you want to both include and exclude path patterns for a single event, use the paths filter prefixed with the
+  /// `!` character to indicate which paths should be excluded.
+  ///
+  /// Accepts glob patterns that use the `*` and `**` wildcard characters to match more than one path name.
+  /// For more information, see the
+  /// [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+  `paths-ignore`: Listing<String>(paths == null)?
+}
+
+class RegistryPackage extends Trigger {
+  types: Listing<RegistryPackageType>?
+}
+typealias RegistryPackageType = "published" | "updated"
+
+class Release extends Trigger {
+  types: Listing<ReleaseType>?
+}
+typealias ReleaseType =
+  "published" | "unpublished" | "created" | "edited" | "deleted" | "prereleased" | "released"
+
+class RepositoryDispatch extends Trigger {
+  types: Listing<String>?
+}
+
+class Schedule {
+  @SourceCode { language = "Cron" }
+  cron: String
+}
+
+/// Allows workflows to be reused by other workflows.
+///
+/// https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
+class WorkflowCall extends Trigger {
+  inputs: Mapping<String, WorkflowInput>?
+  outputs: Mapping<String, WorkflowCallOutput>?
+  secrets: Mapping<String, WorkflowCallSecrets>?
+}
+
+class WorkflowCallOutput {
+  description: String?
+  value: Any
+}
+class WorkflowCallSecrets {
+  description: String?
+  required: Boolean
+}
+
+class WorkflowDispatch extends Trigger {
+  inputs: Mapping<String, WorkflowInput>?
+}
+
+class WorkflowInput {
+  description: String
+  deprecatedMessage: String?
+  required: Boolean?
+  default: String?
+  type: WorkflowInputType?
+  options: Listing<String>?
+}
+typealias WorkflowInputType = "boolean" | "string" | "choice" | "environment" | "number"
+
+class WorkflowRun extends Trigger {
+  types: Listing<WorkflowRunType>?
+  workflows: Listing<String>(length > 0)
+  branches: Listing<String>?
+  `branches-ignore`: Listing<String>?
+}
+typealias WorkflowRunType = "requested" | "completed" | "in_progress"
+
+class On {
+  /// Runs your workflow anytime the `branch_protection_rule` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#branch_protection_rule>
+  branch_protection_rule: BranchProtectionRule?
+
+  /// Runs your workflow anytime the check_run event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#check_run>
+  check_run: CheckRun?
+
+  /// Runs your workflow anytime the `check_suite` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#check_suite>
+  check_suite: CheckSuite?
+
+  /// Runs your workflow anytime someone creates a branch or tag, which triggers the create event.
+  ///
+  /// For information about the REST API, see <https://developer.github.com/v3/git/refs/#create-a-reference>.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#create>
+  create: BaseTrigger?
+
+  /// Runs your workflow when someone deletes a Git reference (Git branch or tag) in the workflow's repository.
+  ///
+  /// For information about the APIs to delete a Git reference, see [Mutations](https://docs.github.com/en/graphql/reference/mutations#deleteref) in the GraphQL API documentation or
+  /// [REST API endpoints for Git references](https://docs.github.com/en/rest/git/refs#delete-a-reference).
+  ///
+  /// See <https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#delete>
+  `delete`: BaseTrigger?
+
+  /// Runs your workflow anytime someone creates a deployment, which triggers the deployment event.
+  ///
+  /// Deployments created with a commit SHA may not have a Git ref.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#deployment>
+  deployment: BaseTrigger?
+
+  /// Runs your workflow anytime a third party provides a deployment status, which triggers the `deployment_status` event.
+  ///
+  /// Deployments created with a commit SHA may not have a Git ref.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#deployment_status>
+  deployment_status: BaseTrigger?
+
+  /// Runs your workflow anytime the discussion event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#discussion>
+  discussion: Discussion?
+
+  /// Runs your workflow anytime the discussion_comment event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#discussion_comment>
+  discussion_comment: DiscussionComment?
+
+  /// Runs your workflow anytime when someone forks a repository, which triggers the `fork` event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#fork>
+  fork: BaseTrigger?
+
+  /// Runs your workflow when someone creates or updates a Wiki page, which triggers the `gollum` event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#gollum>
+  gollum: BaseTrigger?
+
+  /// Runs your workflow anytime the `issue_comment` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#issue_comment>
+  issue_comment: IssueComment?
+
+  /// Runs your workflow anytime the `issues` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#issues>
+  issues: Issues?
+
+  /// Runs your workflow anytime the `label` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#label>
+  label: Label?
+
+  /// Runs your workflow when a pull request is added to a merge queue, which adds the pull request to a merge group.
+  ///
+  /// For information about the merge queue, see <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request-with-a-merge-queue>.
+  ///
+  /// See <https://help.github.com/en/github/automating-your-workflow-with-github-actions/events-that-trigger-workflows#merge_group>
+  merge_group: MergeGroup?
+
+  /// Runs your workflow anytime the `milestone` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#milestone>
+  milestone: Milestone?
+
+  /// Runs your workflow anytime someone pushes to a GitHub Pages-enabled branch, which triggers the `page_build` event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#page_build>
+  page_build: BaseTrigger?
+
+  /// Runs your workflow anytime the project event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#project>
+  project: Project?
+
+  /// Runs your workflow anytime the `project_card` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#project_card>
+  project_card: ProjectCard?
+
+  /// Runs your workflow anytime the `project_column` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  /// For information about the REST API, see <https://developer.github.com/v3/projects/columns>.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#project_column>
+  project_column: ProjectColumn?
+
+  /// Runs your workflow anytime someone makes a private repository public, which triggers the `public` event.
+  ///
+  /// For information about the REST API, see <https://developer.github.com/v3/repos/#edit>.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#public>
+  public: BaseTrigger?
+
+  /// Runs your workflow anytime the `pull_request` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  /// For information about the REST API, see <https://developer.github.com/v3/pulls>.
+  ///
+  /// Note: Workflows do not run on private base repositories when you open a pull request from a forked repository.
+  /// When you create a pull request from a forked repository to the base repository,
+  /// GitHub sends the `pull_request` event to the base repository and no pull request events occur on the forked repository.
+  /// Workflows don't run on forked repositories by default.
+  /// You must enable GitHub Actions in the Actions tab of the forked repository.
+  /// The permissions for the `GITHUB_TOKEN` in forked repositories is read-only.
+  /// For more information about the `GITHUB_TOKEN`, see <https://help.github.com/en/articles/virtual-environments-for-github-actions>.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request>
+  pull_request: PullRequest?
+
+  /// Runs your workflow anytime the `pull_request_review` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// Note: Workflows do not run on private base repositories when you open a pull request from a forked repository.
+  /// When you create a pull request from a forked repository to the base repository,
+  /// GitHub sends the pull_request event to the base repository and no pull request events occur on the forked repository.
+  /// Workflows don't run on forked repositories by default.
+  /// You must enable GitHub Actions in the Actions tab of the forked repository.
+  /// The permissions for the GITHUB_TOKEN in forked repositories is read-only.
+  /// For more information about the GITHUB_TOKEN, see https://help.github.com/en/articles/virtual-environments-for-github-actions.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_review>
+  pull_request_review: PullRequestReview?
+
+  /// Runs your workflow anytime a comment on a pull request's unified diff is modified, which triggers the
+  /// `pull_request_review_comment` event.
+  ///
+  /// More than one activity type triggers this event.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_review_comment>
+  pull_request_review_comment: PullRequestReviewComment?
+
+  /// This event is similar to [pull_request], except that it runs in the context of the base repository of the pull
+  /// request, rather than in the merge commit.
+  ///
+  /// This means that you can more safely make your secrets available to the workflows triggered by the pull request,
+  /// because only workflows defined in the commit on the base repository are run.
+  ///
+  /// For example, this event allows you to create workflows that label and comment on pull requests, based on the
+  /// contents of the event payload.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target>
+  pull_request_target: PullRequest?
+
+  /// Runs your workflow when someone pushes to a repository branch, which triggers the `push` event.
+  ///
+  /// Note: The webhook payload available to GitHub Actions does not include the added, removed, and modified attributes
+  /// in the commit object.
+  /// You can retrieve the full commit object using the REST API.
+  /// For more information, see <https://developer.github.com/v3/repos/commits/#get-a-single-commit.>
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#push>
+  push: Push?
+
+  /// Runs your workflow anytime a package is published or updated.
+  ///
+  /// For more information, see <https://help.github.com/en/github/managing-packages-with-github-packages>.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#registry_package>
+  registry_package: RegistryPackage?
+
+  /// Runs your workflow anytime the release event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  /// For information about the REST API, see <https://developer.github.com/v3/repos/releases/> in the GitHub Developer documentation.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release>
+  release: Release?
+
+  /// You can use the GitHub API to trigger a webhook event called `repository_dispatch` when you want to trigger a
+  /// workflow for activity that happens outside of GitHub.
+  ///
+  /// For more information, see <https://developer.github.com/v3/repos/#create-a-repository-dispatch-event>.
+  /// To trigger the custom `repository_dispatch` webhook event, you must send a POST request to a GitHub API endpoint
+  /// and provide an `event_type` name to describe the activity type.
+  /// To trigger a workflow run, you must also configure your workflow to use the `repository_dispatch` event.
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch>
+  repository_dispatch: RepositoryDispatch?
+
+  /// You can schedule a workflow to run at specific UTC times using POSIX cron syntax
+  /// (https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07).
+  ///
+  /// Scheduled workflows run on the latest commit on the default or base branch.
+  /// The shortest interval you can run scheduled workflows is once every 5 minutes.
+  /// Note: GitHub Actions does not support the non-standard syntax @yearly, @monthly, @weekly, @daily, @hourly,
+  /// and @reboot.
+  /// You can use crontab guru (<https://crontab.guru/>) to help generate your cron syntax and confirm what time it will
+  /// run.
+  /// To help you get started, there is also a list of crontab guru examples (<https://crontab.guru/examples.html>).
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#schedule>
+  schedule: Listing<Schedule>?
+
+  /// Runs your workflow anytime the status of a Git commit changes, which triggers the `status` event.
+  ///
+  /// For information about the REST API, see <https://developer.github.com/v3/repos/statuses/>.
+  ///
+  /// See <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#status>
+  status: BaseTrigger?
+
+  /// Runs your workflow anytime the `watch` event occurs.
+  ///
+  /// More than one activity type triggers this event.
+  /// For information about the REST API, see <https://developer.github.com/v3/activity/starring/>
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#watch>
+  watch: BaseTrigger?
+
+  /// Allows workflows to be reused by other workflows.
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call>
+  workflow_call: WorkflowCall?
+
+  /// You can now create workflows that are manually triggered with the new `workflow_dispatch` event.
+  ///
+  /// You will then see a 'Run workflow' button on the Actions tab, enabling you to easily trigger a run.
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch>
+  workflow_dispatch: WorkflowDispatch?
+
+  /// This event occurs when a workflow run is requested or completed, and allows you to execute a workflow based on the
+  /// finished result of another workflow.
+  ///
+  /// For example, if your [pull_request] workflow generates build artifacts, you can create a new workflow that uses
+  /// `workflow_run` to analyze the results and add a comment to the original pull request.
+  ///
+  /// See <https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_run>
+  workflow_run: WorkflowRun?
+}
+
+// endregion
+
+// Environment Variables
+typealias EnvironmentVariables = Mapping<String, String | Boolean | Number>
+
+// Permissions
+class Permissions {
+  /// Work with GitHub Actions.
+  ///
+  /// For example, `actions = "write"` permits an action to cancel a workflow run.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  actions: Permission?
+
+  /// Work with artifact attestations.
+  ///
+  /// For example, `attestations = "write"` permits an action to generate an artifact attestation for a build.
+  ///
+  /// For more information, see
+  /// [Using artifact attestations to establish provenance for builds](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations).
+  attestations: Permission?
+
+  /// Work with check runs and check suites.
+  ///
+  /// For example, `checks = "write"` permits an action to create a check run.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  checks: Permission?
+
+  /// Work with the contents of the repository.
+  ///
+  /// For example, contents: read permits an action to list the commits, and `contents = "write"` allows the action to
+  /// create a release.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  contents: Permission?
+
+  /// Work with deployments.
+  ///
+  /// For example, deployments: write permits an action to create a new deployment.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  deployments: Permission?
+
+  /// Work with GitHub Discussions.
+  ///
+  /// For example, `discussions = "write"` permits an action to close or delete a discussion.
+  ///
+  /// For more information, see [Using the GraphQL API for Discussions](https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions).
+  discussions: Permission?
+
+  /// Fetch an OpenID Connect (OIDC) token.
+  ///
+  /// This requires `id-token = "write"`.
+  ///
+  /// For more information, see [OpenID Connect](https://docs.github.com/en/actions/concepts/security/openid-connect#updating-your-actions-for-oidc).
+  `id-token`: Permission?
+
+  /// Work with issues.
+  ///
+  /// For example, issues: write permits an action to add a comment to an issue.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  issues: Permission?
+
+  /// Generate AI inference responses with GitHub Models.
+  ///
+  /// For example, `models = "read"` permits an action to use the GitHub Models inference API.
+  ///
+  /// See [Prototyping with AI models](https://docs.github.com/en/github-models/use-github-models/prototyping-with-ai-models).
+  models: Permission?
+
+  /// Work with GitHub Packages.
+  ///
+  /// For example, `packages = "write"` permits an action to upload and publish packages on GitHub Packages.
+  ///
+  /// For more information, see
+  /// [About permissions for GitHub Packages](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages#about-scopes-and-permissions-for-package-registries).
+  packages: Permission?
+
+  /// Work with GitHub Pages.
+  ///
+  /// For example, `pages = "write"` permits an action to request a GitHub Pages build.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  pages: Permission?
+
+  /// Work with pull requests.
+  ///
+  /// For example, `pull-requests = "write"` permits an action to add a label to a pull request.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  `pull-requests`: Permission?
+
+  /// Work with GitHub code scanning alerts.
+  ///
+  /// For example, `security-events = "read"` permits an action to list the code scanning alerts for the repository, and
+  /// `security-events = "write"` allows an action to update the status of a code scanning alert.
+  ///
+  /// For more information, see [Repository permissions for 'Code scanning alerts'](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-code-scanning-alerts).
+  ///
+  /// Dependabot and secret scanning alerts cannot be read with this permission and require a GitHub App or a personal
+  /// access token.
+  /// For more information, see [Repository permissions for 'Dependabot alerts'](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-dependabot-alerts)
+  /// and [Repository permissions for 'Secret scanning alerts'](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-secret-scanning-alerts)
+  /// in "Permissions required for GitHub Apps."
+  `security-events`: Permission?
+
+  /// Work with commit statuses.
+  ///
+  /// For example, `statuses = "read"` permits an action to list the commit statuses for a given reference.
+  ///
+  /// For more information, see
+  /// [Permissions required for GitHub Apps](https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions).
+  statuses: Permission?
+}
+
+typealias Permission = "read" | "write" | "none"
+
+class Concurrency {
+  group: String
+  `cancel-in-progress`: Boolean
+}
+
+// Output
+output {
+  text =
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    \(super.text)
+    """
+  renderer = new YamlRenderer {}
+}

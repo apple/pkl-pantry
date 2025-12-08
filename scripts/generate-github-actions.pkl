@@ -1,0 +1,128 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Generates the actions within the `com.github.actions` and `com.github.actions.catalog` packages.
+///
+/// Usage:
+///
+///     pkl eval generate-catalog.pkl -m ../
+module com.github.actions.contrib.`generate-catalog`
+
+import "pkl:yaml"
+
+import "@com.github.actions.contrib/ActionGenerator.pkl"
+import "@syntax/ClassOrModuleNode.pkl"
+import "@syntax/TypeNode.pkl"
+
+import* "actionTypes/**.pkl" as extraActionTypes
+
+local yamlParser = new yaml.Parser { mode = "1.2" }
+
+hidden fixed adjustments: Mapping<
+  String,
+  Mapping<String, Mixin<ClassOrModuleNode.PropertyDefinitionNode>>
+> = new {
+  ["actions/checkout"] {
+    ["submodules"] {
+      typeAnnotation {
+        type = new TypeNode.NullableTypeNode {
+          typeNode = new TypeNode.UnionTypeNode {
+            members {
+              new TypeNode.DeclaredTypeNode {
+                name {
+                  parts {
+                    new { value = "Boolean" }
+                  }
+                }
+              }
+              new TypeNode.StringLiteralTypeNode {
+                value = "recursive"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// noinspection UnresolvedElement
+function getLatestVersion(action: String): String =
+  let (ownerAndRepo = action.split("/").take(2).join("/"))
+  let (
+    resource =
+      read(
+        "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(ownerAndRepo)/metadata.yml"
+      )
+  )
+    yamlParser.parse(resource).versionsWithTypings.toList().last
+
+local coreActions: Listing<String> = new {
+  "actions/cache"
+  "actions/cache/save"
+  "actions/cache/restore"
+  "actions/configure-pages"
+  "actions/create-github-app-token"
+  "actions/create-release"
+  "actions/deploy-pages"
+  "actions/download-artifact"
+  "actions/first-interaction"
+  "actions/github-script"
+  "actions/labeler"
+  "actions/setup-dotnet"
+  "actions/setup-go"
+  "actions/setup-java"
+  "actions/setup-node"
+  "actions/setup-python"
+  "actions/stale"
+  "actions/upload-artifact"
+  "actions/upload-pages-artifact"
+}
+
+local allCoreVersions: Listing<String> = new {
+  "actions/checkout@v6"
+  for (action in coreActions) {
+    "\(action)@\(getLatestVersion(action))"
+  }
+}
+
+local coreGenerator: ActionGenerator = new {
+  moduleNamePrefix = "com.github.actions"
+  githubActionsPackageName = "..."
+  pathPrefix = "packages/com.github.actions"
+}
+
+function generateAction(action: String): Mapping<String, FileOutput> =
+  let (
+    generated = (coreGenerator) {
+      actionName = action
+      actionTypes = extraActionTypes.getOrNull("actionTypes/\(action).pkl")
+      local actionWithoutVersion = action.substring(0, action.indexOf("@"))
+      adjustments = module.adjustments.getOrNull(actionWithoutVersion)
+    }
+  )
+    new {
+      ["packages/com.github.actions/\(generated.modulePath.join("/"))/\(generated.moduleName).pkl"] {
+        text = generated.result
+      }
+    }
+
+output {
+  files {
+    for (action in allCoreVersions) {
+      ...generateAction(action)
+    }
+  }
+}

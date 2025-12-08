@@ -1,0 +1,119 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+import "pkl:reflect"
+
+import "@syntax/ModuleNode.pkl"
+import "@syntax/TypeNode.pkl"
+
+import* "@com.github.actions/actions/*/**.pkl" as allCoreActions
+
+class ActionMeta {
+  path: String
+  stripPrefix: String
+  mod: Module
+
+  fixed reflectedModule = reflect.Module(mod)
+  fixed importPath = path.replaceFirst(stripPrefix, "")
+  fixed parts = importPath.split("/")
+  fixed org = parts[0]
+  fixed repoName = parts[1]
+  fixed subpath =
+    if (parts.length == 3)
+      ""
+    else
+      (parts.sublist(2, parts.length - 2).join("/"))
+  fixed version = parts[parts.length - 2]
+  fixed moduleName = parts.last.replaceLast(".pkl", "")
+  fixed importTypeName = "\(moduleName)\(version.capitalize())"
+
+  fixed importNode: ModuleNode.ImportNode = new {
+    keyword = "import"
+    value = path.replaceFirst(stripPrefix, "")
+    alias = importTypeName
+  }
+
+  fixed classProperty: ModuleNode.PropertyDefinitionNode = new {
+    name {
+      value = List(org, repoName, subpath).filter((it) -> !it.isEmpty).join("/") + "@\(version)"
+    }
+    when (reflectedModule.docComment != null) {
+      docComment {
+        value = reflectedModule.docComment!!
+      }
+    }
+    typeAnnotation {
+      type = new TypeNode.DeclaredTypeNode {
+        name {
+          parts {
+            new {
+              value = importTypeName
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+local coreActionMetas: List<ActionMeta> =
+  allCoreActions
+    .toMap()
+    .entries
+    .map((it) -> new ActionMeta {
+      path = it.key
+      mod = it.value
+      stripPrefix = "@com.github.actions/"
+    })
+
+local coreCatalog: ModuleNode = new {
+  declaration {
+    docComment {
+      value =
+        """
+        Index module of all actions within the `actions/` GitHub org.
+        """
+    }
+    moduleHeader {
+      modifiers {
+        "open"
+      }
+      name {
+        parts {
+          for (part in "com.github.actions.catalog".split(".")) {
+            new { value = part }
+          }
+        }
+      }
+    }
+  }
+  imports {
+    for (meta in coreActionMetas) {
+      meta.importNode
+    }
+  }
+  properties {
+    for (meta in coreActionMetas) {
+      meta.classProperty
+    }
+  }
+}
+
+output {
+  text = throw("You must use `-m`.")
+  files {
+    ["packages/com.github.actions/catalog.pkl"] = coreCatalog.output
+  }
+}

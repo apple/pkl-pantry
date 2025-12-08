@@ -1,0 +1,185 @@
+//===----------------------------------------------------------------------===//
+// This file contains code originally based off of github.com/StefMa/pkl-gha.
+//
+// Original license:
+//
+// MIT License
+//
+// Copyright (c) 2024 Stefan M.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/** gha-fork */
+amends "../Workflow.pkl"
+
+import "../catalog.pkl"
+
+name = "PrintHelloWorld"
+
+on {
+  push {
+    `tags-ignore` {
+      "v*"
+    }
+    branches {
+      "master"
+      "develop"
+    }
+  }
+  pull_request {
+    types {
+      "opened"
+      "edited"
+      "reopened"
+      "synchronize"
+      "review_requested"
+    }
+  }
+  workflow_dispatch {
+    inputs {
+      ["name"] {
+        description = "Name of the person to greet"
+        required = true
+        default = "Mona the Octocat"
+      }
+    }
+  }
+}
+
+permissions {
+  actions = "read"
+  contents = "read"
+  issues = "write"
+  `pull-requests` = "write"
+}
+
+env {
+  ["PR_NUMBER"] = module.context.github.event("number")
+  ["SOME_INT"] = 3
+  ["SOME_FLOAT"] = 3.2
+  ["SOME_BOOL"] = true
+}
+
+concurrency {
+  group = "example-group"
+  `cancel-in-progress` = true
+}
+
+jobs {
+  ["hello_dependabot"] {
+    `runs-on` = "macos-latest"
+    `if` = "actor == 'dependabot[bot]'"
+    needs {
+      "first_job"
+      "second_job"
+    }
+    permissions = "write-all"
+    environment {
+      name = "production"
+    }
+    steps {
+      (catalog.`actions/checkout@v6`) {
+        name = "Checkout"
+        with {
+          ref = "develop"
+          token = module.context.secrets("GITHUB_TOKEN")
+        }
+      }
+      new {
+        id = "hello"
+        name = "Hello World"
+        `working-directory` = "src/"
+        run =
+          """
+          echo Dependabot!
+          echo "some_output=hello" >> "$GITHUB_OUTPUT"
+          """
+      }
+    }
+    outputs {
+      ["some_output"] = "${{ steps.hello.outputs.some_output }}"
+      ["another_output"] = "true"
+    }
+  }
+  ["print"] {
+    `runs-on` {
+      "macos-latest"
+      "windows-latest"
+    }
+    environment = "staging"
+    needs = "hello_dependabot"
+    steps {
+      new {
+        name = "Hello World"
+        run = "echo Hello World"
+      }
+      new {
+        name = "date"
+        run = "date"
+      }
+      (catalog.`actions/checkout@v6`) {
+        name = "Checkout"
+        with {
+          ref = "develop"
+        }
+      }
+      new {
+        name = "Slack"
+        id = "Slack"
+        `if` = "failure()"
+        uses = "slackapi/slack-github-action@v1.25.0"
+        with = new {
+          ["some_bool"] = true
+          ["some_number"] = 5
+          ["payload"] =
+          // language=json
+            """
+            {
+            	"blocks": [
+            		{
+                "type": "section",
+            			"text": {
+            				"type": "mrkdwn",
+            				"text": ":alert: Develop is broken!"
+            			}
+            		}
+            	]
+            }
+            """
+        }
+      }
+    }
+  }
+}

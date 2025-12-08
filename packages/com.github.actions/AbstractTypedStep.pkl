@@ -1,0 +1,102 @@
+//===----------------------------------------------------------------------===//
+// This file contains code originally based off of github.com/StefMa/pkl-gha.
+//
+// Original license:
+//
+// MIT License
+//
+// Copyright (c) 2024 Stefan M.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Abstract class of steps that call actions with typesafe inputs.
+///
+/// To define a type-safe action step, define a new class/module that extends this module.
+///
+/// Example:
+///
+/// ```
+/// module Echo
+///
+/// extends "@com.github.actions/AbstractTypedStep"
+///
+/// fixed action: "actions/checkout"
+///
+/// fixed version: "v4"
+///
+/// with: CheckoutInputs
+///
+/// class CheckoutInputs {
+///   sha: String
+/// }
+/// ```
+/** gha-fork */
+abstract module com.github.actions.AbstractTypedStep
+
+extends "AbstractStep.pkl"
+
+fixed uses: String = List(action, sha ?? version).filterNonNull().join("@")
+
+/// Selects an action to run as part of a step in your job.
+///
+/// An action is a reusable unit of code.
+/// You can use an action defined in the same repository as the workflow, a public repository, or in
+/// a published Docker container image.
+abstract hidden fixed action: String
+
+/// The version of the action to run.
+///
+/// For typed steps, the type of [with] is associated with the major version of the action, so
+/// subclasses should specify a fixed version
+/// It is strongly recommend to include the version of the action you are using by specifying a Git
+/// ref, SHA, or Docker tag.
+///
+/// Use [sha] to specify a specific SHA to use in place of the version.
+/// If you don't specify a version, it could break your workflows or cause unexpected behavior when
+/// the action owner publishes an update.
+///
+/// * Using the commit SHA of a released action version is the safest for stability and security.
+/// * If the action publishes major version tags, you should expect to receive critical fixes and
+///   security patches while still retaining compatibility.
+///   Note that this behavior is at the discretion of the action's author.
+/// * Using the default branch of an action may be convenient, but if someone releases a new major
+///   version with a breaking change, your workflow could break.
+abstract hidden fixed version: String?
+
+/// Use a specific SHA of the action instead of a potentially floating Git ref.
+hidden sha: String(matches(Regex("[a-z0-9]{40}")))?
+
+/// The inputs to the action.
+abstract with: Typed

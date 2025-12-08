@@ -1,0 +1,267 @@
+examples {
+  ["matrixTest.pkl"] {
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    name: Matrix Test
+    'on':
+      push:
+        branches:
+        - main
+    jobs:
+      matrixTest:
+        strategy:
+          matrix:
+            os:
+            - ubuntu-latest
+            - macos-latest
+            - windows-latest
+            somethingElse:
+            - os: ubuntu-latest
+              runtime: linux-x64
+            - os: windows-latest
+              runtime: windows-x64
+            - os: macos-latest
+              runtime: macos-x64
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+        - uses: actions/checkout@v6
+          with: {}
+        - name: Run on ${{ matrix.os }}
+          run: echo Hello World
+    
+    """
+  }
+  ["prebuildActions.pkl"] {
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    name: Check prebuild actions
+    'on':
+      push: {}
+    jobs:
+      test-various-actions:
+        name: Test actions
+        runs-on: macos-latest
+        steps:
+        - uses: actions/setup-go@v5
+          with:
+            go-version: 1.17.7
+            check-latest: true
+        - uses: actions/setup-java@v5
+          with:
+            java-version: '17'
+            distribution: temurin
+        - uses: actions/cache@v4
+          with:
+            path: wiki/README.md
+            key: wiki-readme-${{ runner.os }}-${{ hashFiles('wiki/generateWikiToc.go') }}
+        - uses: actions/upload-pages-artifact@v3
+          with:
+            path: tmp-doc
+        - id: deployment
+          uses: actions/deploy-pages@v4
+          with: {}
+    
+    """
+  }
+  ["reusableWorkflow.pkl"] {
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    name: Reusable Workflow
+    'on':
+      push:
+        branches:
+        - master
+        - develop
+        tags-ignore:
+        - v*
+    jobs:
+      reusable_workflow:
+        steps: []
+        uses: ./something.yaml
+        secrets: inherit
+      reusable_workflow_repo:
+        steps: []
+        uses: octo-org/another-repo/.github/workflows/workflow.yml@v1
+        with:
+          some_input: some value
+          another_input: true
+        secrets:
+          SECRET TOKEN: TOKEN
+          ANOTHER SECRET: 42
+    
+    """
+  }
+  ["testWorkflow.pkl"] {
+    #"""
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    name: PrintHelloWorld
+    'on':
+      pull_request:
+        types:
+        - opened
+        - edited
+        - reopened
+        - synchronize
+        - review_requested
+      push:
+        branches:
+        - master
+        - develop
+        tags-ignore:
+        - v*
+      workflow_dispatch:
+        inputs:
+          name:
+            description: Name of the person to greet
+            required: true
+            default: Mona the Octocat
+    env:
+      PR_NUMBER: ${{ github.event.number }}
+      SOME_INT: 3
+      SOME_FLOAT: 3.2
+      SOME_BOOL: true
+    concurrency:
+      group: example-group
+      cancel-in-progress: true
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+    jobs:
+      hello_dependabot:
+        if: actor == 'dependabot[bot]'
+        needs:
+        - first_job
+        - second_job
+        permissions: write-all
+        runs-on: macos-latest
+        outputs:
+          some_output: ${{ steps.hello.outputs.some_output }}
+          another_output: 'true'
+        environment:
+          name: production
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v6
+          with:
+            ref: develop
+            token: ${{ secrets.GITHUB_TOKEN }}
+        - name: Hello World
+          id: hello
+          working-directory: src/
+          run: |-
+            echo Dependabot!
+            echo "some_output=hello" >> "$GITHUB_OUTPUT"
+      print:
+        needs: hello_dependabot
+        runs-on:
+        - macos-latest
+        - windows-latest
+        environment: staging
+        steps:
+        - name: Hello World
+          run: echo Hello World
+        - name: date
+          run: date
+        - name: Checkout
+          uses: actions/checkout@v6
+          with:
+            ref: develop
+        - name: Slack
+          id: Slack
+          if: failure()
+          uses: slackapi/slack-github-action@v1.25.0
+          with:
+            some_bool: true
+            some_number: 5
+            payload: "{\n\t\"blocks\": [\n\t\t{\n    \"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \":alert: Develop is broken!\"\n\t\t\t}\n\t\t}\n\t]\n}"
+    
+    """#
+  }
+  ["updateWikiReadme.pkl"] {
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    name: Update Wiki Readme
+    'on':
+      push:
+        paths:
+        - wiki/**
+        - '!wiki/README.md'
+    jobs:
+      update-wiki-readme:
+        name: Update Wiki Readme
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v6
+          with: {}
+        - uses: actions/setup-go@v5
+          with:
+            go-version: 1.17.7
+        - shell: bash
+          run: go run wiki/generateWikiToc.go
+        - name: Commit changes
+          run: |-
+            git config --global user.email "StefM@IsGre.at"
+            git config --global user.name "StefMa"
+            git add wiki/README.md || echo "No changes to commit"
+            git commit -m 'Re-build TOC in README.md' || echo "No changes to commit"
+            git push origin || echo "No changes to commit"
+    
+    """
+  }
+  ["workflowTriggers.pkl"] {
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    name: GitHub Action Triggers
+    'on':
+      branch_protection_rule: {}
+      check_run: {}
+      check_suite: {}
+      create: {}
+      delete: {}
+      deployment: {}
+      deployment_status: {}
+      discussion: {}
+      discussion_comment: {}
+      fork: {}
+      gollum: {}
+      issue_comment: {}
+      issues: {}
+      label: {}
+      milestone: {}
+      page_build: {}
+      project: {}
+      project_card: {}
+      project_column: {}
+      public: {}
+      pull_request: {}
+      pull_request_review: {}
+      pull_request_review_comment: {}
+      pull_request_target: {}
+      push: {}
+      registry_package: {}
+      release: {}
+      repository_dispatch: {}
+      schedule:
+      - cron: '*/10 * * * *'
+      - cron: 5 4 * * *
+      - cron: '* 0 * * 0'
+      status: {}
+      watch: {}
+      workflow_call: {}
+      workflow_dispatch: {}
+      workflow_run:
+        workflows:
+        - some_other
+    jobs:
+      doesntMatter:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Hello
+          run: echo 'Hello, World!'
+    
+    """
+  }
+}

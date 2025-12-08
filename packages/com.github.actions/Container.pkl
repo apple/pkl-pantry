@@ -1,0 +1,91 @@
+//===----------------------------------------------------------------------===//
+// This file contains code originally based off of github.com/StefMa/pkl-gha.
+//
+// Original license:
+//
+// MIT License
+//
+// Copyright (c) 2024 Stefan M.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Use `jobs.<job_id>.container` to create a container to run any steps in a job that don't already
+/// specify a container.
+///
+/// If you have steps that use both script and container actions, the container actions will run as
+/// sibling containers on the same network with the same volume mounts.
+///
+/// Documentation: <https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container>
+/** gha-fork */
+module com.github.actions.Container
+
+import "Workflow.pkl"
+
+/// If the image's container registry requires authentication to pull the image, you can use
+/// credentials to set a map of the username and password.
+///
+/// The credentials are the same values that you would provide to the `docker login` command.
+credentials: Credentials?
+
+/// Sets an array of environment variables in the container.
+env: Workflow.EnvironmentVariables?
+
+/// The Docker image to use as the container to run the action.
+///
+/// The value can be the Docker Hub image name or a registry name.
+image: String
+
+/// Additional Docker container resource options.
+///
+/// For a list of options, see
+/// https://docs.docker.com/engine/reference/commandline/create/#options.
+options: String?
+
+/// Sets an array of ports to expose on the container.
+ports: Listing<UInt16 | String>(!isEmpty)?
+
+/// Sets an array of volumes for the container to use.
+///
+/// You can use volumes to share data between services or other steps in a job.
+/// You can specify named Docker volumes, anonymous Docker volumes, or bind mounts on the host.
+/// To specify a volume, you specify the source and destination path: <source>:<destinationPath>
+/// The <source> is a volume name or an absolute path on the host machine, and <destinationPath>
+/// is an absolute path in the container.
+volumes: Listing<String>(!isEmpty)?
+
+class Credentials {
+  username: String?
+  password: String?
+}
