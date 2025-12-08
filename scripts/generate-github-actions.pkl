@@ -32,7 +32,7 @@ local yamlParser = new yaml.Parser { mode = "1.2" }
 
 hidden fixed adjustments: Mapping<
   String,
-  Mapping<String, Mixin<ClassOrModuleNode.PropertyDefinitionNode>>,
+  Mapping<String, Mixin<ClassOrModuleNode.PropertyDefinitionNode>>
 > = new {
   ["actions/checkout"] {
     ["submodules"] {

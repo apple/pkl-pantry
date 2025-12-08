@@ -1,5 +1,33 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// This file contains code originally based off of github.com/StefMa/pkl-gha.
+//
+// Original license:
+//
+// MIT License
+//
+// Copyright (c) 2024 Stefan M.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,11 +74,11 @@
 ///
 /// ## Using typed steps
 ///
-/// There are two types of steps; typed steps, and untyped steps.
-/// Typed steps have their `with` properties strictly checked; that is, the property names and their
-/// corresponding types are both checked.
+/// Pkl provides helpers to steps which call into externally defined actions in a typesafe way.
+/// For example, it provides code assistance for calling the `actions/checkout` action while
+/// providing completions and typechecking for each input.
 ///
-/// Typed steps come from new classes that extend module [AbstractTypedStep].
+/// These steps are defined as classes (or modules) that extend module [AbstractTypedStep].
 ///
 /// ### Using the catalog
 ///
@@ -69,7 +97,7 @@
 ///         `runs-on` = "ubuntu-latest"
 ///         steps {
 ///           // use the checkout action without any further parameterization
-///           catalog.`actions/checkout@v5`
+///           catalog.`actions/checkout@v6`
 ///
 ///           // use the cache/restore action with some extra parameters
 ///           (catalog.`actions/cache/restore@v4`) {
@@ -90,11 +118,12 @@
 /// These actions turn into their own modules, and should be checked into source code.
 /// For further instructions, see its
 /// [documentation](https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib/current/generate-action/index.html).
+/** gha-fork */
 module com.github.actions.Workflow
 
 import "AbstractTypedJob.pkl"
 import "context.pkl" as Context
-import "Job.pkl"
+import "Job.pkl" as JobModule
 
 name: String
 
@@ -212,10 +241,16 @@ permissions: (*Permissions | "read-all" | "write-all")?
 ///
 /// For more information, see
 /// [REST API endpoints for GitHub Actions](https://docs.github.com/en/rest/actions?apiVersion=2022-11-28#workflow-jobs).
-jobs: Mapping<String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_-]*"))), *Job | AbstractTypedJob>(!isEmpty)
+jobs: Mapping<String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_-]*"))), Job>(!isEmpty)
 
 /// The contextual values available within a GitHub Action.
 hidden context: Context
+
+/// A job within a workflow run.
+typealias Job = *JobModule | AbstractTypedJob
+
+/// A step within a job.
+typealias Step = JobModule.Step
 
 // region Trigger
 abstract class Trigger {
