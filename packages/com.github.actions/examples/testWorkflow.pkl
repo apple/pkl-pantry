@@ -98,6 +98,8 @@ concurrency {
 }
 
 jobs {
+  ["first_job"] { `runs-on` = "ubuntu-latest" }
+  ["second_job"] { `runs-on` = "ubuntu-latest" }
   ["hello_dependabot"] {
     `runs-on` = "macos-latest"
     `if` = "actor == 'dependabot[bot]'"

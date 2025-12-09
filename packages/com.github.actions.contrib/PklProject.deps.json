@@ -13,7 +13,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.1.0",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.2.0",
       "path": "../com.github.actions"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/io.github.typesafegithub@1": {

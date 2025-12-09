@@ -130,6 +130,12 @@ examples {
       issues: write
       pull-requests: write
     jobs:
+      first_job:
+        runs-on: ubuntu-latest
+        steps: []
+      second_job:
+        runs-on: ubuntu-latest
+        steps: []
       hello_dependabot:
         if: actor == 'dependabot[bot]'
         needs:
