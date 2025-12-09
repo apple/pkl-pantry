@@ -246,7 +246,32 @@ jobs: Jobs
 /// The contextual values available within a GitHub Action.
 hidden const context: Context
 
-typealias Jobs = Mapping<String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_-]*"))), Job>(!isEmpty)
+typealias Jobs =
+  Mapping<String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_-]*"))), Job>(!isEmpty, hasValidJobReferences)
+
+local const hasValidJobReferences = (jobs: Mapping<String, Job>) ->
+  let (jobEntries = jobs.toMap().entries)
+  let (
+    violations =
+      jobEntries.flatMap((keyjob) ->
+        let (
+          needs =
+            if (keyjob.value.needs is Listing)
+              keyjob.value.needs.toList()
+            else
+              List(keyjob.value.needs).filterNonNull()
+        )
+          needs
+            .toList()
+            .mapNonNull((need) ->
+              if (jobs.containsKey(need))
+                null
+              else
+                "Job '\(keyjob.key)' depends on unknown job '\(need)'"
+            )
+      )
+  )
+    violations.isEmpty || throw(violations.join("\n"))
 
 /// A job within a workflow run.
 typealias Job = *JobModule | AbstractTypedJob
