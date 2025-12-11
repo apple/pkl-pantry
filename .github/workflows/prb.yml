@@ -1,6 +1,4 @@
-# Do not modify!
-# This file was generated from a template using https://github.com/StefMa/pkl-gha
-
+# Generated from Workflow.pkl. DO NOT EDIT.
 name: Pull Request
 'on':
   pull_request: {}
@@ -13,11 +11,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       with:
         persist-credentials: false
         fetch-depth: 0
-    - uses: actions/setup-java@v5
+    - uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5
       with:
         java-version: '21'
         distribution: temurin
@@ -37,13 +35,13 @@ jobs:
         echo "$DIR" >> "$GITHUB_PATH"
         echo "pkl_exec=$PKL_EXEC" >> "$GITHUB_OUTPUT"
     - run: ./gradlew build
-    - uses: actions/upload-artifact@v5
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       with:
         name: build
         path: build
     - name: Upload Test Result XML
       if: '!cancelled()'
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       with:
         name: test-results-xml-build
         path: build/test-results/**/*.xml
@@ -53,14 +51,14 @@ jobs:
     steps:
     - name: Upload event file
       if: '!cancelled()'
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       with:
         name: test-results-event-file
         path: ${{ github.event_path }}
   check-pkl-github-actions:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       with:
         persist-credentials: false
     - name: Setup Pkl

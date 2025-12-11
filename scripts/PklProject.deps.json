@@ -3,7 +3,7 @@
   "resolvedDependencies": {
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1.0.2",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1.0.3",
       "path": "../packages/com.github.actions.contrib"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {
@@ -18,7 +18,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.2.0",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.3.0",
       "path": "../packages/com.github.actions"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/io.github.typesafegithub@1": {

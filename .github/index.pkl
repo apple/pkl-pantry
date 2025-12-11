@@ -15,11 +15,9 @@
 //===----------------------------------------------------------------------===//
 amends "@pkl.impl.ghactions/PklCI.pkl"
 
-import "@gha/actions/Artifact.pkl"
-import "@gha/actions/Common.pkl"
-import "@gha/actions/Setup.pkl"
-import "@gha/Context.pkl"
-import "@gha/Workflow.pkl"
+import "@com.github.actions/catalog.pkl"
+import "@com.github.actions/context.pkl"
+import "@com.github.actions/Workflow.pkl"
 import "@pkl.impl.ghactions/steps/SetupPkl.pkl"
 
 triggerPackageDocsBuild = "main"
@@ -35,12 +33,12 @@ local buildAndTest: Workflow = new {
     ["build"] {
       `runs-on` = "ubuntu-latest"
       steps {
-        new Common.Checkout {
+        (catalog.`actions/checkout@v6`) {
           with {
             `fetch-depth` = 0
           }
         }
-        new Setup.Java {
+        (catalog.`actions/setup-java@v5`) {
           with {
             `java-version` = "21"
             distribution = "temurin"
@@ -52,7 +50,7 @@ local buildAndTest: Workflow = new {
         new {
           run = "./gradlew build"
         }
-        new Artifact.Upload {
+        (catalog.`actions/upload-artifact@v5`) {
           with {
             name = "build"
             path = "build"
@@ -75,12 +73,12 @@ main = (buildAndTest) {
         contents = "write"
       }
       steps {
-        new Common.Checkout {
+        (catalog.`actions/checkout@v6`) {
           with {
             `fetch-depth` = 0
           }
         }
-        new Artifact.Download {
+        (catalog.`actions/download-artifact@v6`) {
           with {
             name = "build"
             path = "build"
@@ -89,9 +87,9 @@ main = (buildAndTest) {
         new {
           name = "Publish release on GitHub"
           env {
-            ["GH_TOKEN"] = Context.github.token
-            ["GH_REPO"] = Context.github.repository
-            ["SHA"] = Context.github.sha
+            ["GH_TOKEN"] = context.github.token
+            ["GH_REPO"] = context.github.repository
+            ["SHA"] = context.github.sha
           }
           // language=bash
           run =
