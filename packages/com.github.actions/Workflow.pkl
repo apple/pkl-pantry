@@ -125,46 +125,29 @@ import "AbstractTypedJob.pkl"
 import "context.pkl" as Context
 import "Job.pkl" as JobModule
 
-name: String
+/// The name of the workflow.
+///
+/// GitHub displays the names of your workflows under your repository's "Actions" tab.
+/// If you omit name, GitHub displays the workflow file path relative to the root of the repository.
+name: String?
 
-local const onIsSet = (on: On) ->
-  on.branch_protection_rule != null
-    || on.check_run != null
-    || on.check_suite != null
-    || on.create != null
-    || on.`delete` != null
-    || on.deployment != null
-    || on.deployment_status != null
-    || on.discussion != null
-    || on.discussion_comment != null
-    || on.fork != null
-    || on.gollum != null
-    || on.issue_comment != null
-    || on.issues != null
-    || on.label != null
-    || on.merge_group != null
-    || on.milestone != null
-    || on.page_build != null
-    || on.project != null
-    || on.project_card != null
-    || on.project_column != null
-    || on.public != null
-    || on.pull_request != null
-    || on.pull_request_review != null
-    || on.pull_request_review_comment != null
-    || on.pull_request_target != null
-    || on.push != null
-    || on.registry_package != null
-    || on.release != null
-    || on.repository_dispatch != null
-    || on.schedule != null
-    || on.status != null
-    || on.watch != null
-    || on.workflow_call != null
-    || on.workflow_dispatch != null
-    || on.workflow_run != null
+/// The name for workflow runs generated from the workflow.
+///
+/// GitHub displays the workflow run name in the list of workflow runs on your repository's
+/// "Actions" tab.
+/// If run-name is omitted or is only whitespace, then the run name is set to event-specific
+/// information for the workflow run.
+/// For example, for a workflow triggered by a `push` or `pull_request` event, it is set as the
+/// commit message or the title of the pull request.
+///
+/// This value can include expressions and can reference the `github` and `inputs` contexts.
+`run-name`: String?
 
-on: On(onIsSet)
+/// Define which events can cause the workflow to run.
+///
+/// For a list of available events, see
+/// [Events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows).
+on: *On | TriggerEventName | Listing<TriggerEventName>
 
 /// A map of variables that are available to the steps of all jobs in the workflow.
 ///
@@ -278,6 +261,44 @@ typealias Job = *JobModule | AbstractTypedJob
 
 /// A step within a job.
 typealias Step = JobModule.Step
+
+/// The name of an event that triggers a workflow.
+typealias TriggerEventName =
+  "branch_protection_rule"
+    | "check_run"
+    | "check_suite"
+    | "create"
+    | "delete"
+    | "deployment"
+    | "deployment_status"
+    | "discussion"
+    | "discussion_comment"
+    | "fork"
+    | "gollum"
+    | "issue_comment"
+    | "issues"
+    | "label"
+    | "merge_group"
+    | "milestone"
+    | "page_build"
+    | "project"
+    | "project_card"
+    | "project_column"
+    | "public"
+    | "pull_request"
+    | "pull_request_review"
+    | "pull_request_review_comment"
+    | "pull_request_target"
+    | "push"
+    | "registry_package"
+    | "release"
+    | "repository_dispatch"
+    | "schedule"
+    | "status"
+    | "watch"
+    | "workflow_call"
+    | "workflow_dispatch"
+    | "workflow_run"
 
 // region Trigger
 abstract class Trigger {
@@ -630,6 +651,7 @@ class WorkflowRun extends Trigger {
   branches: Listing<String>?
   `branches-ignore`: Listing<String>?
 }
+
 typealias WorkflowRunType = "requested" | "completed" | "in_progress"
 
 class On {
