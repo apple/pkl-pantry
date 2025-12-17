@@ -157,7 +157,7 @@ local effectiveActionTypes: ActionTypes? =
     else
       null
 
-local const actionNameRegex = Regex(#"([^/]+)/([^/]+)(?:/(.+))?@(v\d+)"#)
+local const actionNameRegex = Regex(#"([^/]+)/([^/]+)(?:/(.+))?@(v\d+(\.\d+\.\d+)?)"#)
 
 typealias ActionName = String(matches(actionNameRegex))
 
