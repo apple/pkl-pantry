@@ -247,30 +247,12 @@ val decorateFailureWithDependentPackageInformation by
 
 createPackages.get().finalizedBy(decorateFailureWithDependentPackageInformation)
 
-val isInCircleCi = System.getenv("CIRCLE_PROJECT_REPONAME") != null
-
-val prepareCiGit by
-  tasks.registering {
-    doLast {
-      if (isInCircleCi) {
-        providers
-          .exec { commandLine("git", "config", "user.email", "pkl-oss@groups.apple.com") }
-          .result
-          .get()
-        providers
-          .exec { commandLine("git", "config", "user.name", "The Pkl Team (automation)") }
-          .result
-          .get()
-      }
-    }
-  }
-
 repositories { mavenCentral() }
 
 val prepareReleases by
   tasks.registering {
     group = "build"
-    dependsOn(createPackages, prepareCiGit)
+    dependsOn(createPackages)
     inputs.files(projectDirs)
 
     doLast {
