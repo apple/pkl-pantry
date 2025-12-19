@@ -11,7 +11,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import com.diffplug.spotless.FormatterFunc
+import com.diffplug.spotless.FormatterStep
 import groovy.json.JsonSlurper
+import java.io.Serial
+import java.io.Serializable
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -21,13 +25,39 @@ import kotlin.io.path.name
 import kotlin.math.ceil
 import kotlin.math.log10
 import org.pkl.core.Version
+import org.pkl.formatter.Formatter
+import org.pkl.formatter.GrammarVersion
 import org.pkl.gradle.task.BasePklTask
 import org.pkl.gradle.task.ProjectPackageTask
 
 plugins {
-  kotlin("jvm").version(libs.versions.kotlin)
+  alias(libs.plugins.kotlin)
   alias(libs.plugins.pkl)
-  id("com.diffplug.spotless")
+  alias(libs.plugins.spotless)
+}
+
+class PklFormatterStep : Serializable {
+  companion object {
+    @Serial private const val serialVersionUID: Long = 1L
+  }
+
+  fun create(): FormatterStep {
+    return FormatterStep.createLazy(
+      "pkl",
+      { PklFormatterStep() },
+      { PklFormatterFunc() },
+    )
+  }
+}
+
+class PklFormatterFunc : FormatterFunc, Serializable {
+  companion object {
+    @Serial private const val serialVersionUID: Long = 1L
+  }
+
+  override fun apply(input: String): String {
+    return Formatter().format(input, GrammarVersion.V1)
+  }
 }
 
 val originalRemoteName = System.getenv("PKL_ORIGINAL_REMOTE_NAME") ?: "origin"

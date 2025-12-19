@@ -11,8 +11,8 @@ junitParams = { group = "org.junit.jupiter", name = "junit-jupiter-params", vers
 junitPlatformLauncher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatformLauncher" }
 pklCore = { group = "org.pkl-lang", name = "pkl-core", version.ref = "pkl" }
 pklParser = { group = "org.pkl-lang", name = "pkl-parser", version.ref = "pkl" }
-spotlessPlugin = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotless"}
-pklFormatter = { group = "org.pkl-lang", name = "pkl-formatter", version.ref = "pkl" }
 
 [plugins]
 pkl = { id = "org.pkl-lang", version.ref = "pkl" }
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless"}
