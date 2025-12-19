@@ -49,8 +49,8 @@
 @ModuleInfo { minPklVersion = "0.30.0" }
 module com.github.actions.contrib.ActionGenerator
 
+import "pkl:semver"
 import "pkl:yaml"
-
 import "@com.github.actions/Action.pkl"
 import "@deepToTyped/deepToTyped.pkl"
 import "@io.github.typesafegithub/ActionTypes.pkl"
@@ -61,7 +61,6 @@ import "@syntax/IdentifierNode.pkl"
 import "@syntax/ModuleNode.pkl"
 import "@syntax/ObjectBodyNode.pkl"
 import "@syntax/TypeNode.pkl"
-
 import "util.pkl"
 
 local comGithubActionsVerison = read("@com.github.actions/VERSION.txt").text.trim()
@@ -113,34 +112,36 @@ local actionYaml =
 local effectiveAction =
   action ?? deepToTyped.apply(Action.getClass(), yamlParser.parse(actionYaml)) as Action
 
-local actionTypesUrl1 =
-  if (subpath == null)
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)/action-types.yml"
-  else
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)/\(subpath)/action-types.yml"
+local versionMajor = semver.parseOrNull(version.replaceFirst("v", ""))?.major
+local actionTypesUrlFallbackVersion = versionMajor.ifNonNull((it) -> "v\(versionMajor)")
 
-local actionTypesUrl2 =
-  if (subpath == null)
-    "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(owner)/\(repo)/\(version)/action-types.yml"
+local actionTypesUrls: Listing<String?> = new {
+  "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
+  if (actionTypesUrlFallbackVersion != null)
+    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(actionTypesUrlFallbackVersion)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
   else
-    "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(owner)/\(repo)/\(version)/\(subpath)/action-types.yml"
+    null
+
+  "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(owner)/\(repo)/\(version)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
+  if (actionTypesUrlFallbackVersion != null)
+    "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(owner)/\(repo)/\(actionTypesUrlFallbackVersion)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
+  else
+    null
+}
+
+local actionTypesUrl =
+  actionTypesUrls.toList().filterNonNull().findOrNull((it) -> read?(it) != null)
 
 local actionTypesYaml =
-  read?(actionTypesUrl1)
-    ?? read?(actionTypesUrl2)
+  actionTypesUrl.ifNonNull((it) -> read?(it))
     ?? let (
       _ =
         trace(
           """
-          This action's inputs can have its input types enhanced by an action-types.yml.
+          This action’s inputs can have its input types enhanced using an `action-types.yml` file.
           Reference: https://github.com/typesafegithub/github-actions-typing
 
-          Can be placed in either of:
-
-          * \(actionTypesUrl1)
-          * \(actionTypesUrl2)
-
-          Alternatively, it can be passed in when programmatically generating this action using ActionGenerator.pkl.
+          The file can be placed either in the repository itself or passed in when programmatically generating this action using `ActionGenerator.pkl`.
           """
         )
     )
