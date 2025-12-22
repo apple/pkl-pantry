@@ -115,22 +115,19 @@ local effectiveAction =
 local versionMajor = semver.parseOrNull(version.replaceFirst("v", ""))?.major
 local actionTypesUrlFallbackVersion = versionMajor.ifNonNull((it) -> "v\(it)")
 
-local actionTypesUrls: Listing<String?> = new {
+local actionTypesUrls: Listing<String> = new {
   "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
-  if (actionTypesUrlFallbackVersion != null)
+  when (actionTypesUrlFallbackVersion != null) {
     "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(actionTypesUrlFallbackVersion)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
-  else
-    null
+  }
 
   "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(owner)/\(repo)/\(version)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
-  if (actionTypesUrlFallbackVersion != null)
+  when (actionTypesUrlFallbackVersion != null) {
     "https://raw.githubusercontent.com/typesafegithub/github-actions-typing-catalog/refs/heads/main/typings/\(owner)/\(repo)/\(actionTypesUrlFallbackVersion)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
-  else
-    null
+  }
 }
 
-local actionTypesUrl =
-  actionTypesUrls.toList().filterNonNull().findOrNull((it) -> read?(it) != null)
+local actionTypesUrl = actionTypesUrls.toList().findOrNull((it) -> read?(it) != null)
 
 local actionTypesYaml =
   actionTypesUrl.ifNonNull((it) -> read?(it))
