@@ -51,6 +51,7 @@ module com.github.actions.contrib.ActionGenerator
 
 import "pkl:semver"
 import "pkl:yaml"
+
 import "@com.github.actions/Action.pkl"
 import "@deepToTyped/deepToTyped.pkl"
 import "@io.github.typesafegithub/ActionTypes.pkl"
@@ -61,6 +62,7 @@ import "@syntax/IdentifierNode.pkl"
 import "@syntax/ModuleNode.pkl"
 import "@syntax/ObjectBodyNode.pkl"
 import "@syntax/TypeNode.pkl"
+
 import "util.pkl"
 
 local comGithubActionsVerison = read("@com.github.actions/VERSION.txt").text.trim()
