@@ -130,7 +130,7 @@ local actionTypesUrls: Listing<String> = new {
 local actionTypesUrl = actionTypesUrls.toList().findOrNull((it) -> read?(it) != null)
 
 local actionTypesYaml =
-  actionTypesUrl.ifNonNull((it) -> read?(it))
+  actionTypesUrl.ifNonNull((it) -> read?(it as String))
     ?? let (
       _ =
         trace(
