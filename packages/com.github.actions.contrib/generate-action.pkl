@@ -27,6 +27,8 @@
 ///     pkl eval package://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@<VERSION>#/generate-action.pkl \
 ///       -m . \
 ///       -p action-name=actions/checkout@v4
+///
+/// Optionally, you can specify a different GitHub Actions package with the `action-package-name` parameter
 @ModuleInfo { minPklVersion = "0.30.0" }
 module com.github.actions.contrib.`generate-action`
 
@@ -37,8 +39,14 @@ import "ActionGenerator.pkl"
 /// Should include the version string.
 actionName: ActionGenerator.ActionName = read("prop:action-name")
 
+/// Optional override of the GitHub actions package.
+githubActionsPackageName: String? = read?("prop:action-package-name")
+
 local generator: ActionGenerator = new {
   actionName = module.actionName
+  when (module.githubActionsPackageName != null) {
+    githubActionsPackageName = module.githubActionsPackageName
+  }
 }
 
 fixed files: Mapping<String, FileOutput> = new {
