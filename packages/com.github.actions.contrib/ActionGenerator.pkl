@@ -113,7 +113,7 @@ local effectiveAction =
   action ?? deepToTyped.apply(Action.getClass(), yamlParser.parse(actionYaml)) as Action
 
 local versionMajor = semver.parseOrNull(version.replaceFirst("v", ""))?.major
-local actionTypesUrlFallbackVersion = versionMajor.ifNonNull((it) -> "v\(versionMajor)")
+local actionTypesUrlFallbackVersion = versionMajor.ifNonNull((it) -> "v\(it)")
 
 local actionTypesUrls: Listing<String?> = new {
   "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)\(subpath.ifNonNull((it) -> "/\(it)") ?? "")/action-types.yml"
