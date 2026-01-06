@@ -1,0 +1,83 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module pkl.dependabotManagedGitHub.tests.LockfileGenerator
+
+amends "pkl:test"
+
+import "@com.github.actions/Workflow.pkl"
+
+import "../LockfileGenerator.pkl"
+
+facts {
+  ["new lockfile; records new action into lockfile"] {
+    local generator: LockfileGenerator = new {
+      workflows =
+        List(new Workflow {
+          jobs {
+            ["foo"] {
+              steps {
+                new { uses = "foo@v1" }
+              }
+            }
+          }
+        })
+      currentLocks = null
+    }
+    generator.lockfileWorkflow.output.text.contains("foo@abc123 # v1")
+  }
+  ["existing lockfile; does not query for a new checksum"] {
+    local generator: LockfileGenerator = new {
+      workflows =
+        List(new Workflow {
+          jobs {
+            ["foo"] {
+              steps {
+                new { uses = "foo@v1" }
+              }
+            }
+          }
+        })
+      currentLocks = new LockfileGenerator.Locks {
+        ["foo@v1"] {
+          base = "foo"
+          version = "v1"
+          sha = "bullfrog"
+        }
+      }
+    }
+    generator.lockfileWorkflow.output.text.contains("foo@bullfrog")
+  }
+  ["existing lockfile; removes entry if step is not used"] {
+    local generator: LockfileGenerator = new {
+      workflows =
+        List(new Workflow {
+          jobs {
+            ["foo"] {
+              steps {}
+            }
+          }
+        })
+      currentLocks = new LockfileGenerator.Locks {
+        ["foo@v1"] {
+          base = "foo"
+          version = "v1"
+          sha = "bullfrog"
+        }
+      }
+    }
+    !generator.lockfileWorkflow.output.text.contains("foo@bullfrog")
+  }
+}

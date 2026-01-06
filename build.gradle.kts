@@ -1,5 +1,5 @@
 /**
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -202,6 +202,7 @@ pkl.project {
     projectDirectories.from(projectDirs)
     outputPath = outputDir.dir("generated/packages/%{name}/%{version}")
     allowedResources = listOf("file:", "pkl:", "https:", "prop:", "packaage:", "projectpackage:")
+    externalProperties.put("pkl-pantry.testMode", "1")
     junitReportsDir = outputDir.dir("test-results")
   }
 }

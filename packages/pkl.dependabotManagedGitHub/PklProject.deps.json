@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "resolvedDependencies": {
+    "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1.1.1",
+      "path": "../pkl.experimental.deepToTyped"
+    },
+    "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.3.0",
+      "path": "../com.github.actions"
+    },
+    "package://pkg.pkl-lang.org/pkl-pantry/com.github.dependabot@1": {
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.dependabot@1.0.0",
+      "path": "../com.github.dependabot"
+    }
+  }
+}
