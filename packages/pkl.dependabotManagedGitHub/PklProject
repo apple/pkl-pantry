@@ -13,8 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A framework for
+/// Provides [DependabotManagedGitHub], a template for writing GitHub Actions workflows, whose
+/// actions are pinned to specific SHAs, and updated by dependabot.
 amends "../basePklProject.pkl"
+
+// used by doc comments
+import "DependabotManagedGitHub.pkl"
 
 package {
   version = "1.0.0"

@@ -24,7 +24,7 @@
 /// `__lockfile__.yml`.
 /// The contents of this lockfile are used to replace the `uses` of versioned actions with their
 /// git SHA.
-/// For example, `uses: checkout@v6` becomes `uses: checkout@abc123 #v6`.
+/// For example, `uses: checkout@v6` becomes `uses: checkout@abc123 # v6`.
 /// If a step uses an action that doesn't exist in the lockfile, its git sha is first resolved
 /// and written to the lockfile.
 ///
@@ -35,6 +35,9 @@
 /// ## Example
 ///
 /// Here is an example of this template in use, along with the corresponding `PklProject`.
+/// In addition to these two files, the project must be resolved with
+/// `pkl project resolve .github/`, which will create `.github/PklProject.deps.json`.
+///
 /// To render this into YAML, run `pkl eval --project-dir .github .github/index.pkl`.
 ///
 /// ```
@@ -76,7 +79,7 @@ open module pkl.dependabotManagedGitHub.DependabotManagedGitHub
 import "@com.github.actions/Workflow.pkl"
 import "@com.github.dependabot/v2/Dependabot.pkl"
 
-import "LockfileGenerator.pkl"
+import "internal/LockfileGenerator.pkl"
 
 /// The effective workflows produced by this job, keyed by the workflow filename.
 ///

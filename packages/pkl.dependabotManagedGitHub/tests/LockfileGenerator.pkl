@@ -19,7 +19,7 @@ amends "pkl:test"
 
 import "@com.github.actions/Workflow.pkl"
 
-import "../LockfileGenerator.pkl"
+import "../internal/LockfileGenerator.pkl"
 
 facts {
   ["new lockfile; records new action into lockfile"] {

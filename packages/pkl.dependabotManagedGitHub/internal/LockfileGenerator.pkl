@@ -18,7 +18,7 @@
 ///
 /// If an action does not already exist in the lockfile, fetches the git sha from GitHub.
 /// Otherwise, uses the git sha as currently defined.
-module pkl.dependabotManagedGitHub.LockfileGenerator
+module pkl.dependabotManagedGitHub.internal.LockfileGenerator
 
 import "pkl:yaml"
 
@@ -117,9 +117,9 @@ local class ActionMeta {
   ///
   /// There are possibly two tags (one which is annotated).
   /// If there are, we need the one that ends with `^{}`.
-  local function getSha(org: String, repo: String, version: String): String =
+  local function getSha(owner: String, repo: String, version: String): String =
     let (
-      gitOutput = read("https://github.com/\(org)/\(repo).git/info/refs?service=git-upload-pack")
+      gitOutput = read("https://github.com/\(owner)/\(repo).git/info/refs?service=git-upload-pack")
     )
     let (lines = gitOutput.text.split("\n"))
     let (
@@ -192,7 +192,7 @@ fixed lockfileWorkflow: Workflow = new {
 
 typealias Locks = Mapping<String, LockEntry>
 
-class LockEntry {
+local class LockEntry {
   /// The base path of a `uses` block (e.g. `actions/checkout`)
   base: String
 
