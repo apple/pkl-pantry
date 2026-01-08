@@ -28,7 +28,7 @@
 /// If the lockfile doesn't already exist, or if a new action is used, action versions are
 /// resolved to their SHA and the lockfile is updated as a result of evaluation.
 ///
-/// Additionally, this template produces a `dependabot.yml` file, which configured GitHub to
+/// Additionally, this template produces a `dependabot.yml` file, which configures GitHub to
 /// automatically update the workflow YAMLs with updated git shas as new action versions are
 /// released.
 ///
