@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-module pkl.github.dependabotManagedGitHub.tests.LockfileGenerator
+module pkl.github.dependabotManagedActions.tests.LockfileGenerator
 
 amends "pkl:test"
 

@@ -13,23 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-amends "../DependabotManagedGitHub.pkl"
+module pkl.github.dependabotManagedActions.tests.simple
 
-import "@com.github.actions/catalog.pkl"
+amends "pkl:test"
 
-workflows {
-  ["workflows/build.yml"] {
-    jobs {
-      ["do-build"] {
-        `runs-on` = "macos-latest"
-        steps {
-          catalog.`actions/checkout@v6`
-          catalog.`actions/setup-go@v6`
-          new {
-            run = "go test ./..."
-          }
-        }
-      }
+import "../examples/simple.pkl"
+
+examples {
+  for (fileName, fileOutput in simple.output.files!!) {
+    [fileName] {
+      fileOutput.text
     }
   }
 }

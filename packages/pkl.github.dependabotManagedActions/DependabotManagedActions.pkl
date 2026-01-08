@@ -43,7 +43,7 @@
 ///
 /// ```
 /// // .github/index.pkl
-/// amends "@pkl.github.dependabotManagedGitHub/DependabotManagedGitHub.pkl"
+/// amends "@pkl.github.dependabotManagedActions/DependabotManagedActions.pkl"
 ///
 /// import "@com.github.actions/catalog.pkl"
 ///
@@ -70,12 +70,12 @@
 ///   ["com.github.actions"] {
 ///     uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.3.0"
 ///   }
-///   ["pkl.github.dependabotManagedGitHub"] {
-///     uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.github.dependabotManagedGitHub@1.0.0"
+///   ["pkl.github.dependabotManagedActions"] {
+///     uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.github.dependabotManagedActions@1.0.0"
 ///   }
 /// }
 /// ```
-module pkl.github.dependabotManagedGitHub.DependabotManagedGitHub
+module pkl.github.dependabotManagedActions.DependabotManagedActions
 
 import "@com.github.actions/Workflow.pkl"
 import "@com.github.dependabot/v2/Dependabot.pkl"

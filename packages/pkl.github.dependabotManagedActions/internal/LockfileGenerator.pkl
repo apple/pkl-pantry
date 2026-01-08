@@ -18,7 +18,7 @@
 ///
 /// If an action does not already exist in the lockfile, fetches the git sha from GitHub.
 /// Otherwise, uses the git sha as currently defined.
-module pkl.github.dependabotManagedGitHub.internal.LockfileGenerator
+module pkl.github.dependabotManagedActions.internal.LockfileGenerator
 
 import "pkl:yaml"
 
