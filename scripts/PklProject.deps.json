@@ -3,7 +3,7 @@
   "resolvedDependencies": {
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1.0.3",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@1.0.6",
       "path": "../packages/com.github.actions.contrib"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {

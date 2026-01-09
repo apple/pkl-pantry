@@ -1,0 +1,209 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Generates the "lockfile" based off the defined workflows, as well as the existing lockfile (if
+/// exists).
+///
+/// If an action does not already exist in the lockfile, fetches the git sha from GitHub.
+/// Otherwise, uses the git sha as currently defined.
+module pkl.github.dependabotManagedActions.internal.LockfileGenerator
+
+import "pkl:yaml"
+
+import "@com.github.actions/Workflow.pkl"
+import "@deepToTyped/deepToTyped.pkl"
+
+workflows: List<Workflow>
+
+const lockfileName: "workflows/__lockfile__.yml"
+
+local const testMode: Boolean = read?("prop:pkl-pantry.testMode") != null
+
+/// The current lock, if exists.
+currentLocks: Locks? =
+  if (lockfileResource == null)
+    null
+  else
+    let (mapping = yamlParser.parse(lockfileResource) as Mapping)
+    let (workflow = deepToTyped.apply(Workflow.getClass(), mapping) as Workflow)
+    let (locksJob = workflow.jobs.toMap().values.first)
+      locksJob.steps
+        .toList()
+        .toMap(
+          (it) -> it.name!!,
+          (it) -> new LockEntry {
+            base = it.uses.split("@")[0]
+            version = it.name.split("@")[1]
+            sha = it.uses.split("@")[1]
+          }
+        )
+        .toMapping()
+
+local const yamlParser: yaml.Parser = new { useMapping = true }
+
+local const lockfileResource =
+  if (testMode)
+    null
+  else
+    let (pwd = read("env:PWD"))
+      // allow running from either `.github` dir or repo root
+      read?("file://\(pwd)/\(lockfileName)")
+        ?? read?("file://\(pwd)/.github/\(lockfileName)")
+
+local allActions =
+  workflows
+    .flatMap((it) -> it.jobs.toMap().values)
+    .flatMap((it) -> it.steps.toList())
+    .mapNonNull((it) -> it.uses)
+    .filter((it) -> !it.startsWith("./") && it.contains("@v"))
+    .toSet() as Set<String>
+
+local newLocks: Mapping<String, LockEntry> =
+  allActions
+    .difference(currentLocks?.keys ?? Set())
+    .map((it) -> new ActionMeta { uses = it }.lock)
+    .toMap((it) -> it.usesWithTag, (it) -> it)
+    .toMapping()
+
+local class ActionMeta {
+  local self = this
+
+  uses: String
+
+  local parts = uses.split("@")
+
+  fixed base = parts[0]
+
+  fixed version = parts[1]
+
+  local orgRepoSubpath = base.split("/")
+
+  fixed org = orgRepoSubpath[0]
+
+  fixed repo = orgRepoSubpath[1]
+
+  fixed sha =
+    if (testMode)
+      "abc123"
+    else
+      getSha(org, repo, version)
+
+  fixed lock: LockEntry = new {
+    base = self.base
+    version = self.version
+    sha = self.sha
+  }
+
+  /// Resolve the SHA given the action version.
+  ///
+  /// The version can either be a git tag, or a branch name.
+  ///
+  /// Don't use api.github.com because of rate limiting.
+  ///
+  /// The response from this API call is in
+  /// [pkt-line format](https://git-scm.com/docs/protocol-common#_pkt_line_format).
+  ///
+  /// There are possibly two tags (one which is annotated).
+  /// If there are, we need the one that ends with `^{}`.
+  local function getSha(owner: String, repo: String, version: String): String =
+    let (
+      gitOutput = read("https://github.com/\(owner)/\(repo).git/info/refs?service=git-upload-pack")
+    )
+    let (lines = gitOutput.text.split("\n"))
+    let (
+      tag =
+        lines.findOrNull((it) -> it.endsWith("refs/tags/\(version)^{}"))
+          ?? lines.findOrNull((it) -> it.endsWith("refs/tags/\(version)"))
+          ?? lines.findOrNull((it) -> it.endsWith("refs/heads/\(version)"))
+    )
+      if (tag == null)
+        throw("Cannot resolve git commit SHA for tag \(tag)")
+      else
+        // first four bytes represent content length
+        tag.split(" ").first.drop(4)
+}
+
+fixed locks: Locks =
+  if (currentLocks == null)
+    newLocks
+  else
+    (
+      currentLocks.toMap().filter((key, _) -> allActions.contains(key))
+        + newLocks.toMap()
+    ).toMapping()
+
+fixed lockfileWorkflow: Workflow = new {
+  name = "__lockfile__"
+  on {
+    push {
+      `branches-ignore` {
+        "**"
+      }
+      `tags-ignore` {
+        "**"
+      }
+    }
+  }
+  jobs {
+    ["locks"] {
+      `if` = "false"
+      `runs-on` = "nothing"
+    }
+  }
+  output {
+    text =
+      """
+      # This is a fake workflow that never runs.
+      # It's used to pin actions to specific git SHAs when generating actual workflows.
+      # It also gets updated by dependabot (see .github/dependabot.yml).
+      \(super.text)
+      """
+    renderer {
+      converters {
+        ["jobs[locks].steps"] = (_) -> new Listing {
+          local yamlRenderer = new YamlRenderer {}
+          for (entry in locks.toMap().values.sortBy((it) -> it.usesWithTag)) {
+            new {
+              name = entry.usesWithTag
+              uses = new RenderDirective {
+                text =
+                  " " + yamlRenderer.renderValue(entry.usesWithChecksum) + " # \(entry.version)"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+typealias Locks = Mapping<String, LockEntry>
+
+local class LockEntry {
+  /// The base path of a `uses` block (e.g. `actions/checkout`)
+  base: String
+
+  /// The named version (e.g. `v6`)
+  version: String(startsWith("v"))
+
+  /// The git sha
+  sha: String
+
+  fixed usesWithTag = "\(base)@\(version)"
+
+  fixed usesWithChecksum = "\(base)@\(sha)"
+
+  fixed renderDirective = new RenderDirective { text = " \(usesWithChecksum) # \(version)" }
+}
