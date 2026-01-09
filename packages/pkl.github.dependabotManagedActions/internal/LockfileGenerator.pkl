@@ -165,7 +165,6 @@ fixed lockfileWorkflow: Workflow = new {
   output {
     text =
       """
-      #file: noinspection MandatoryParamsAbsent,UndefinedAction
       # This is a fake workflow that never runs.
       # It's used to pin actions to specific git SHAs when generating actual workflows.
       # It also gets updated by dependabot (see .github/dependabot.yml).
