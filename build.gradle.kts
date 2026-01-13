@@ -201,7 +201,7 @@ pkl.project {
   packagers.register("createPackages") {
     projectDirectories.from(projectDirs)
     outputPath = outputDir.dir("generated/packages/%{name}/%{version}")
-    allowedResources = listOf("file:", "pkl:", "https:", "prop:", "packaage:", "projectpackage:")
+    allowedResources = listOf("file:", "pkl:", "https:", "prop:", "package:", "projectpackage:")
     externalProperties.put("pkl-pantry.testMode", "1")
     junitReportsDir = outputDir.dir("test-results")
   }
