@@ -89,5 +89,5 @@ To generate workflows, this helper takes the following steps:
 This workflow generates a dummy workflow called `+__lockfile__+.yml`.
 This workflow is configured to never run, and simply exists so that:
 
-. Pkl generate workflow YAMLs.
+. Pkl can generate workflow YAMLs without needing to query GitHub for a new git SHA.
 . Dependabot can update the lockfile when it updates actions.
