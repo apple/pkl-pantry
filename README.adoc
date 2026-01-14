@@ -42,7 +42,7 @@ This will create a `PklProject.deps.json` file, which should also be checked int
 
 == Maintained packages
 
-The following packages are maintianed in this repo:
+The following packages are maintained in this repo:
 
 |===
 |Package |Description

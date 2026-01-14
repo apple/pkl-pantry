@@ -13,12 +13,12 @@ For documentation, see its https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pk
 ..github/PklProject
 [source,pkl]
 ----
-amneds "pkl:Project"
+amends "pkl:Project"
 
 dependencies {
   ["com.github.actions"] {
-    // replace <version> with the current version
-    uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@<version>"
+    // replace <VERSION> with the current version
+    uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@<VERSION>"
   }
 }
 ----
