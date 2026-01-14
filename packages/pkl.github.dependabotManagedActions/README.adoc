@@ -1,0 +1,93 @@
+= pkl.github.dependabotManagedActions
+
+image:https://img.shields.io/github/v/release/apple/pkl-pantry?filter=pkl.github.dependabotManagedActions@*["Latest release", link="https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/pkl.github.dependabotManagedActions/current/index.html"]
+
+This package provides https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/pkl.github.dependabotManagedActions/current/DependabotManagedActions/index.html[DependabotManagedActions], a helper for writing Github Actions workflows that are pinned to git SHA, and updated by Dependabot.
+
+== Quickstart
+
+. Create your PklProject with this package and link:../com.github.actions/[com.github.actions] as dependencies. +
++
+..github/PklProject
+[source,pkl]
+----
+amends "pkl:Project"
+
+dependencies {
+  ["com.github.actions"] {
+    uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@<VERSION>"
+  }
+  ["pkl.github.dependabotManagedActions"] {
+    uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.github.dependabotManagedActions@<VERSION>"
+  }
+}
+----
+
+. Resolve the project +
++
+[source,shell]
+----
+pkl project resolve .github/
+----
++
+This creates a file at `.github/PklProject.deps.json`.
+This file should also be checked into your repo.
+
+. Create a file called `.github/index.pkl` which amends DependabotManagedActions.
++
+..github/index.pkl
+[source,pkl]
+----
+amends "@pkl.github.dependabotManagedActions/DependabotManagedActions.pkl"
+
+import "@com.github.actions/catalog.pkl"
+
+workflows {
+  ["workflows/build.yml"] =
+    // define your workflows as normal
+    // they can either be defined inline, or imported from elsewhere.
+    import("build.pkl")
+}
+----
+
+. Use `pkl eval` to turn Pkl into the resulting YAML files:
++
+[source,bash]
+----
+cd .github
+pkl eval -m . index.pkl
+
+# or if you're in the project root
+pkl eval --project-dir .github/ -m .github/ .github/index.pkl
+----
+
+
+== Why?
+
+When writing GitHub Actions workflows, a security best practice is to https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions[pin actions to a full-length commit SHA].
+
+This helps mitigate a supply chain attack where if an attacker gains control of an action publisher's repository, they can inject malicious code into your CI pipelines (for example, https://www.cve.org/CVERecord?id=CVE-2025-30066[CVE-2025-30066]).
+
+The https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/pkl.github.dependabotManagedActions/current/DependabotManagedActions/index.html[DependabotManagedActions] helper allows you to write Pkl-based workflows like normal, and have the versions substituted with git SHAs before being rendered to YAML.
+
+== How it works
+
+To generate workflows, this helper takes the following steps:
+
+1. Load the existing <<lockfile,lockfile>>, if it exists.
+2. Process the steps within each passed in workflow:
+    * If it uses an action that already exists in the lockfile, use it.
+    * If not, resolve the version's git SHA and add it to the lockfile
+    * Remove any entries in the lockfile that don't match any steps
+3. Write a new lockfile (this is a no-op if no steps have changed).
+4. Write each workflow YAML
+5. Write a `.github/dependabot.yml` to configure Dependabot to update these actions.
+
+[[lockfile]]
+== Lockfile
+
+This workflow generates a dummy workflow called `+__lockfile__+.yml`.
+This workflow is configured to never run, and simply exists so that:
+
+. Pkl generate workflow YAMLs.
+. Dependabot can update the lockfile when it updates actions.

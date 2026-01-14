@@ -28,6 +28,40 @@ dependencies {
 }
 ----
 
+== Maintained packages
+
+The following packages are maintianed in this repo:
+
+* link:packages/com.circleci.v2[com.circleci.v2]
+* link:packages/com.github.actions[com.github.actions]
+* link:packages/com.github.actions.contrib[com.github.actions.contrib]
+* link:packages/com.github.dependabot[com.github.dependabot]
+* link:packages/com.influxdata.telegraf[com.influxdata.telegraf]
+* link:packages/icalendar[icalendar]
+* link:packages/io.github.typesafegithub[io.github.typesafegithub]
+* link:packages/io.prometheus[io.prometheus]
+* link:packages/k8s.contrib[k8s.contrib]
+* link:packages/k8s.contrib.appEnvCluster[k8s.contrib.appEnvCluster]
+* link:packages/k8s.contrib.crd[k8s.contrib.crd]
+* link:packages/k8s.networking.gateway[k8s.networking.gateway]
+* link:packages/org.apache.spark[org.apache.spark]
+* link:packages/org.json_schema[org.json_schema]
+* link:packages/org.json_schema.contrib[org.json_schema.contrib]
+* link:packages/org.openapis.v3[org.openapis.v3]
+* link:packages/org.openapis.v3.contrib[org.openapis.v3.contrib]
+* link:packages/pkl.csv[pkl.csv]
+* link:packages/pkl.experimental.deepToTyped[pkl.experimental.deepToTyped]
+* link:packages/pkl.experimental.net[pkl.experimental.net]
+* link:packages/pkl.experimental.structuredRead[pkl.experimental.structuredRead]
+* link:packages/pkl.experimental.syntax[pkl.experimental.syntax]
+* link:packages/pkl.experimental.uri[pkl.experimental.uri]
+* link:packages/pkl.github.dependabotManagedActions[pkl.github.dependabotManagedActions]
+* link:packages/pkl.lua[pkl.lua]
+* link:packages/pkl.pipe[pkl.pipe]
+* link:packages/pkl.table[pkl.table]
+* link:packages/pkl.tar[pkl.tar]
+* link:packages/pkl.toml[pkl.toml]
+
 == Documentation
 
 The documentation for all packages published here can be found in our
