@@ -20,7 +20,7 @@
 /// To produce output, the `-m` (or `--multiple-file-output-path`) flag must pointed at the repo's
 /// `.github` directory.
 ///
-/// In addition to the regular workflows, this template also produces a dummy workflow called
+/// In addition to the regular workflows, this template also produces a fake workflow called
 /// `__lockfile__.yml`.
 /// The contents of this lockfile are used to replace the `uses` of versioned actions with their
 /// git SHA.

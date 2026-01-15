@@ -19,14 +19,122 @@ import "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0#/toml.pkl"
 
 If using a link:https://pkl-lang.org/main/current/language-reference/index.html#projects[project], add a package as a dependency:
 
+.PklProject
 [source,pkl]
 ----
 amends "pkl:Project"
 
 dependencies {
-  ["toml"] { uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0" }
+  ["toml"] {
+    uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.toml@1.0.0"
+  }
 }
 ----
+
+Then, resolve the project:
+
+[source,bash]
+----
+pkl project resolve
+----
+
+This will create a `PklProject.deps.json` file, which should also be checked into source control.
+
+== Maintained packages
+
+The following packages are maintained in this repo:
+
+|===
+|Package |Description
+
+|link:packages/com.circleci.v2[com.circleci.v2]
+|Templates for defining https://circleci.com[CircleCI] configuration.
+
+|link:packages/com.github.actions[com.github.actions]
+|Templates for defining https://github.com/features/actions[GitHub Actions] workflows.
+
+|link:packages/com.github.actions.contrib[com.github.actions.contrib]
+|Utility modules for working with GitHub Actions
+
+|link:packages/com.github.dependabot[com.github.dependabot]
+|Templates for managing https://github.com/dependabot[Dependabot].
+
+|link:packages/com.influxdata.telegraf[com.influxdata.telegraf]
+|Templates for configuring https://docs.influxdata.com/telegraf[Telegraf], a plugin-driven server agent for collecting and reporting metrics.
+
+|link:packages/icalendar[icalendar]
+|Library for working with iCalendar data.
+
+|link:packages/io.github.typesafegithub[io.github.typesafegithub]
+|Typings for GitHub Actions
+
+|link:packages/io.prometheus[io.prometheus]
+|Templates for configuring https://prometheus.io[Prometheus], an open-source systems monitoring and alerting toolkit.
+
+|link:packages/k8s.contrib[k8s.contrib]
+|Utilities for handling k8s configuration in Pkl.
+
+|link:packages/k8s.contrib.appEnvCluster[k8s.contrib.appEnvCluster]
+|Template that captures the hierarchical pattern of Application, Environment, and Cluster.
+
+|link:packages/k8s.contrib.crd[k8s.contrib.crd]
+|Utilities for https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/[Kubernetes Custom Resources].
+
+|link:packages/k8s.networking.gateway[k8s.networking.gateway]
+|Kubernetes resource definitions for https://gateway-api.sigs.k8s.io[Gateway API].
+
+|link:packages/org.apache.spark[org.apache.spark]
+|Definitions for https://spark.apache.org[Apache Spark].
+
+|link:packages/org.json_schema[org.json_schema]
+|Modules for https://json-schema.org[JSON Schema].
+
+|link:packages/org.json_schema.contrib[org.json_schema.contrib]
+|Utilities for https://json-schema.org[JSON Schema].
+
+|link:packages/org.openapis.v3[org.openapis.v3]
+|Modules for describing https://www.openapis.org/[OpenAPI] v3.x
+
+|link:packages/org.openapis.v3.contrib[org.openapis.v3.contrib]
+|Utility modules for working with OpenAPI.
+
+|link:packages/pkl.csv[pkl.csv]
+|A https://www.ietf.org/rfc/rfc4180.txt[RFC4180] compliant CSV Renderer and Parser.
+
+|link:packages/pkl.experimental.deepToTyped[pkl.experimental.deepToTyped]
+|An experimental module that does a deep-conversion from untyped data to `Typed` values.
+
+|link:packages/pkl.experimental.net[pkl.experimental.net]
+|Experimental library for handling network (IP and MAC) addresses.
+
+|link:packages/pkl.experimental.structuredRead[pkl.experimental.structuredRead]
+|Utility libraries to parse `read()` values into structured data.
+
+|link:packages/pkl.experimental.syntax[pkl.experimental.syntax]
+|Experimental Pkl syntax library
+
+|link:packages/pkl.experimental.uri[pkl.experimental.uri]
+|Experimental Pkl URI library
+
+|link:packages/pkl.github.dependabotManagedActions[pkl.github.dependabotManagedActions]
+|Provides DependabotManagedActions, a template for writing GitHub Actions workflows, whose actions are pinned to specific SHAs, and updated by dependabot.
+
+|link:packages/pkl.lua[pkl.lua]
+|A parser and renderer for a subset of https://www.lua.org[Lua].
+
+|link:packages/pkl.pipe[pkl.pipe]
+|Tools for constructing pipelines and one-liners in Pkl, by processing text, JSON, or YAML.
+
+|link:packages/pkl.table[pkl.table]
+|Generates pretty human-readable, markdown-compatible, and HTML tables.
+
+|link:packages/pkl.tar[pkl.tar]
+|Libraries for creating tar archives.
+
+|link:packages/pkl.toml[pkl.toml]
+|A https://toml.io/en/[TOML] Renderer.
+
+|===
 
 == Documentation
 

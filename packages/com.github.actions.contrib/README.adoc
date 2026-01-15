@@ -1,0 +1,55 @@
+= com.github.actions.contrib
+
+image:https://img.shields.io/github/v/release/apple/pkl-pantry?filter=com.github.actions.contrib@*["Latest release", link="https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib/current/index.html"]
+
+This package provides utilities for working with GitHub Actions.
+
+[[generating-actions]]
+== Generating actions
+
+The link:generate-action.pkl[generate-action.pkl] tool allows you to generate an externally defined action as its own typed step.
+
+Example (replace `<VERSION>` with the https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib/current/index.html[latest version]):
+
+[source,bash]
+----
+pkl eval \
+  # The name of the action you want to generate
+  -p action=ruby/setup-ruby@v1 \
+  # Optional: The name of the com.github.actions package (defaults to full package asset URI)
+  -p action-package-name=com.github.actions \
+  package://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@<VERSION>#/generate-action.pkl
+----
+
+=== Programmatic usage
+
+The action generator can be used as a Pkl API via the https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib/current/ActionGenerator/index.html[ActionGenerator] class.
+
+This is useful for many reasons, including:
+
+* You want to refine the action types for your action's input properties
+* You want to have control of how you write Pkl output.
+
+Example:
+
+[source,pkl]
+----
+import "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions.contrib@<VERSION>#/ActionGenerator"
+
+local generator: ActionGenerator = new {
+  // define the action you want to generate
+  actionName = "ruby/setup-ruby@v1"
+
+  // define the types for this action's inputs
+  actionTypes {
+    inputs {
+      ["ruby-version"] {
+        type = "string"
+      }
+    }
+  }
+}
+
+// The resulting action's Pkl source code, in text form.
+local generatedActionPkl = generator.result
+----

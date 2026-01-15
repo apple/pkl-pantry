@@ -1,0 +1,178 @@
+= com.github.actions
+
+image:https://img.shields.io/github/v/release/apple/pkl-pantry?filter=com.github.actions@*["Latest release", link="https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions/current/index.html"]
+
+This package contains a set of templates for writing GitHub Actions workflow manifests.
+
+For documentation, see its https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions/current/index.html[package docs].
+
+== Quickstart
+
+. Create your PklProject and add this package as a dependency +
++
+..github/PklProject
+[source,pkl]
+----
+amends "pkl:Project"
+
+dependencies {
+  ["com.github.actions"] {
+    // replace <VERSION> with the current version
+    uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@<VERSION>"
+  }
+}
+----
+. Resolve the project +
++
+[source,shell]
+----
+pkl project resolve .github/
+----
++
+This creates a file at `.github/PklProject.deps.json`.
+This file should also be checked into your repo.
+. Define your workflow
++
+..github/build.pkl
+[source,pkl]
+----
+amends "@com.github.actions/Workflow.pkl"
+
+on {
+  push {
+    branches {
+      "main"
+    }
+  }
+}
+
+jobs {
+  ["build"] {
+    `runs-on` = "ubuntu-latest"
+    steps {
+      new {
+        run = """
+          echo "Hello World"
+          """
+      }
+    }
+  }
+}
+----
+. Render the workflow into YAML +
++
+[source,bash]
+----
+cd .github/
+pkl eval build.pkl -o workflows/build.yml
+
+# or without changing dirs
+pkl eval --project-dir .github/ -o .github/workflows/build.yml .github/build.pkl
+----
++
+If you don't have the Pkl CLI, first https://pkl-lang.org/main/current/pkl-cli/index.html#installation[install it on your machine].
+
+[[catalog]]
+== Catalog
+
+This package comes with a https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions/current/catalog/index.html[catalog] of ready-defined actions that are published within the https://github.com/actions[core actions repo].
+
+To use the catalog, simply import `catalog.pkl`.
+The individual actions are defined as properties on this catalog.
+
+These actions have their inputs defined with their specific properties and types.
+
+Example:
+
+[source,pkl]
+----
+amends "@com.github.actions/Workflow.pkl"
+
+import "@com.github.actions/catalog.pkl"
+
+jobs {
+  ["build"] {
+    `runs-on` = "ubuntu-latest"
+    steps {
+      (catalog.`actions/checkout@v6`) {
+        with {
+          // This is type-checked and will fail if the value is not an integer.
+          `fetch-depth` = 0
+        }
+      }
+
+      (catalog.`actions/upload-artifact@v5`) {
+        with {
+          // Some properties are semantically just lists, but are
+          // expressed as strings in their schema.
+          // In these cases, there is specialized property
+          // defined as a Listing.
+          // Pkl will fuse this back into a string for you.
+          pathList {
+            "*.sh"
+            "*.bin"
+          }
+        }
+      }
+
+      // You can use other actions too (untyped steps).
+      // In this case, the inputs is simply typed as `Mapping<String, String | Number | Boolean>`.
+      new {
+        uses = "ruby/setup-ruby@v1"
+        with {
+          ["ruby-version"] = "v1"
+        }
+      }
+    }
+  }
+}
+----
+
+== Context
+
+There is a helper `context` property on `Workflow` for accessing https://docs.github.com/en/actions/reference/workflows-and-actions/contexts[contextual values].
+
+[source,pkl]
+----
+amends "@com.github.actions/Workflow.pkl"
+
+env {
+  // equivalent to `["GH_REPO"] = "${{ github.repository }}"`
+  ["GH_REPO"] = module.context.github.repository
+}
+----
+
+== Examples
+
+For ready-to-go examples, see the link:./examples[examples dir].
+
+== Typed steps
+
+The <<catalog,catalog>> contains actions that extend module https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl-pantry/com.github.actions/current/AbstractTypedStep/index.html[AbstractTypedStep], and override the `with` parameter with their own class.
+
+You can create your own, either by hand-rolling them, or generating them!
+
+To generate an action, see link:../com.github.actions.contrib/README.adoc#generating-actions[com.github.actions.contrib].
+
+You can also create your own catalog that extends this package's catalog.
+This means that all of your additional actions are co-located with the core actions.
+
+[source,pkl]
+----
+extends "@com.github.actions/catalog.pkl"
+
+import "path/to/MyAction.pkl"
+
+myAction: MyAction
+----
+
+== Pinning actions to SHAs
+
+A security best practice is to https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions[pin an action to a git SHA].
+
+To help with this, there is a helper template called link:../pkl.github.dependabotManagedActions/[DependabotManagedActions].
+
+Using this template means:
+
+1. You do not need to figure out the correct git SHAs yourself, the template queries GitHub for you.
+2. It configures Dependabot to submit version bump pull requests when actions receive new updates.
