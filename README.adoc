@@ -102,7 +102,7 @@ The following packages are maintained in this repo:
 |A https://www.ietf.org/rfc/rfc4180.txt[RFC4180] compliant CSV Renderer and Parser.
 
 |link:packages/pkl.experimental.deepToTyped[pkl.experimental.deepToTyped]
-|An experimental module that does a deep-conversion of Dynamic into Typed.
+|An experimental module that does a deep-conversion from untyped data to `Typed` values.
 
 |link:packages/pkl.experimental.net[pkl.experimental.net]
 |Experimental library for handling network (IP and MAC) addresses.
