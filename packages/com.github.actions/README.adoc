@@ -80,7 +80,7 @@ This package comes with a https://pkl-lang.org/package-docs/pkg.pkl-lang.org/pkl
 To use the catalog, simply import `catalog.pkl`.
 The individual actions are defined as properties on this catalog.
 
-These actions have their `with` defined with their specific properties and types.
+These actions have their inputs defined with their specific properties and types.
 
 Example:
 
@@ -96,18 +96,11 @@ jobs {
     steps {
       (catalog.`actions/checkout@v6`) {
         with {
-          // Pkl will error if you specify a non-integer type
+          // This is type-checked and will fail if the value is not an integer.
           `fetch-depth` = 0
         }
       }
-      // You can use other actions that are defined externally, too.
-      // In this case, `with` parameters are just key-value pairs in a Mapping.
-      new {
-        uses = "ruby/setup-ruby@v1"
-        with {
-          ["ruby-version"] = "v1"
-        }
-      }
+
       (catalog.`actions/upload-artifact@v5`) {
         with {
           // Some properties are semantically just lists, but are
@@ -121,10 +114,18 @@ jobs {
           }
         }
       }
+
+      // You can use other actions too (untyped steps).
+      // In this case, the inputs is simply typed as `Mapping<String, String | Number | Boolean>`.
+      new {
+        uses = "ruby/setup-ruby@v1"
+        with {
+          ["ruby-version"] = "v1"
+        }
+      }
     }
   }
 }
-
 ----
 
 == Context
