@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ local dynamic: Dynamic = new Dynamic {
   }
 }
 
-local typealias FooBarMapping = Mapping<Foo, Bar>//|Listing<Bar>|Foo
+local typealias FooBarMapping = Mapping<Foo, Bar> //|Listing<Bar>|Foo
 local exMapping: FooBarMapping = new {
   [new Foo { x = 42 }] {
     foo {
@@ -60,7 +60,7 @@ local exListing: BarListing = new {
 local typealias BarSet = Set<Bar>
 local exSet: BarSet = Set(new Bar { foo { x = 1 } })
 
-local typealias BarUnionSetOrList = *BarSet|BarList
+local typealias BarUnionSetOrList = *BarSet | BarList
 
 local class MyService {
   metadata: MyMetadata
@@ -120,7 +120,7 @@ local class OverConstrained {
 }
 
 local typealias fooLiteral = "foo"
-local typealias enumType = *"foo"|"bar"|"baz"
+local typealias enumType = *"foo" | "bar" | "baz"
 
 local class ClassWithDefaultAttribute {
   what: String = "The default"
@@ -128,7 +128,7 @@ local class ClassWithDefaultAttribute {
   where: String
 }
 
-local open class BaseClass {
+open local class BaseClass {
   a: String
   b: String
 }
@@ -172,13 +172,15 @@ facts {
     t.apply(String, "hello") == "hello"
     t.apply(fooLiteral, "foo") == "foo"
     t.apply(enumType, "bar") == "bar"
+    t.apply(Bytes, "foo".base64) == "foo".encodeToBytes("UTF-8")
   }
 
   ["Listy types"] {
-    local list = new Listing {
-      "foo"
-      42
-    }.toList()
+    local list =
+      new Listing {
+        "foo"
+        42
+      }.toList()
     t.apply(List, list) == list
     t.apply(Listing, list) == list.toListing()
     t.apply(Set, list) == list.toSet()
@@ -187,10 +189,11 @@ facts {
   }
 
   ["Mappy types"] {
-    local map = new Mapping {
-      ["bar"] = "foo"
-      [0] = 42
-    }.toMap()
+    local map =
+      new Mapping {
+        ["bar"] = "foo"
+        [0] = 42
+      }.toMap()
     t.apply(Map, map) == map
     t.apply(Mapping, map) == map.toMapping()
   }
@@ -254,7 +257,7 @@ facts {
 
   ["Negative cases"] {
     // Something to think about: `y` is not in Foo; it quietly falls through here.
-    t.apply(Foo, new Dynamic { x = 42 y = 1337 }) == new Foo { x = 42 }
+    t.apply(Foo, new Dynamic { x = 42; y = 1337 }) == new Foo { x = 42 }
   }
 
   ["Type with fields that have dependent constraints"] {
