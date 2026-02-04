@@ -12,6 +12,7 @@ examples {
         - '**'
         tags-ignore:
         - '**'
+    permissions: {}
     jobs:
       locks:
         if: 'false'

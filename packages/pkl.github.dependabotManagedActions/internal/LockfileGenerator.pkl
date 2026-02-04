@@ -156,6 +156,8 @@ fixed lockfileWorkflow: Workflow = new {
       }
     }
   }
+  // explicitly define empty permissions map -> default "none" for all
+  permissions {}
   jobs {
     ["locks"] {
       `if` = "false"
