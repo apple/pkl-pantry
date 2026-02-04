@@ -21,7 +21,7 @@ amends "../basePklProject.pkl"
 import "DependabotManagedActions.pkl"
 
 package {
-  version = "1.0.2"
+  version = "1.0.3"
 }
 
 dependencies {
