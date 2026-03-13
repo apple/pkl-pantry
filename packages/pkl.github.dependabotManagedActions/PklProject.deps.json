@@ -13,7 +13,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.dependabot@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.dependabot@1.0.0",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.dependabot@1.0.1",
       "path": "../com.github.dependabot"
     }
   }
