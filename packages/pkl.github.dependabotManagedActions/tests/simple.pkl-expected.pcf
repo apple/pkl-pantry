@@ -49,9 +49,7 @@ examples {
         runs-on: macos-latest
         steps:
         - uses: actions/checkout@abc123 # v6
-          with: {}
         - uses: actions/setup-go@abc123 # v6
-          with: {}
         - run: go test ./...
     
     """

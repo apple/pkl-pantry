@@ -459,13 +459,7 @@ fixed moduleNode: ModuleNode = new {
         value = "with"
       }
       typeAnnotation {
-        type = new TypeNode.DeclaredTypeNode {
-          name {
-            parts {
-              new { value = inputsName }
-            }
-          }
-        }
+        type = new TypeNode.NullableTypeNode { typeNode = DeclaredTypeNode(inputsName) }
       }
     }
   }
