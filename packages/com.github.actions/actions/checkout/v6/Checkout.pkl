@@ -22,7 +22,7 @@ fixed action: "actions/checkout"
 
 fixed version: "v6"
 
-with: With
+with: With?
 
 class With {
   /// Repository name with owner. For example, actions/checkout

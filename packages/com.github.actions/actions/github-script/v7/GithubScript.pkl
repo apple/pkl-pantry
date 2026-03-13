@@ -22,7 +22,7 @@ fixed action: "actions/github-script"
 
 fixed version: "v7"
 
-with: With
+with: With?
 
 class With {
   /// The script to run

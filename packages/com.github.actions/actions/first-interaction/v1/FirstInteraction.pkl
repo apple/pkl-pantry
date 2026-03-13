@@ -22,7 +22,7 @@ fixed action: "actions/first-interaction"
 
 fixed version: "v1"
 
-with: With
+with: With?
 
 class With {
   /// Token for the repository. Can be passed in using {{ secrets.GITHUB_TOKEN }}

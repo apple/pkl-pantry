@@ -22,7 +22,7 @@ fixed action: "actions/create-release"
 
 fixed version: "v1"
 
-with: With
+with: With?
 
 class With {
   /// The name of the tag. This should come from the webhook payload, `github.GITHUB_REF` when a user pushes a new tag

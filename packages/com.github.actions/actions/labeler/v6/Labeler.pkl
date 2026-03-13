@@ -22,7 +22,7 @@ fixed action: "actions/labeler"
 
 fixed version: "v6"
 
-with: With
+with: With?
 
 class With {
   /// The GitHub token used to manage labels

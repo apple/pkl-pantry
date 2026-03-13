@@ -22,7 +22,7 @@ fixed action: "actions/setup-java"
 
 fixed version: "v5"
 
-with: With
+with: With?
 
 class With {
   /// The Java version to set up. Takes a whole or semver Java version. See examples of supported syntax in README file

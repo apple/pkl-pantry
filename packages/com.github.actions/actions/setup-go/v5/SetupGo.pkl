@@ -22,7 +22,7 @@ fixed action: "actions/setup-go"
 
 fixed version: "v5"
 
-with: With
+with: With?
 
 class With {
   /// The Go version to download (if necessary) and use. Supports semver spec and ranges. Be sure to enclose this option in single quotation marks.
