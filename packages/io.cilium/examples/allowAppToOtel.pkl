@@ -1,0 +1,36 @@
+amends "../v2/CiliumNetworkPolicy.pkl"
+
+metadata {
+  name = "allow-app-to-otel"
+  namespace = "observability"
+}
+
+spec {
+  endpointSelector {
+    matchLabels {
+      ["app"] = "otel-collector"
+    }
+  }
+  ingress {
+    new {
+      fromEndpoints {
+        new {
+          matchLabels {
+            ["app"] = "myapp"
+            ["io.kubernetes.pod.namespace"] = "testapp"
+          }
+        }
+      }
+    }
+    new {
+      toPorts {
+        new {
+          ports {
+            new { port = "4317"; protocol = "TCP" }
+            new { port = "4318"; protocol = "TCP" }
+          }
+        }
+      }
+    }
+  }
+}

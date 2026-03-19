@@ -1,0 +1,13 @@
+module io.cilium.tests.examples
+
+amends "pkl:test"
+
+import* "../examples/*.pkl" as allExamples
+
+examples {
+  for (name in allExamples.keys) {
+    [name.replaceFirst("../examples/", "")] {
+      allExamples[name].output.text
+    }
+  }
+}

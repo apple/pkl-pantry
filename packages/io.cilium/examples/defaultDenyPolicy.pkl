@@ -1,0 +1,48 @@
+amends "../v2/CiliumNetworkPolicy.pkl"
+
+metadata {
+  name = "default-deny"
+  namespace = "testapp"
+}
+
+spec {
+  endpointSelector {}
+  ingress {
+    new {
+      fromEndpoints {
+        new {
+          matchLabels {
+            ["io.kubernetes.pod.namespace"] = "kube-system"
+          }
+        }
+      }
+    }
+  }
+  egress {
+    new {
+      toEndpoints {
+        new {
+          matchLabels {
+            ["io.kubernetes.pod.namespace"] = "kube-system"
+          }
+        }
+      }
+    }
+    new {
+      toFQDNs {
+        new { matchName = "google.com" }
+        new { matchName = "www.google.com" }
+      }
+    }
+    new {
+      toPorts {
+        new {
+          ports {
+            new { port = "53"; protocol = "UDP" }
+            new { port = "53"; protocol = "TCP" }
+          }
+        }
+      }
+    }
+  }
+}
