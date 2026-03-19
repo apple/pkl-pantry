@@ -1,0 +1,26 @@
+/// CiliumCIDRGroup is a list of external CIDRs (i.e: CIDRs selecting peers outside the clusters) that
+/// can be referenced as a single entity from CiliumNetworkPolicies.
+///
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumcidrgroups.yaml>.
+module io.cilium.v2.CiliumCIDRGroup
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2"
+
+fixed kind: "CiliumCIDRGroup"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+spec: Spec
+
+class Spec {
+  /// ExternalCIDRs is a list of CIDRs selecting peers outside the clusters.
+  externalCIDRs: Listing<String>(length >= 0)
+}

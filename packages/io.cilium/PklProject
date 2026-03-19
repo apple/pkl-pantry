@@ -1,0 +1,9 @@
+amends "../basePklProject.pkl"
+
+dependencies {
+  ["k8s"] { uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.3.0" }
+}
+
+package {
+  version = "1.0.0"
+}

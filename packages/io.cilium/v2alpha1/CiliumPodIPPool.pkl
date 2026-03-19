@@ -1,0 +1,118 @@
+/// CiliumPodIPPool defines an IP pool that can be used for pooled IPAM (i.e. the multi-pool IPAM mode).
+///
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2alpha1/ciliumpodippools.yaml>.
+module io.cilium.v2alpha1.CiliumPodIPPool
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2alpha1"
+
+fixed kind: "CiliumPodIPPool"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+spec: Spec
+
+class Spec {
+  /// IPv4 specifies the IPv4 CIDRs and mask sizes of the pool
+  ipv4: Ipv4?
+
+  /// IPv6 specifies the IPv6 CIDRs and mask sizes of the pool
+  ipv6: Ipv6?
+
+  /// NamespaceSelector selects the set of Namespaces that are eligible to use this pool. If both
+  /// PodSelector and NamespaceSelector are specified, a Pod must match both selectors to be eligible for
+  /// IP allocation from this pool.
+  ///
+  /// If NamespaceSelector is empty, the pool can be used by Pods in any namespace (subject to
+  /// PodSelector constraints).
+  namespaceSelector: NamespaceSelector?
+
+  /// PodSelector selects the set of Pods that are eligible to receive IPs from this pool when neither
+  /// the Pod nor its Namespace specify an explicit `ipam.cilium.io/*` annotation.
+  ///
+  /// The selector can match on regular Pod labels and on the following synthetic labels that Cilium adds
+  /// for convenience:
+  ///
+  /// io.kubernetes.pod.namespace – the Pod's namespace io.kubernetes.pod.name – the Pod's name
+  ///
+  /// A single Pod must not match more than one pool for the same IP family. If multiple pools match, IP
+  /// allocation fails for that Pod and a warning event is emitted in the namespace of the Pod.
+  podSelector: PodSelector?
+}
+
+/// IPv4 specifies the IPv4 CIDRs and mask sizes of the pool
+class Ipv4 {
+  /// CIDRs is a list of IPv4 CIDRs that are part of the pool.
+  cidrs: Listing<String>(!isEmpty)
+
+  /// MaskSize is the mask size of the pool.
+  maskSize: Int(isBetween(1, 32))
+}
+
+/// IPv6 specifies the IPv6 CIDRs and mask sizes of the pool
+class Ipv6 {
+  /// CIDRs is a list of IPv6 CIDRs that are part of the pool.
+  cidrs: Listing<String>(!isEmpty)
+
+  /// MaskSize is the mask size of the pool.
+  maskSize: Int(isBetween(1, 128))
+}
+
+/// NamespaceSelector selects the set of Namespaces that are eligible to use this pool. If both
+/// PodSelector and NamespaceSelector are specified, a Pod must match both selectors to be eligible for
+/// IP allocation from this pool.
+///
+/// If NamespaceSelector is empty, the pool can be used by Pods in any namespace (subject to PodSelector
+/// constraints).
+class NamespaceSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<PodSelectorMatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// A label selector requirement is a selector that contains values, a key, and an operator that relates
+/// the key and values.
+class PodSelectorMatchExpression {
+  /// key is the label key that the selector applies to.
+  key: String
+
+  /// operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists
+  /// and DoesNotExist.
+  operator: "In"|"NotIn"|"Exists"|"DoesNotExist"
+
+  /// values is an array of string values. If the operator is In or NotIn, the values array must be
+  /// non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is
+  /// replaced during a strategic merge patch.
+  values: Listing<String>?
+}
+
+/// PodSelector selects the set of Pods that are eligible to receive IPs from this pool when neither the
+/// Pod nor its Namespace specify an explicit `ipam.cilium.io/*` annotation.
+///
+/// The selector can match on regular Pod labels and on the following synthetic labels that Cilium adds
+/// for convenience:
+///
+/// io.kubernetes.pod.namespace – the Pod's namespace io.kubernetes.pod.name – the Pod's name
+///
+/// A single Pod must not match more than one pool for the same IP family. If multiple pools match, IP
+/// allocation fails for that Pod and a warning event is emitted in the namespace of the Pod.
+class PodSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<PodSelectorMatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}

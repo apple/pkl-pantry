@@ -1,0 +1,181 @@
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumegressgatewaypolicies.yaml>.
+module io.cilium.v2.CiliumEgressGatewayPolicy
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2"
+
+fixed kind: "CiliumEgressGatewayPolicy"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+spec: Spec?
+
+class Spec {
+  /// DestinationCIDRs is a list of destination CIDRs for destination IP addresses. If a destination IP
+  /// matches any one CIDR, it will be selected.
+  destinationCIDRs: Listing<String(matches(Regex(#"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/([0-9]|[1-2][0-9]|3[0-2])$|^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/(12[0-8]|1[0-1][0-9]|[1-9][0-9]|[0-9]))$"#)))>
+
+  /// EgressGateway is the gateway node responsible for SNATing traffic. In case multiple nodes are a
+  /// match for the given set of labels, the first node in lexical ordering based on their name will be
+  /// selected.
+  egressGateway: EgressGateway
+
+  /// Optional list of gateway nodes responsible for SNATing traffic. If this field has any entries the
+  /// contents of the egressGateway field will be ignored. In case multiple nodes are a match for the
+  /// given set of labels in each entry, the first node in lexical ordering based on their name will be
+  /// selected for each entry.
+  ///
+  /// Default if undefined: `{}`
+  egressGateways: Listing<SpecEgressGateway>?
+
+  /// ExcludedCIDRs is a list of destination CIDRs that will be excluded from the egress gateway
+  /// redirection and SNAT logic. Should be a subset of destinationCIDRs otherwise it will not have any
+  /// effect.
+  excludedCIDRs: Listing<String(matches(Regex(#"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/([0-9]|[1-2][0-9]|3[0-2])$|^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/(12[0-8]|1[0-1][0-9]|[1-9][0-9]|[0-9]))$"#)))>?
+
+  /// Egress represents a list of rules by which egress traffic is filtered from the source pods.
+  selectors: Listing<Selector>
+}
+
+/// EgressGateway is the gateway node responsible for SNATing traffic. In case multiple nodes are a match
+/// for the given set of labels, the first node in lexical ordering based on their name will be selected.
+class EgressGateway {
+  /// EgressIP is the source IP address that the egress traffic is SNATed with.
+  ///
+  /// Example: When set to "192.168.1.100", matching egress traffic will be redirected to the node
+  /// matching the NodeSelector field and SNATed with IP address 192.168.1.100.
+  ///
+  /// When none of the Interface or EgressIP fields is specified, the policy will use the first IPv4
+  /// assigned to the interface with the default route.
+  egressIP: String?
+
+  /// Interface is the network interface to which the egress IP address that the traffic is SNATed with
+  /// is assigned.
+  ///
+  /// Example: When set to "eth1", matching egress traffic will be redirected to the node matching the
+  /// NodeSelector field and SNATed with the first IPv4 address assigned to the eth1 interface.
+  ///
+  /// When none of the Interface or EgressIP fields is specified, the policy will use the first IPv4
+  /// assigned to the interface with the default route.
+  interface: String?
+
+  /// This is a label selector which selects the node that should act as egress gateway for the given
+  /// policy. In case multiple nodes are selected, only the first one in the lexical ordering over the
+  /// node names will be used. This field follows standard label selector semantics.
+  nodeSelector: EgressGatewayNodeSelector
+}
+
+/// This is a label selector which selects the node that should act as egress gateway for the given
+/// policy. In case multiple nodes are selected, only the first one in the lexical ordering over the node
+/// names will be used. This field follows standard label selector semantics.
+class EgressGatewayNodeSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// A label selector requirement is a selector that contains values, a key, and an operator that relates
+/// the key and values.
+class MatchExpression {
+  /// key is the label key that the selector applies to.
+  key: String
+
+  /// operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists
+  /// and DoesNotExist.
+  operator: "In"|"NotIn"|"Exists"|"DoesNotExist"
+
+  /// values is an array of string values. If the operator is In or NotIn, the values array must be
+  /// non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is
+  /// replaced during a strategic merge patch.
+  values: Listing<String>?
+}
+
+/// EgressGateway identifies the node that should act as egress gateway for a given egress Gateway
+/// policy. In addition to that it also specifies the configuration of said node (which egress IP or
+/// network interface should be used to SNAT traffic).
+class SpecEgressGateway {
+  /// EgressIP is the source IP address that the egress traffic is SNATed with.
+  ///
+  /// Example: When set to "192.168.1.100", matching egress traffic will be redirected to the node
+  /// matching the NodeSelector field and SNATed with IP address 192.168.1.100.
+  ///
+  /// When none of the Interface or EgressIP fields is specified, the policy will use the first IPv4
+  /// assigned to the interface with the default route.
+  egressIP: String?
+
+  /// Interface is the network interface to which the egress IP address that the traffic is SNATed with
+  /// is assigned.
+  ///
+  /// Example: When set to "eth1", matching egress traffic will be redirected to the node matching the
+  /// NodeSelector field and SNATed with the first IPv4 address assigned to the eth1 interface.
+  ///
+  /// When none of the Interface or EgressIP fields is specified, the policy will use the first IPv4
+  /// assigned to the interface with the default route.
+  interface: String?
+
+  /// This is a label selector which selects the node that should act as egress gateway for the given
+  /// policy. In case multiple nodes are selected, only the first one in the lexical ordering over the
+  /// node names will be used. This field follows standard label selector semantics.
+  nodeSelector: EgressGatewayNodeSelector
+}
+
+class Selector {
+  /// Selects Namespaces using cluster-scoped labels. This field follows standard label selector
+  /// semantics; if present but empty, it selects all namespaces.
+  namespaceSelector: NamespaceSelector?
+
+  /// This is a label selector which selects Pods by Node. This field follows standard label selector
+  /// semantics; if present but empty, it selects all nodes.
+  nodeSelector: NodeSelector?
+
+  /// This is a label selector which selects Pods. This field follows standard label selector semantics;
+  /// if present but empty, it selects all pods.
+  podSelector: PodSelector?
+}
+
+/// Selects Namespaces using cluster-scoped labels. This field follows standard label selector semantics;
+/// if present but empty, it selects all namespaces.
+class NamespaceSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// This is a label selector which selects Pods by Node. This field follows standard label selector
+/// semantics; if present but empty, it selects all nodes.
+class NodeSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// This is a label selector which selects Pods. This field follows standard label selector semantics; if
+/// present but empty, it selects all pods.
+class PodSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}

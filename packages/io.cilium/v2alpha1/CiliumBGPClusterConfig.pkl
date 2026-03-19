@@ -1,0 +1,155 @@
+/// CiliumBGPClusterConfig is the Schema for the CiliumBGPClusterConfig API
+///
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumbgpclusterconfigs.yaml>.
+module io.cilium.v2alpha1.CiliumBGPClusterConfig
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2alpha1"
+
+fixed kind: "CiliumBGPClusterConfig"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+/// Spec defines the desired cluster configuration of the BGP control plane.
+spec: Spec
+
+/// Status is a running status of the cluster configuration
+status: Status?
+
+/// Spec defines the desired cluster configuration of the BGP control plane.
+class Spec {
+  /// A list of CiliumBGPInstance(s) which instructs the BGP control plane how to instantiate virtual BGP
+  /// routers.
+  bgpInstances: Listing<BgpInstance>(length.isBetween(1, 16))
+
+  /// NodeSelector selects a group of nodes where this BGP Cluster config applies. If empty / nil this
+  /// config applies to all nodes.
+  nodeSelector: NodeSelector?
+}
+
+class BgpInstance {
+  /// LocalASN is the ASN of this BGP instance. Supports extended 32bit ASNs.
+  localASN: Int(isBetween(1, 4294967295))?
+
+  /// LocalPort is the port on which the BGP daemon listens for incoming connections.
+  ///
+  /// If not specified, BGP instance will not listen for incoming connections.
+  localPort: Int(isBetween(1, 65535))?
+
+  /// Name is the name of the BGP instance. It is a unique identifier for the BGP instance within the
+  /// cluster configuration.
+  name: String(length.isBetween(1, 255))
+
+  /// Peers is a list of neighboring BGP peers for this virtual router
+  peers: Listing<Peer>?
+}
+
+class Peer {
+  /// Name is the name of the BGP peer. It is a unique identifier for the peer within the BGP instance.
+  name: String(length.isBetween(1, 255))
+
+  /// PeerASN is the ASN of the peer BGP router. Supports extended 32bit ASNs.
+  ///
+  /// If peerASN is 0, the BGP OPEN message validation of ASN will be disabled and ASN will be determined
+  /// based on peer's OPEN message.
+  ///
+  /// Default if undefined: `0`
+  peerASN: UInt32?
+
+  /// PeerAddress is the IP address of the neighbor. Supports IPv4 and IPv6 addresses.
+  peerAddress: String(matches(Regex(#"((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))"#)))?
+
+  /// PeerConfigRef is a reference to a peer configuration resource. If not specified, the default BGP
+  /// configuration is used for this peer.
+  peerConfigRef: PeerConfigRef?
+}
+
+/// PeerConfigRef is a reference to a peer configuration resource. If not specified, the default BGP
+/// configuration is used for this peer.
+class PeerConfigRef {
+  /// Group is the group of the peer config resource. If not specified, the default of "cilium.io" is
+  /// used.
+  ///
+  /// Default if undefined: `"cilium.io"`
+  group: String?
+
+  /// Kind is the kind of the peer config resource. If not specified, the default of
+  /// "CiliumBGPPeerConfig" is used.
+  ///
+  /// Default if undefined: `"CiliumBGPPeerConfig"`
+  kind: String?
+
+  /// Name is the name of the peer config resource. Name refers to the name of a Kubernetes object
+  /// (typically a CiliumBGPPeerConfig).
+  name: String
+}
+
+/// NodeSelector selects a group of nodes where this BGP Cluster config applies. If empty / nil this
+/// config applies to all nodes.
+class NodeSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// A label selector requirement is a selector that contains values, a key, and an operator that relates
+/// the key and values.
+class MatchExpression {
+  /// key is the label key that the selector applies to.
+  key: String
+
+  /// operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists
+  /// and DoesNotExist.
+  operator: "In"|"NotIn"|"Exists"|"DoesNotExist"
+
+  /// values is an array of string values. If the operator is In or NotIn, the values array must be
+  /// non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is
+  /// replaced during a strategic merge patch.
+  values: Listing<String>?
+}
+
+/// Status is a running status of the cluster configuration
+class Status {
+  /// The current conditions of the CiliumBGPClusterConfig
+  conditions: Listing<Condition>?
+}
+
+/// Condition contains details for one aspect of the current state of this API Resource.
+class Condition {
+  /// lastTransitionTime is the last time the condition transitioned from one status to another. This
+  /// should be when the underlying condition changed. If that is not known, then using the time when the
+  /// API field changed is acceptable.
+  lastTransitionTime: String
+
+  /// message is a human readable message indicating details about the transition. This may be an empty
+  /// string.
+  message: String(length <= 32768)
+
+  /// observedGeneration represents the .metadata.generation that the condition was set based upon. For
+  /// instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration
+  /// is 9, the condition is out of date with respect to the current state of the instance.
+  observedGeneration: Int(isPositive)?
+
+  /// reason contains a programmatic identifier indicating the reason for the condition's last
+  /// transition. Producers of specific condition types may define expected values and meanings for this
+  /// field, and whether the values are considered a guaranteed API. The value should be a CamelCase
+  /// string. This field may not be empty.
+  reason: String(length.isBetween(1, 1024), matches(Regex("^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$")))
+
+  /// status of the condition, one of True, False, Unknown.
+  status: "True"|"False"|"Unknown"
+
+  /// type of condition in CamelCase or in foo.example.com/CamelCase.
+  type: String(length <= 316, matches(Regex(#"^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$"#)))
+}
