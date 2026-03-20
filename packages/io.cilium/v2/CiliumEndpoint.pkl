@@ -1,0 +1,280 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+
+
+/// CiliumEndpoint is the status of a Cilium policy rule.
+///
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumendpoints.yaml>.
+module io.cilium.v2.CiliumEndpoint
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2"
+
+fixed kind: "CiliumEndpoint"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+/// EndpointStatus is the status of a Cilium endpoint.
+status: Status?
+
+/// EndpointStatus is the status of a Cilium endpoint.
+class Status {
+  /// Controllers is the list of failing controllers for this endpoint.
+  controllers: Listing<Controller>?
+
+  /// Encryption is the encryption configuration of the node
+  encryption: Encryption?
+
+  /// ExternalIdentifiers is a set of identifiers to identify the endpoint apart from the pod name. This
+  /// includes container runtime IDs.
+  `external-identifiers`: ExternalIdentifiers?
+
+  /// Health is the overall endpoint & subcomponent health.
+  health: Health?
+
+  /// ID is the cilium-agent-local ID of the endpoint.
+  id: Int?
+
+  /// Identity is the security identity associated with the endpoint
+  identity: Identity?
+
+  /// Log is the list of the last few warning and error log entries
+  log: Listing<Log>?
+
+  /// NamedPorts List of named Layer 4 port and protocol pairs which will be used in Network Policy
+  /// specs.
+  ///
+  /// swagger:model NamedPorts
+  `named-ports`: Listing<NamedPort>?
+
+  /// Networking is the networking properties of the endpoint.
+  networking: Networking?
+
+  /// EndpointPolicy represents the endpoint's policy by listing all allowed ingress and egress
+  /// identities in combination with L4 port and protocol.
+  policy: Policy?
+
+  /// ServiceAccount is the service account associated with the endpoint
+  `service-account`: String?
+
+  /// State is the state of the endpoint.
+  state: (
+    "creating"
+    |"waiting-for-identity"
+    |"not-ready"
+    |"waiting-to-regenerate"
+    |"regenerating"
+    |"restoring"
+    |"ready"
+    |"disconnecting"
+    |"disconnected"
+    |"invalid")?
+}
+
+/// ControllerStatus is the status of a failing controller.
+class Controller {
+  /// Configuration is the controller configuration
+  configuration: Configuration?
+
+  /// Name is the name of the controller
+  name: String?
+
+  /// Status is the status of the controller
+  status: ControllerStatus?
+
+  /// UUID is the UUID of the controller
+  uuid: String?
+}
+
+/// Configuration is the controller configuration
+class Configuration {
+  /// Retry on error
+  `error-retry`: Boolean?
+
+  /// Base error retry back-off time Format: duration
+  `error-retry-base`: Int?
+
+  /// Regular synchronization interval Format: duration
+  interval: Int?
+}
+
+/// Status is the status of the controller
+class ControllerStatus {
+  `consecutive-failure-count`: Int?
+
+  `failure-count`: Int?
+
+  `last-failure-msg`: String?
+
+  `last-failure-timestamp`: String?
+
+  `last-success-timestamp`: String?
+
+  `success-count`: Int?
+}
+
+/// Encryption is the encryption configuration of the node
+class Encryption {
+  /// Key is the index to the key to use for encryption or 0 if encryption is disabled.
+  key: Int?
+}
+
+/// ExternalIdentifiers is a set of identifiers to identify the endpoint apart from the pod name. This
+/// includes container runtime IDs.
+class ExternalIdentifiers {
+  /// ID assigned to this attachment by container runtime
+  `cni-attachment-id`: String?
+
+  /// ID assigned by container runtime (deprecated, may not be unique)
+  `container-id`: String?
+
+  /// Name assigned to container (deprecated, may not be unique)
+  `container-name`: String?
+
+  /// Docker endpoint ID
+  `docker-endpoint-id`: String?
+
+  /// Docker network ID
+  `docker-network-id`: String?
+
+  /// K8s namespace for this endpoint (deprecated, may not be unique)
+  `k8s-namespace`: String?
+
+  /// K8s pod name for this endpoint (deprecated, may not be unique)
+  `k8s-pod-name`: String?
+
+  /// K8s pod for this endpoint (deprecated, may not be unique)
+  `pod-name`: String?
+}
+
+/// Health is the overall endpoint & subcomponent health.
+class Health {
+  /// bpf
+  bpf: String?
+
+  /// Is this endpoint reachable
+  connected: Boolean?
+
+  /// overall health
+  overallHealth: String?
+
+  /// policy
+  policy: String?
+}
+
+/// Identity is the security identity associated with the endpoint
+class Identity {
+  /// ID is the numeric identity of the endpoint
+  id: Int?
+
+  /// Labels is the list of labels associated with the identity
+  labels: Listing<String>?
+}
+
+/// EndpointStatusChange Indication of a change of status
+///
+/// swagger:model EndpointStatusChange
+class Log {
+  /// Code indicate type of status change Enum: ["ok","failed"]
+  code: String?
+
+  /// Status message
+  message: String?
+
+  /// state
+  state: String?
+
+  /// Timestamp when status change occurred
+  timestamp: String?
+}
+
+/// Port Layer 4 port / protocol pair
+///
+/// swagger:model Port
+class NamedPort {
+  /// Optional layer 4 port name
+  name: String?
+
+  /// Layer 4 port number
+  port: Int?
+
+  /// Layer 4 protocol Enum: ["TCP","UDP","SCTP","ICMP","ICMPV6","ANY"]
+  protocol: String?
+}
+
+/// Networking is the networking properties of the endpoint.
+class Networking {
+  /// IP4/6 addresses assigned to this Endpoint
+  addressing: Listing<Addressing>
+
+  /// NodeIP is the IP of the node the endpoint is running on. The IP must be reachable between nodes.
+  node: String?
+}
+
+/// AddressPair is a pair of IPv4 and/or IPv6 address.
+class Addressing {
+  ipv4: String?
+
+  ipv6: String?
+}
+
+/// EndpointPolicy represents the endpoint's policy by listing all allowed ingress and egress identities
+/// in combination with L4 port and protocol.
+class Policy {
+  /// EndpointPolicyDirection is the list of allowed identities per direction.
+  egress: Ingress?
+
+  /// EndpointPolicyDirection is the list of allowed identities per direction.
+  ingress: Ingress?
+}
+
+/// EndpointPolicyDirection is the list of allowed identities per direction.
+class Ingress {
+  /// Deprecated
+  adding: Listing<Removing>?
+
+  /// AllowedIdentityList is a list of IdentityTuples that species peers that are allowed.
+  allowed: Listing<Removing>?
+
+  /// DenyIdentityList is a list of IdentityTuples that species peers that are denied.
+  denied: Listing<Removing>?
+
+  enforcing: Boolean
+
+  /// Deprecated
+  removing: Listing<Removing>?
+
+  /// EndpointPolicyState defines the state of the Policy mode: "enforcing", "non-enforcing", "disabled"
+  state: String?
+}
+
+/// IdentityTuple specifies a peer by identity, destination port and protocol.
+class Removing {
+  `dest-port`: Int?
+
+  identity: Int?
+
+  `identity-labels`: Mapping<String, String>?
+
+  protocol: Int?
+}

@@ -1,0 +1,234 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+
+
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumbgppeerconfigs.yaml>.
+module io.cilium.v2alpha1.CiliumBGPPeerConfig
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2alpha1"
+
+fixed kind: "CiliumBGPPeerConfig"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+/// Spec is the specification of the desired behavior of the CiliumBGPPeerConfig.
+spec: Spec
+
+/// Status is the running status of the CiliumBGPPeerConfig
+status: Status?
+
+/// Spec is the specification of the desired behavior of the CiliumBGPPeerConfig.
+class Spec {
+  /// AuthSecretRef is the name of the secret to use to fetch a TCP authentication password for this
+  /// peer.
+  ///
+  /// If not specified, no authentication is used.
+  authSecretRef: String?
+
+  /// EBGPMultihopTTL controls the multi-hop feature for eBGP peers. Its value defines the Time To Live
+  /// (TTL) value used in BGP packets sent to the peer.
+  ///
+  /// If not specified, EBGP multihop is disabled. This field is ignored for iBGP neighbors.
+  ///
+  /// Default if undefined: `1`
+  ebgpMultihop: Int(isBetween(1, 255))?
+
+  /// Families, if provided, defines a set of AFI/SAFIs the speaker will negotiate with it's peer.
+  ///
+  /// If not specified, the default families of IPv6/unicast and IPv4/unicast will be created.
+  families: Listing<Family>?
+
+  /// GracefulRestart defines graceful restart parameters which are negotiated with this peer.
+  ///
+  /// If not specified, the graceful restart capability is disabled.
+  gracefulRestart: GracefulRestart?
+
+  /// Timers defines the BGP timers for the peer.
+  ///
+  /// If not specified, the default timers are used.
+  timers: Timers?
+
+  /// Transport defines the BGP transport parameters for the peer.
+  ///
+  /// If not specified, the default transport parameters are used.
+  transport: Transport?
+}
+
+/// CiliumBGPFamilyWithAdverts represents a AFI/SAFI address family pair along with reference to BGP
+/// Advertisements.
+class Family {
+  /// Advertisements selects group of BGP Advertisement(s) to advertise for this family.
+  ///
+  /// If not specified, no advertisements are sent for this family.
+  advertisements: Advertisements?
+
+  /// Afi is the Address Family Identifier (AFI) of the family.
+  afi: "ipv4"|"ipv6"|"l2vpn"|"ls"|"opaque"
+
+  /// Safi is the Subsequent Address Family Identifier (SAFI) of the family.
+  safi: 
+    "unicast"
+    |"multicast"
+    |"mpls_label"
+    |"encapsulation"
+    |"vpls"
+    |"evpn"
+    |"ls"
+    |"sr_policy"
+    |"mup"
+    |"mpls_vpn"
+    |"mpls_vpn_multicast"
+    |"route_target_constraints"
+    |"flowspec_unicast"
+    |"flowspec_vpn"
+    |"key_value"
+}
+
+/// Advertisements selects group of BGP Advertisement(s) to advertise for this family.
+///
+/// If not specified, no advertisements are sent for this family.
+class Advertisements {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// A label selector requirement is a selector that contains values, a key, and an operator that relates
+/// the key and values.
+class MatchExpression {
+  /// key is the label key that the selector applies to.
+  key: String
+
+  /// operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists
+  /// and DoesNotExist.
+  operator: "In"|"NotIn"|"Exists"|"DoesNotExist"
+
+  /// values is an array of string values. If the operator is In or NotIn, the values array must be
+  /// non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is
+  /// replaced during a strategic merge patch.
+  values: Listing<String>?
+}
+
+/// GracefulRestart defines graceful restart parameters which are negotiated with this peer.
+///
+/// If not specified, the graceful restart capability is disabled.
+class GracefulRestart {
+  /// Enabled flag, when set enables graceful restart capability.
+  enabled: Boolean
+
+  /// RestartTimeSeconds is the estimated time it will take for the BGP session to be re-established with
+  /// peer after a restart. After this period, peer will remove stale routes. This is described RFC 4724
+  /// section 4.2.
+  ///
+  /// Default if undefined: `120`
+  restartTimeSeconds: Int(isBetween(1, 4095))?
+}
+
+/// Timers defines the BGP timers for the peer.
+///
+/// If not specified, the default timers are used.
+class Timers {
+  /// ConnectRetryTimeSeconds defines the initial value for the BGP ConnectRetryTimer (RFC 4271, Section
+  /// 8).
+  ///
+  /// If not specified, defaults to 120 seconds.
+  ///
+  /// Default if undefined: `120`
+  connectRetryTimeSeconds: Int(isBetween(1, 2147483647))?
+
+  /// HoldTimeSeconds defines the initial value for the BGP HoldTimer (RFC 4271, Section 4.2). Updating
+  /// this value will cause a session reset.
+  ///
+  /// If not specified, defaults to 90 seconds.
+  ///
+  /// Default if undefined: `90`
+  holdTimeSeconds: Int(isBetween(3, 65535))?
+
+  /// KeepaliveTimeSeconds defines the initial value for the BGP KeepaliveTimer (RFC 4271, Section 8). It
+  /// can not be larger than HoldTimeSeconds. Updating this value will cause a session reset.
+  ///
+  /// If not specified, defaults to 30 seconds.
+  ///
+  /// Default if undefined: `30`
+  keepAliveTimeSeconds: Int(isBetween(1, 65535))?
+}
+
+/// Transport defines the BGP transport parameters for the peer.
+///
+/// If not specified, the default transport parameters are used.
+class Transport {
+  /// Deprecated LocalPort is the local port to be used for the BGP session.
+  ///
+  /// If not specified, ephemeral port will be picked to initiate a connection.
+  ///
+  /// This field is deprecated and will be removed in a future release. Local port configuration is
+  /// unnecessary and is not recommended.
+  localPort: Int(isBetween(1, 65535))?
+
+  /// PeerPort is the peer port to be used for the BGP session.
+  ///
+  /// If not specified, defaults to TCP port 179.
+  ///
+  /// Default if undefined: `179`
+  peerPort: Int(isBetween(1, 65535))?
+}
+
+/// Status is the running status of the CiliumBGPPeerConfig
+class Status {
+  /// The current conditions of the CiliumBGPPeerConfig
+  conditions: Listing<Condition>?
+}
+
+/// Condition contains details for one aspect of the current state of this API Resource.
+class Condition {
+  /// lastTransitionTime is the last time the condition transitioned from one status to another. This
+  /// should be when the underlying condition changed. If that is not known, then using the time when the
+  /// API field changed is acceptable.
+  lastTransitionTime: String
+
+  /// message is a human readable message indicating details about the transition. This may be an empty
+  /// string.
+  message: String(length <= 32768)
+
+  /// observedGeneration represents the .metadata.generation that the condition was set based upon. For
+  /// instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration
+  /// is 9, the condition is out of date with respect to the current state of the instance.
+  observedGeneration: Int(isPositive)?
+
+  /// reason contains a programmatic identifier indicating the reason for the condition's last
+  /// transition. Producers of specific condition types may define expected values and meanings for this
+  /// field, and whether the values are considered a guaranteed API. The value should be a CamelCase
+  /// string. This field may not be empty.
+  reason: String(length.isBetween(1, 1024), matches(Regex("^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$")))
+
+  /// status of the condition, one of True, False, Unknown.
+  status: "True"|"False"|"Unknown"
+
+  /// type of condition in CamelCase or in foo.example.com/CamelCase.
+  type: String(length <= 316, matches(Regex(#"^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$"#)))
+}

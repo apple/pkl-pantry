@@ -1,0 +1,119 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+
+
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumclusterwideenvoyconfigs.yaml>.
+module io.cilium.v2.CiliumClusterwideEnvoyConfig
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2"
+
+fixed kind: "CiliumClusterwideEnvoyConfig"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+spec: Spec?
+
+class Spec {
+  /// BackendServices specifies Kubernetes services whose backends are automatically synced to Envoy
+  /// using EDS. Traffic for these services is not forwarded to an Envoy listener. This allows an Envoy
+  /// listener load balance traffic to these backends while normal Cilium service load balancing takes
+  /// care of balancing traffic for these services at the same time.
+  backendServices: Listing<BackendService>?
+
+  /// NodeSelector is a label selector that determines to which nodes this configuration applies. If nil,
+  /// then this config applies to all nodes.
+  nodeSelector: NodeSelector?
+
+  /// Envoy xDS resources, a list of the following Envoy resource types:
+  /// type.googleapis.com/envoy.config.listener.v3.Listener,
+  /// type.googleapis.com/envoy.config.route.v3.RouteConfiguration,
+  /// type.googleapis.com/envoy.config.cluster.v3.Cluster,
+  /// type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment, and
+  /// type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret.
+  resources: Listing<Dynamic>
+
+  /// Services specifies Kubernetes services for which traffic is forwarded to an Envoy listener for L7
+  /// load balancing. Backends of these services are automatically synced to Envoy usign EDS.
+  services: Listing<Service>?
+}
+
+class BackendService {
+  /// Name is the name of a destination Kubernetes service that identifies traffic to be redirected.
+  name: String
+
+  /// Namespace is the Kubernetes service namespace. In CiliumEnvoyConfig namespace defaults to the
+  /// namespace of the CEC, In CiliumClusterwideEnvoyConfig namespace defaults to "default".
+  namespace: String?
+
+  /// Ports is a set of port numbers, which can be used for filtering in case of underlying is exposing
+  /// multiple port numbers.
+  number: Listing<String>?
+}
+
+/// NodeSelector is a label selector that determines to which nodes this configuration applies. If nil,
+/// then this config applies to all nodes.
+class NodeSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// A label selector requirement is a selector that contains values, a key, and an operator that relates
+/// the key and values.
+class MatchExpression {
+  /// key is the label key that the selector applies to.
+  key: String
+
+  /// operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists
+  /// and DoesNotExist.
+  operator: "In"|"NotIn"|"Exists"|"DoesNotExist"
+
+  /// values is an array of string values. If the operator is In or NotIn, the values array must be
+  /// non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is
+  /// replaced during a strategic merge patch.
+  values: Listing<String>?
+}
+
+class Service {
+  /// Listener specifies the name of the Envoy listener the service traffic is redirected to. The
+  /// listener must be specified in the Envoy 'resources' of the same CiliumEnvoyConfig.
+  ///
+  /// If omitted, the first listener specified in 'resources' is used.
+  listener: String?
+
+  /// Name is the name of a destination Kubernetes service that identifies traffic to be redirected.
+  name: String
+
+  /// Namespace is the Kubernetes service namespace. In CiliumEnvoyConfig namespace this is overridden to
+  /// the namespace of the CEC, In CiliumClusterwideEnvoyConfig namespace defaults to "default".
+  namespace: String?
+
+  /// Ports is a set of service's frontend ports that should be redirected to the Envoy listener. By
+  /// default all frontend ports of the service are redirected.
+  ports: Listing<Int>?
+}

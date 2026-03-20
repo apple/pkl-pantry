@@ -1,0 +1,141 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+
+
+/// CiliumLoadBalancerIPPool is a Kubernetes third-party resource which is used to defined pools of IPs
+/// which the operator can use to allocate and advertise IPs for Services of type LoadBalancer.
+///
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumloadbalancerippools.yaml>.
+module io.cilium.v2.CiliumLoadBalancerIPPool
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2"
+
+fixed kind: "CiliumLoadBalancerIPPool"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+/// Spec is a human readable description for a BGP load balancer ip pool.
+spec: Spec
+
+/// Status is the status of the IP Pool.
+///
+/// It might be possible for users to define overlapping IP Pools, we can't validate or enforce
+/// non-overlapping pools during object creation. The Cilium operator will do this validation and update
+/// the status to reflect the ability to allocate IPs from this pool.
+status: Status?
+
+/// Spec is a human readable description for a BGP load balancer ip pool.
+class Spec {
+  /// AllowFirstLastIPs, if set to `Yes` or undefined means that the first and last IPs of each CIDR will
+  /// be allocatable. If `No`, these IPs will be reserved. This field is ignored for /{31,32} and
+  /// /{127,128} CIDRs since reserving the first and last IPs would make the CIDRs unusable.
+  allowFirstLastIPs: ("Yes"|"No")?
+
+  /// Blocks is a list of CIDRs comprising this IP Pool
+  blocks: Listing<Block>?
+
+  /// Disabled, if set to true means that no new IPs will be allocated from this pool. Existing
+  /// allocations will not be removed from services.
+  ///
+  /// Default if undefined: `false`
+  disabled: Boolean?
+
+  /// ServiceSelector selects a set of services which are eligible to receive IPs from this
+  serviceSelector: ServiceSelector?
+}
+
+/// CiliumLoadBalancerIPPoolIPBlock describes a single IP block.
+class Block {
+  cidr: String?
+
+  start: String?
+
+  stop: String?
+}
+
+/// ServiceSelector selects a set of services which are eligible to receive IPs from this
+class ServiceSelector {
+  /// matchExpressions is a list of label selector requirements. The requirements are ANDed.
+  matchExpressions: Listing<MatchExpression>?
+
+  /// matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is
+  /// equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and
+  /// the values array contains only "value". The requirements are ANDed.
+  matchLabels: Mapping<String, String(length <= 63, matches(Regex("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")))>?
+}
+
+/// A label selector requirement is a selector that contains values, a key, and an operator that relates
+/// the key and values.
+class MatchExpression {
+  /// key is the label key that the selector applies to.
+  key: String
+
+  /// operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists
+  /// and DoesNotExist.
+  operator: "In"|"NotIn"|"Exists"|"DoesNotExist"
+
+  /// values is an array of string values. If the operator is In or NotIn, the values array must be
+  /// non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is
+  /// replaced during a strategic merge patch.
+  values: Listing<String>?
+}
+
+/// Status is the status of the IP Pool.
+///
+/// It might be possible for users to define overlapping IP Pools, we can't validate or enforce
+/// non-overlapping pools during object creation. The Cilium operator will do this validation and update
+/// the status to reflect the ability to allocate IPs from this pool.
+class Status {
+  /// Current service state
+  conditions: Listing<Condition>?
+}
+
+/// Condition contains details for one aspect of the current state of this API Resource.
+class Condition {
+  /// lastTransitionTime is the last time the condition transitioned from one status to another. This
+  /// should be when the underlying condition changed. If that is not known, then using the time when the
+  /// API field changed is acceptable.
+  lastTransitionTime: String
+
+  /// message is a human readable message indicating details about the transition. This may be an empty
+  /// string.
+  message: String(length <= 32768)
+
+  /// observedGeneration represents the .metadata.generation that the condition was set based upon. For
+  /// instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration
+  /// is 9, the condition is out of date with respect to the current state of the instance.
+  observedGeneration: Int(isPositive)?
+
+  /// reason contains a programmatic identifier indicating the reason for the condition's last
+  /// transition. Producers of specific condition types may define expected values and meanings for this
+  /// field, and whether the values are considered a guaranteed API. The value should be a CamelCase
+  /// string. This field may not be empty.
+  reason: String(length.isBetween(1, 1024), matches(Regex("^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$")))
+
+  /// status of the condition, one of True, False, Unknown.
+  status: "True"|"False"|"Unknown"
+
+  /// type of condition in CamelCase or in foo.example.com/CamelCase.
+  type: String(length <= 316, matches(Regex(#"^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$"#)))
+}

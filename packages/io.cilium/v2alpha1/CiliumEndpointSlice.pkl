@@ -1,0 +1,105 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+
+
+/// CiliumEndpointSlice contains a group of CoreCiliumendpoints.
+///
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2alpha1/ciliumendpointslices.yaml>.
+module io.cilium.v2alpha1.CiliumEndpointSlice
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2alpha1"
+
+fixed kind: "CiliumEndpointSlice"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+/// Endpoints is a list of coreCEPs packed in a CiliumEndpointSlice
+endpoints: Listing<Endpoint>
+
+/// Namespace indicate as CiliumEndpointSlice namespace. All the CiliumEndpoints within the same
+/// namespace are put together in CiliumEndpointSlice.
+namespace: String?
+
+/// CoreCiliumEndpoint is slim version of status of CiliumEndpoint.
+class Endpoint {
+  /// EncryptionSpec defines the encryption relevant configuration of a node.
+  encryption: Encryption?
+
+  /// IdentityID is the numeric identity of the endpoint
+  id: Int?
+
+  /// Name indicate as CiliumEndpoint name.
+  name: String?
+
+  /// NamedPorts List of named Layer 4 port and protocol pairs which will be used in Network Policy
+  /// specs.
+  ///
+  /// swagger:model NamedPorts
+  `named-ports`: Listing<NamedPort>?
+
+  /// EndpointNetworking is the addressing information of an endpoint.
+  networking: Networking?
+
+  /// PodUID is the UID of the Pod that owns this endpoint.
+  `pod-uid`: String?
+
+  /// ServiceAccount is the service account of the endpoint.
+  `service-account`: String?
+}
+
+/// EncryptionSpec defines the encryption relevant configuration of a node.
+class Encryption {
+  /// Key is the index to the key to use for encryption or 0 if encryption is disabled.
+  key: Int?
+}
+
+/// Port Layer 4 port / protocol pair
+///
+/// swagger:model Port
+class NamedPort {
+  /// Optional layer 4 port name
+  name: String?
+
+  /// Layer 4 port number
+  port: Int?
+
+  /// Layer 4 protocol Enum: ["TCP","UDP","SCTP","ICMP","ICMPV6","ANY"]
+  protocol: String?
+}
+
+/// EndpointNetworking is the addressing information of an endpoint.
+class Networking {
+  /// IP4/6 addresses assigned to this Endpoint
+  addressing: Listing<Addressing>
+
+  /// NodeIP is the IP of the node the endpoint is running on. The IP must be reachable between nodes.
+  node: String?
+}
+
+/// AddressPair is a pair of IPv4 and/or IPv6 address.
+class Addressing {
+  ipv4: String?
+
+  ipv6: String?
+}
