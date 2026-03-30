@@ -1,0 +1,223 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+
+
+/// CiliumBGPNodeConfig is node local configuration for BGP agent. Name of the object should be node
+/// name. This resource will be created by Cilium operator and is read-only for the users.
+///
+/// This module was generated from the CustomResourceDefinition at
+/// <https://raw.githubusercontent.com/cilium/cilium/refs/heads/main/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumbgpnodeconfigs.yaml>.
+module io.cilium.v2alpha1.CiliumBGPNodeConfig
+
+extends "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/K8sResource.pkl"
+
+import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+
+fixed apiVersion: "cilium.io/v2alpha1"
+
+fixed kind: "CiliumBGPNodeConfig"
+
+/// Standard object's metadata.
+///
+/// More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+metadata: ObjectMeta?
+
+/// Spec is the specification of the desired behavior of the CiliumBGPNodeConfig.
+spec: Spec
+
+/// Status is the most recently observed status of the CiliumBGPNodeConfig.
+status: Status?
+
+/// Spec is the specification of the desired behavior of the CiliumBGPNodeConfig.
+class Spec {
+  /// BGPInstances is a list of BGP router instances on the node.
+  bgpInstances: Listing<BgpInstance>(length.isBetween(1, 16))
+}
+
+/// CiliumBGPNodeInstance is a single BGP router instance configuration on the node.
+class BgpInstance {
+  /// LocalASN is the ASN of this virtual router. Supports extended 32bit ASNs.
+  localASN: Int(isBetween(1, 4294967295))?
+
+  /// LocalPort is the port on which the BGP daemon listens for incoming connections.
+  ///
+  /// If not specified, BGP instance will not listen for incoming connections.
+  localPort: Int(isBetween(1, 65535))?
+
+  /// Name is the name of the BGP instance. This name is used to identify the BGP instance on the node.
+  name: String(length.isBetween(1, 255))
+
+  /// Peers is a list of neighboring BGP peers for this virtual router
+  peers: Listing<Peer>?
+
+  /// RouterID is the BGP router ID of this virtual router. This configuration is derived from
+  /// CiliumBGPNodeConfigOverride resource.
+  ///
+  /// If not specified, the router ID will be derived from the node local address.
+  routerID: String?
+}
+
+class Peer {
+  /// LocalAddress is the IP address of the local interface to use for the peering session. This
+  /// configuration is derived from CiliumBGPNodeConfigOverride resource. If not specified, the local
+  /// address will be used for setting up peering.
+  localAddress: String(matches(Regex(#"((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))"#)))?
+
+  /// Name is the name of the BGP peer. This name is used to identify the BGP peer for the BGP instance.
+  name: String
+
+  /// PeerASN is the ASN of the peer BGP router. Supports extended 32bit ASNs
+  peerASN: UInt32?
+
+  /// PeerAddress is the IP address of the neighbor. Supports IPv4 and IPv6 addresses.
+  peerAddress: String(matches(Regex(#"((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))"#)))?
+
+  /// PeerConfigRef is a reference to a peer configuration resource. If not specified, the default BGP
+  /// configuration is used for this peer.
+  peerConfigRef: PeerConfigRef?
+}
+
+/// PeerConfigRef is a reference to a peer configuration resource. If not specified, the default BGP
+/// configuration is used for this peer.
+class PeerConfigRef {
+  /// Group is the group of the peer config resource. If not specified, the default of "cilium.io" is
+  /// used.
+  ///
+  /// Default if undefined: `"cilium.io"`
+  group: String?
+
+  /// Kind is the kind of the peer config resource. If not specified, the default of
+  /// "CiliumBGPPeerConfig" is used.
+  ///
+  /// Default if undefined: `"CiliumBGPPeerConfig"`
+  kind: String?
+
+  /// Name is the name of the peer config resource. Name refers to the name of a Kubernetes object
+  /// (typically a CiliumBGPPeerConfig).
+  name: String
+}
+
+/// Status is the most recently observed status of the CiliumBGPNodeConfig.
+class Status {
+  /// BGPInstances is the status of the BGP instances on the node.
+  bgpInstances: Listing<StatusBgpInstance>?
+
+  /// The current conditions of the CiliumBGPNodeConfig
+  conditions: Listing<Condition>?
+}
+
+class StatusBgpInstance {
+  /// LocalASN is the ASN of this BGP instance.
+  localASN: Int?
+
+  /// Name is the name of the BGP instance. This name is used to identify the BGP instance on the node.
+  name: String
+
+  /// PeerStatuses is the state of the BGP peers for this BGP instance.
+  peers: Listing<BgpInstancePeer>?
+}
+
+/// CiliumBGPNodePeerStatus is the status of a BGP peer.
+class BgpInstancePeer {
+  /// EstablishedTime is the time when the peering session was established. It is represented in RFC3339
+  /// form and is in UTC.
+  establishedTime: String?
+
+  /// Name is the name of the BGP peer.
+  name: String
+
+  /// PeerASN is the ASN of the neighbor.
+  peerASN: Int?
+
+  /// PeerAddress is the IP address of the neighbor.
+  peerAddress: String
+
+  /// PeeringState is last known state of the peering session.
+  peeringState: String?
+
+  /// RouteCount is the number of routes exchanged with this peer per AFI/SAFI.
+  routeCount: Listing<RouteCount>?
+
+  /// Timers is the state of the negotiated BGP timers for this peer.
+  timers: Timers?
+}
+
+class RouteCount {
+  /// Advertised is the number of routes advertised to this peer.
+  advertised: Int?
+
+  /// Afi is the Address Family Identifier (AFI) of the family.
+  afi: "ipv4"|"ipv6"|"l2vpn"|"ls"|"opaque"
+
+  /// Received is the number of routes received from this peer.
+  received: Int?
+
+  /// Safi is the Subsequent Address Family Identifier (SAFI) of the family.
+  safi: 
+    "unicast"
+    |"multicast"
+    |"mpls_label"
+    |"encapsulation"
+    |"vpls"
+    |"evpn"
+    |"ls"
+    |"sr_policy"
+    |"mup"
+    |"mpls_vpn"
+    |"mpls_vpn_multicast"
+    |"route_target_constraints"
+    |"flowspec_unicast"
+    |"flowspec_vpn"
+    |"key_value"
+}
+
+/// Timers is the state of the negotiated BGP timers for this peer.
+class Timers {
+  /// AppliedHoldTimeSeconds is the negotiated hold time for this peer.
+  appliedHoldTimeSeconds: Int?
+
+  /// AppliedKeepaliveSeconds is the negotiated keepalive time for this peer.
+  appliedKeepaliveSeconds: Int?
+}
+
+/// Condition contains details for one aspect of the current state of this API Resource.
+class Condition {
+  /// lastTransitionTime is the last time the condition transitioned from one status to another. This
+  /// should be when the underlying condition changed. If that is not known, then using the time when the
+  /// API field changed is acceptable.
+  lastTransitionTime: String
+
+  /// message is a human readable message indicating details about the transition. This may be an empty
+  /// string.
+  message: String(length <= 32768)
+
+  /// observedGeneration represents the .metadata.generation that the condition was set based upon. For
+  /// instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration
+  /// is 9, the condition is out of date with respect to the current state of the instance.
+  observedGeneration: Int(isPositive)?
+
+  /// reason contains a programmatic identifier indicating the reason for the condition's last
+  /// transition. Producers of specific condition types may define expected values and meanings for this
+  /// field, and whether the values are considered a guaranteed API. The value should be a CamelCase
+  /// string. This field may not be empty.
+  reason: String(length.isBetween(1, 1024), matches(Regex("^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$")))
+
+  /// status of the condition, one of True, False, Unknown.
+  status: "True"|"False"|"Unknown"
+
+  /// type of condition in CamelCase or in foo.example.com/CamelCase.
+  type: String(length <= 316, matches(Regex(#"^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$"#)))
+}

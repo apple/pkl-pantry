@@ -1,0 +1,56 @@
+examples {
+  ["defaultDenyPolicy.pkl"] {
+    """
+    apiVersion: cilium.io/v2
+    kind: CiliumNetworkPolicy
+    metadata:
+      name: default-deny
+      namespace: testapp
+    spec:
+      egress:
+      - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+      - toFQDNs:
+        - matchName: google.com
+        - matchName: www.google.com
+      - toPorts:
+        - ports:
+          - port: '53'
+            protocol: UDP
+          - port: '53'
+            protocol: TCP
+      endpointSelector: {}
+      ingress:
+      - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+
+    """
+  }
+  ["allowAppToOtel.pkl"] {
+    """
+    apiVersion: cilium.io/v2
+    kind: CiliumNetworkPolicy
+    metadata:
+      name: allow-app-to-otel
+      namespace: observability
+    spec:
+      endpointSelector:
+        matchLabels:
+          app: otel-collector
+      ingress:
+      - fromEndpoints:
+        - matchLabels:
+            app: myapp
+            io.kubernetes.pod.namespace: testapp
+      - toPorts:
+        - ports:
+          - port: '4317'
+            protocol: TCP
+          - port: '4318'
+            protocol: TCP
+
+    """
+  }
+}
