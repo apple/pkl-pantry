@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ class With {
   /// To set as a [Listing], use [`cache-dependency-path-list`].
   `cache-dependency-path`: String? = `cache-dependency-path-list`?.join("\n")
 
-  /// Used to specify an alternative mirror to downlooad Node.js binaries from
+  /// Used to specify an alternative mirror to download Node.js binaries from
   mirror: String?
 
   /// The token used as Authorization header when fetching from the mirror

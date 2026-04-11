@@ -1,0 +1,98 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+amends "@io.github.typesafegithub/ActionTypes.pkl"
+
+inputs {
+  ["repo-token"] { type = "string" }
+  ["fail-on-severity"] {
+    type = "enum"
+    `allowed-values` {
+      "low"
+      "moderate"
+      "high"
+      "critical"
+    }
+  }
+  ["fail-on-scopes"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "enum"
+      `allowed-values` {
+        "unknown"
+        "runtime"
+        "development"
+      }
+    }
+  }
+  ["base-ref"] { type = "string" }
+  ["head-ref"] { type = "string" }
+  ["config-file"] { type = "string" }
+  ["allow-licenses"] {
+    type = "list"
+    separator = ","
+    `list-item` { type = "string" }
+  }
+  ["deny-licenses"] {
+    type = "list"
+    separator = ","
+    `list-item` { type = "string" }
+  }
+  ["allow-dependencies-licenses"] {
+    type = "list"
+    separator = ","
+    `list-item` { type = "string" }
+  }
+  ["allow-ghsas"] {
+    type = "list"
+    separator = ","
+    `list-item` { type = "string" }
+  }
+  ["external-repo-token"] { type = "string" }
+  ["license-check"] { type = "boolean" }
+  ["vulnerability-check"] { type = "boolean" }
+  ["comment-summary-in-pr"] {
+    type = "enum"
+    `allowed-values` {
+      "always"
+      "never"
+      "on-failure"
+    }
+  }
+  ["deny-packages"] {
+    type = "list"
+    separator = ","
+    `list-item` { type = "string" }
+  }
+  ["deny-groups"] {
+    type = "list"
+    separator = ","
+    `list-item` { type = "string" }
+  }
+  ["retry-on-snapshot-warnings"] { type = "boolean" }
+  ["retry-on-snapshot-warnings-timeout"] { type = "integer" }
+  ["warn-only"] { type = "boolean" }
+  ["show-openssf-scorecard"] { type = "boolean" }
+  ["warn-on-openssf-scorecard-level"] { type = "integer" }
+  ["show-patched-versions"] { type = "boolean" }
+}
+outputs {
+  ["comment-content"] { type = "string" }
+  ["dependency-changes"] { type = "string" }
+  ["vulnerable-changes"] { type = "string" }
+  ["invalid-license-changes"] { type = "string" }
+  ["denied-changes"] { type = "string" }
+}

@@ -13,30 +13,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A composite action that prepares your static assets to be deployed to GitHub Pages
-module com.github.actions.actions.`upload-pages-artifact`.v4.UploadPagesArtifact
+/// Save Cache artifacts like dependencies and build outputs to improve workflow execution time
+module com.github.actions.actions.cache.save.v5.CacheSave
 
 extends ".../AbstractTypedStep.pkl"
 
-fixed action: "actions/upload-pages-artifact"
+fixed action: "actions/cache/save"
 
-fixed version: "v4"
+fixed version: "v5"
 
 with: With?
 
 class With {
-  /// Artifact name
-  ///
-  /// Default if unspecified: `"github-pages"`
-  name: String?
+  /// A list of files, directories, and wildcard patterns to cache
+  hidden pathList: Listing<String>
 
-  /// Path of the directory containing the static assets.
+  /// A list of files, directories, and wildcard patterns to cache
   ///
-  /// Default if unspecified: `"_site/"`
-  path: String?
+  /// To set as a [Listing], use [pathList].
+  path: String = pathList.join("\n")
 
-  /// Duration after which artifact will expire in days.
+  /// An explicit key for saving the cache
+  key: String
+
+  /// The chunk size used to split up large files during upload, in bytes
+  `upload-chunk-size`: Int?
+
+  /// An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms
   ///
-  /// Default if unspecified: `"1"`
-  `retention-days`: Int?
+  /// Default if unspecified: `"false"`
+  enableCrossOsArchive: Boolean?
 }

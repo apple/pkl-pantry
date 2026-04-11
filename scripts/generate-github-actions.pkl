@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,10 +100,9 @@ local coreActions: Listing<String> = new {
   "actions/cache"
   "actions/cache/save"
   "actions/cache/restore"
-  "actions/configure-pages"
-  "actions/create-github-app-token"
+  //   "actions/create-github-app-token"
   "actions/create-release"
-  "actions/deploy-pages"
+  //   "actions/deploy-pages"
   "actions/setup-java"
   "actions/setup-python"
 }
@@ -120,6 +119,10 @@ local allCoreVersions: Listing<String> = new {
   "actions/stale@v10"
   "actions/upload-artifact@v5"
   "actions/upload-pages-artifact@v4"
+  "actions/configure-pages@v6"
+  "actions/create-github-app-token@v2"
+  "actions/deploy-pages@v4"
+  "actions/dependency-review-action@v4"
   for (action in coreActions) {
     "\(action)@\(getLatestVersion(action))"
   }

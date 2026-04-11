@@ -105,11 +105,20 @@ local actionYamlUrl =
   else
     "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)/\(subpath)/action.yml"
 
+local actionYamlUrl2 =
+  if (subpath == null)
+    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/heads/\(version)/action.yml"
+  else
+    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/heads/\(version)/\(subpath)/action.yml"
+
 local yamlParser = new yaml.Parser { useMapping = true; mode = "1.2" }
 
 local actionYaml =
   read?(actionYamlUrl)
-    ?? throw("Cannot import action.yml. Is this an action repository? Tried `\(actionYamlUrl)`")
+    ?? read?(actionYamlUrl2)
+    ?? throw(
+      "Cannot import action.yml. Is this an action repository? Tried `\(actionYamlUrl)` and \(actionYamlUrl2)"
+    )
 
 local effectiveAction =
   action ?? deepToTyped.apply(Action.getClass(), yamlParser.parse(actionYaml)) as Action

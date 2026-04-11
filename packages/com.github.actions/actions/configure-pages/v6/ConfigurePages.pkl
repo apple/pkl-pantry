@@ -13,45 +13,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// A GitHub Action to deploy an artifact as a GitHub Pages site
-module com.github.actions.actions.`deploy-pages`.v4.DeployPages
+/// A GitHub Action to enable Pages, extract various metadata about a site, and configure some supported static site generators.
+module com.github.actions.actions.`configure-pages`.v6.ConfigurePages
 
 extends ".../AbstractTypedStep.pkl"
 
-fixed action: "actions/deploy-pages"
+fixed action: "actions/configure-pages"
 
-fixed version: "v4"
+fixed version: "v6"
 
 with: With?
 
 class With {
+  /// Optional static site generator to attempt to configure: "nuxt", "next", "gatsby", or "sveltekit"
+  static_site_generator: ("nuxt" | "next" | "gatsby" | "sveltekit")?
+
+  /// Optional file path to static site generator configuration file
+  generator_config_file: String?
+
   /// GitHub token
   ///
   /// Default if unspecified: `"${{ github.token }}"`
   token: String?
 
-  /// Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes)
-  ///
-  /// Default if unspecified: `"600000"`
-  timeout: Int?
-
-  /// Maximum number of status report errors before cancelling a deployment (default: 10)
-  ///
-  /// Default if unspecified: `"10"`
-  error_count: Int?
-
-  /// Time in milliseconds between two deployment status report (default: 5 seconds)
-  ///
-  /// Default if unspecified: `"5000"`
-  reporting_interval: Int?
-
-  /// Name of the artifact to deploy
-  ///
-  /// Default if unspecified: `"github-pages"`
-  artifact_name: String?
-
-  /// Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!)
+  /// Try to enable Pages for the repository if it is not already enabled. This option requires a token other than `GITHUB_TOKEN` to be provided. In the context of a Personal Access Token, the `repo` scope or Pages write permission is required. In the context of a GitHub App, the `administration:write` and `pages:write` permissions are required.
   ///
   /// Default if unspecified: `"false"`
-  preview: Boolean?
+  enablement: Boolean?
 }
