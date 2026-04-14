@@ -1,0 +1,130 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Prevent the introduction of dependencies with known vulnerabilities
+module com.github.actions.actions.`dependency-review-action`.v4.DependencyReviewAction
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "actions/dependency-review-action"
+
+fixed version: "v4"
+
+with: With?
+
+class With {
+  /// Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  `repo-token`: String?
+
+  /// Don't block PRs below this severity. Possible values are `low`, `moderate`, `high`, `critical`.
+  `fail-on-severity`: ("low" | "moderate" | "high" | "critical")?
+
+  /// Dependency scopes to block PRs on. Comma-separated list. Possible values are 'unknown', 'runtime', and 'development' (e.g. "runtime, development")
+  hidden `fail-on-scopes-list`: Listing<"unknown" | "runtime" | "development">?
+
+  /// Dependency scopes to block PRs on. Comma-separated list. Possible values are 'unknown', 'runtime', and 'development' (e.g. "runtime, development")
+  ///
+  /// To set as a [Listing], use [`fail-on-scopes-list`].
+  `fail-on-scopes`: String? = `fail-on-scopes-list`?.join(",")
+
+  /// The base git ref to be used for this check. Has a default value when the workflow event is `pull_request` or `pull_request_target`. Must be provided otherwise.
+  `base-ref`: String?
+
+  /// The head git ref to be used for this check. Has a default value when the workflow event is `pull_request` or `pull_request_target`. Must be provided otherwise.
+  `head-ref`: String?
+
+  /// A path to the configuration file for the action.
+  `config-file`: String?
+
+  /// Comma-separated list of allowed licenses (e.g. "MIT, GPL 3.0, BSD 2 Clause")
+  hidden `allow-licenses-list`: Listing<String>?
+
+  /// Comma-separated list of allowed licenses (e.g. "MIT, GPL 3.0, BSD 2 Clause")
+  ///
+  /// To set as a [Listing], use [`allow-licenses-list`].
+  `allow-licenses`: String? = `allow-licenses-list`?.join(",")
+
+  /// Comma-separated list of forbidden licenses (e.g. "MIT, GPL 3.0, BSD 2 Clause")
+  hidden `deny-licenses-list`: Listing<String>?
+
+  /// Comma-separated list of forbidden licenses (e.g. "MIT, GPL 3.0, BSD 2 Clause")
+  ///
+  /// To set as a [Listing], use [`deny-licenses-list`].
+  `deny-licenses`: String? = `deny-licenses-list`?.join(",")
+
+  /// Comma-separated list of dependencies in purl format (e.g. "pkg:npm/express, pkg:pypi/pycrypto"). These dependencies will be permitted to use any license, no matter what license policy is enforced otherwise.
+  hidden `allow-dependencies-licenses-list`: Listing<String>?
+
+  /// Comma-separated list of dependencies in purl format (e.g. "pkg:npm/express, pkg:pypi/pycrypto"). These dependencies will be permitted to use any license, no matter what license policy is enforced otherwise.
+  ///
+  /// To set as a [Listing], use [`allow-dependencies-licenses-list`].
+  `allow-dependencies-licenses`: String? = `allow-dependencies-licenses-list`?.join(",")
+
+  /// Comma-separated list of allowed GitHub Advisory IDs (e.g. "GHSA-abcd-1234-5679, GHSA-efgh-1234-5679")
+  hidden `allow-ghsas-list`: Listing<String>?
+
+  /// Comma-separated list of allowed GitHub Advisory IDs (e.g. "GHSA-abcd-1234-5679, GHSA-efgh-1234-5679")
+  ///
+  /// To set as a [Listing], use [`allow-ghsas-list`].
+  `allow-ghsas`: String? = `allow-ghsas-list`?.join(",")
+
+  /// A token for fetching external configuration file if it lives in another repository. It is required if the repository is private
+  `external-repo-token`: String?
+
+  /// A boolean to determine if license checks should be performed
+  `license-check`: Boolean?
+
+  /// A boolean to determine if vulnerability checks should be performed
+  `vulnerability-check`: Boolean?
+
+  /// Determines if the summary is posted as a comment in the PR itself. Setting this to `always` or `on-failure` requires you to give the workflow `pull-requests: write` permissions
+  `comment-summary-in-pr`: ("always" | "never" | "on-failure")?
+
+  /// A comma-separated list of package URLs to deny (e.g. "pkg:npm/express, pkg:pypi/pycrypto"). If version specified, only deny matching packages and version; else, deny all regardless of version.
+  hidden `deny-packages-list`: Listing<String>?
+
+  /// A comma-separated list of package URLs to deny (e.g. "pkg:npm/express, pkg:pypi/pycrypto"). If version specified, only deny matching packages and version; else, deny all regardless of version.
+  ///
+  /// To set as a [Listing], use [`deny-packages-list`].
+  `deny-packages`: String? = `deny-packages-list`?.join(",")
+
+  /// A comma-separated list of package URLs for group(s)/namespace(s) to deny (e.g. "pkg:npm/express/, pkg:pypi/pycrypto/"). Please note that the group name must be followed by a `/`.
+  hidden `deny-groups-list`: Listing<String>?
+
+  /// A comma-separated list of package URLs for group(s)/namespace(s) to deny (e.g. "pkg:npm/express/, pkg:pypi/pycrypto/"). Please note that the group name must be followed by a `/`.
+  ///
+  /// To set as a [Listing], use [`deny-groups-list`].
+  `deny-groups`: String? = `deny-groups-list`?.join(",")
+
+  /// Whether to retry on snapshot warnings
+  `retry-on-snapshot-warnings`: Boolean?
+
+  /// Number of seconds to wait before stopping snapshot retries.
+  `retry-on-snapshot-warnings-timeout`: Int?
+
+  /// When set to `true` this action will always complete with success, overriding the `fail-on-severity` parameter.
+  `warn-only`: Boolean?
+
+  /// Show a summary of the OpenSSF Scorecard scores.
+  `show-openssf-scorecard`: Boolean?
+
+  /// Numeric threshold for the OpenSSF Scorecard score. If the score is below this threshold, the action will warn you.
+  `warn-on-openssf-scorecard-level`: Int?
+
+  /// When set to `true`, the vulnerability summary table will include a column showing the first patched version for each vulnerability.
+  `show-patched-versions`: Boolean?
+}

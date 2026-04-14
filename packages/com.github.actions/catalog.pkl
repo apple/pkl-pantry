@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,17 @@
 open module com.github.actions.catalog
 
 import "actions/cache/restore/v4/CacheRestore.pkl" as CacheRestoreV4
+import "actions/cache/restore/v5/CacheRestore.pkl" as CacheRestoreV5
 import "actions/cache/save/v4/CacheSave.pkl" as CacheSaveV4
+import "actions/cache/save/v5/CacheSave.pkl" as CacheSaveV5
 import "actions/cache/v4/Cache.pkl" as CacheV4
+import "actions/cache/v5/Cache.pkl" as CacheV5
 import "actions/checkout/v6/Checkout.pkl" as CheckoutV6
 import "actions/configure-pages/v5/ConfigurePages.pkl" as ConfigurePagesV5
+import "actions/configure-pages/v6/ConfigurePages.pkl" as ConfigurePagesV6
 import "actions/create-github-app-token/v2/CreateGithubAppToken.pkl" as CreateGithubAppTokenV2
 import "actions/create-release/v1/CreateRelease.pkl" as CreateReleaseV1
+import "actions/dependency-review-action/v4/DependencyReviewAction.pkl" as DependencyReviewActionV4
 import "actions/deploy-pages/v4/DeployPages.pkl" as DeployPagesV4
 import "actions/download-artifact/v5/DownloadArtifact.pkl" as DownloadArtifactV5
 import "actions/download-artifact/v6/DownloadArtifact.pkl" as DownloadArtifactV6
@@ -49,11 +54,20 @@ import "actions/upload-pages-artifact/v4/UploadPagesArtifact.pkl" as UploadPages
 /// Restore Cache artifacts like dependencies and build outputs to improve workflow execution time
 `actions/cache/restore@v4`: CacheRestoreV4
 
+/// Restore Cache artifacts like dependencies and build outputs to improve workflow execution time
+`actions/cache/restore@v5`: CacheRestoreV5
+
 /// Save Cache artifacts like dependencies and build outputs to improve workflow execution time
 `actions/cache/save@v4`: CacheSaveV4
 
+/// Save Cache artifacts like dependencies and build outputs to improve workflow execution time
+`actions/cache/save@v5`: CacheSaveV5
+
 /// Cache artifacts like dependencies and build outputs to improve workflow execution time
 `actions/cache@v4`: CacheV4
+
+/// Cache artifacts like dependencies and build outputs to improve workflow execution time
+`actions/cache@v5`: CacheV5
 
 /// Checkout a Git repository at a particular version
 `actions/checkout@v6`: CheckoutV6
@@ -61,11 +75,17 @@ import "actions/upload-pages-artifact/v4/UploadPagesArtifact.pkl" as UploadPages
 /// A GitHub Action to enable Pages, extract various metadata about a site, and configure some supported static site generators.
 `actions/configure-pages@v5`: ConfigurePagesV5
 
+/// A GitHub Action to enable Pages, extract various metadata about a site, and configure some supported static site generators.
+`actions/configure-pages@v6`: ConfigurePagesV6
+
 /// GitHub Action for creating a GitHub App installation access token
 `actions/create-github-app-token@v2`: CreateGithubAppTokenV2
 
 /// Create a release for a tag in your repository
 `actions/create-release@v1`: CreateReleaseV1
+
+/// Prevent the introduction of dependencies with known vulnerabilities
+`actions/dependency-review-action@v4`: DependencyReviewActionV4
 
 /// A GitHub Action to deploy an artifact as a GitHub Pages site
 `actions/deploy-pages@v4`: DeployPagesV4
