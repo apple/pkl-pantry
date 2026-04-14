@@ -95,8 +95,34 @@ workflows: Mapping<String, Workflow>
 
 /// Dependabot configuration.
 ///
-/// The `github-actions` ecosystem will be automatically added to this.
+/// [dependabotGitHubActions] will be automatically added to this.
 dependabot: Dependabot
+
+/// Dependabot configuration for the `github-actions` ecosystem.
+dependabotGitHubActions: Dependabot.Update(
+  `package-ecosystem` == "github-actions",
+  directory == "/",
+  ignore.contains(semverMajorIgnoreAll)
+) = new {
+  `package-ecosystem` = "github-actions"
+  directory = "/"
+  schedule {
+    interval = "weekly"
+  }
+  ignore {
+    semverMajorIgnoreAll
+  }
+  cooldown {
+    `default-days` = 7
+  }
+}
+
+hidden const semverMajorIgnoreAll: Dependabot.Ignore = new {
+  `dependency-name` = "*"
+  `update-types` {
+    "version-update:semver-major"
+  }
+}
 
 local generator: LockfileGenerator = new {
   workflows = module.workflows.toMap().values
@@ -106,21 +132,7 @@ local locks = generator.locks
 
 local effectiveDependabot = (dependabot) {
   updates {
-    new {
-      `package-ecosystem` = "github-actions"
-      directory = "/"
-      schedule {
-        interval = "weekly"
-      }
-      ignore {
-        new {
-          `dependency-name` = "*"
-          `update-types` {
-            "version-update:semver-major"
-          }
-        }
-      }
-    }
+    dependabotGitHubActions
   }
 }
 
