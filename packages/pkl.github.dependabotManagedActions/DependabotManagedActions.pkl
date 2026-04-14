@@ -101,7 +101,8 @@ dependabot: Dependabot
 /// Dependabot configuration for the `github-actions` ecosystem.
 dependabotGitHubActions: Dependabot.Update(
   `package-ecosystem` == "github-actions",
-  directory == "/"
+  directory == "/",
+  ignore.contains(semverMajorIgnoreAll)
 ) = new {
   `package-ecosystem` = "github-actions"
   directory = "/"
@@ -109,12 +110,17 @@ dependabotGitHubActions: Dependabot.Update(
     interval = "weekly"
   }
   ignore {
-    new {
-      `dependency-name` = "*"
-      `update-types` {
-        "version-update:semver-major"
-      }
-    }
+    semverMajorIgnoreAll
+  }
+  cooldown {
+    `default-days` = 7
+  }
+}
+
+hidden const semverMajorIgnoreAll: Dependabot.Ignore = new {
+  `dependency-name` = "*"
+  `update-types` {
+    "version-update:semver-major"
   }
 }
 
