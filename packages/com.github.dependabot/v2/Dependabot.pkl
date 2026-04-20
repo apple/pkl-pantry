@@ -970,5 +970,17 @@ typealias ScheduleInterval =
   "daily" | "weekly" | "monthly" | "quarterly" | "semiannually" | "yearly" | "cron"
 
 output {
-  renderer = new YamlRenderer {}
+  renderer = new YamlRenderer {
+    converters {
+      // work around incorrect YAML parsing in Dependabot/Ruby/Psych
+      // https://github.com/apple/pkl/issues/1543
+      ["updates[*].schedule.time"] = (it) ->
+        if (it == null)
+          null
+        else
+          new RenderDirective {
+            text = " " + new JsonRenderer {}.renderValue(it)
+          }
+    }
+  }
 }

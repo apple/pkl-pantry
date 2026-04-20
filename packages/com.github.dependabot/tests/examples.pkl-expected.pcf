@@ -15,6 +15,7 @@ examples {
       directory: /
       schedule:
         interval: weekly
+        time: "04:00"
     
     """
   }
