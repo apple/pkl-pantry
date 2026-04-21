@@ -63,12 +63,16 @@ class Update {
   cooldown: Cooldown?
 
   /// Locations of package manifests
+  ///
+  /// Either this or [directory] must be set.
   directories: Listing<String(!isEmpty)>(!isEmpty, isDistinct)?
 
   /// Location of package manifests
   ///
   /// Default if undefined: `"/"`
-  directory: String?
+  ///
+  /// Either this or [directories] must be set.
+  directory: String?(exactlyOneSet(this, directories))
 
   /// List of file paths to exclude from dependency updates
   `exclude-paths`: Listing<String>(length >= 0, isDistinct)?
@@ -968,6 +972,14 @@ typealias ScheduleDay =
 
 typealias ScheduleInterval =
   "daily" | "weekly" | "monthly" | "quarterly" | "semiannually" | "yearly" | "cron"
+
+local const function exactlyOneSet(a: Any, b: Any) =
+  if (a == null)
+    b != null
+  else if (b == null)
+    a != null
+  else
+    false
 
 output {
   renderer = new YamlRenderer {
