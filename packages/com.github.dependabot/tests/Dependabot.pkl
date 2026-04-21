@@ -13,25 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Provides [DependabotManagedActions], a template for writing GitHub Actions workflows, whose
-/// actions are pinned to specific SHAs, and updated by dependabot.
-amends "../basePklProject.pkl"
+module com.github.dependabot.tests.Dependabot
 
-// used by doc comments
-import "DependabotManagedActions.pkl"
+amends "pkl:test"
 
-package {
-  version = "1.1.2"
-}
+import "pkl:test"
 
-dependencies {
-  ["com.github.actions"] = import("../com.github.actions/PklProject")
-  ["com.github.dependabot"] = import("../com.github.dependabot/PklProject")
-  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
-}
+import "../v2/Dependabot.pkl"
 
-evaluatorSettings {
-  externalProperties {
-    ["pkl-pantry.testMode"] = "1"
+examples {
+  ["directory not set"] {
+    local dependabot: Dependabot = new {
+      updates {
+        new {
+          `package-ecosystem` = "npm"
+        }
+      }
+    }
+    test.catch(() -> dependabot.output.text)
   }
 }
