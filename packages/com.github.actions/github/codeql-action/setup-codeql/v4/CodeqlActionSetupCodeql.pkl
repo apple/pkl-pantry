@@ -1,0 +1,48 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Installs the CodeQL CLI
+module com.github.actions.github.`codeql-action`.`setup-codeql`.v4.CodeqlActionSetupCodeql
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "github/codeql-action/setup-codeql"
+
+fixed version: "v4"
+
+with: With?
+
+class With {
+  /// By default, the Action will use the recommended version of the CodeQL Bundle to analyze your project. You can override this choice using this input. One of:
+  /// - A local path to a CodeQL Bundle tarball, or - The URL of a CodeQL Bundle tarball GitHub release asset, or - A special value `linked` which uses the version of the CodeQL tools
+  ///   that the Action has been bundled with.
+  /// - A special value `nightly` which uses the latest nightly version of the
+  ///   CodeQL tools. Note that this is unstable and not recommended for
+  ///   production use.
+  ///
+  /// If not specified, the Action will check in several places until it finds the CodeQL tools.
+  tools: String?
+
+  /// GitHub token to use for authenticating with this instance of GitHub.
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  token: String?
+
+  /// Default if unspecified: `"${{ toJson(matrix) }}"`
+  matrix: String?
+
+  /// A token for fetching additional files from private repositories in the same GitHub instance that is running this action.
+  `external-repository-token`: String?
+}

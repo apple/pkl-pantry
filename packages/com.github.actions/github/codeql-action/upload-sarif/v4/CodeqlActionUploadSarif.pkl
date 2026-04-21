@@ -1,0 +1,61 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Upload the analysis results
+module com.github.actions.github.`codeql-action`.`upload-sarif`.v4.CodeqlActionUploadSarif
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "github/codeql-action/upload-sarif"
+
+fixed version: "v4"
+
+with: With?
+
+class With {
+  /// The SARIF file or directory of SARIF files to be uploaded to GitHub code scanning.
+  /// See https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github#uploading-a-code-scanning-analysis-with-github-actions
+  /// for information on the maximum number of results and maximum file size supported by code scanning.
+  ///
+  /// Default if unspecified: `"../results"`
+  sarif_file: String?
+
+  /// The path at which the analyzed repository was checked out. Used to relativize any absolute paths in the uploaded SARIF file.
+  ///
+  /// Default if unspecified: `"${{ github.workspace }}"`
+  checkout_path: String?
+
+  /// The ref where results will be uploaded. If not provided, the Action will use the GITHUB_REF environment variable. If provided, the sha input must be provided as well. This input is ignored for pull requests from forks. Expected format: refs/heads/<branch name>, refs/tags/<tag>, refs/pull/<number>/merge, or refs/pull/<number>/head.
+  ref: String?
+
+  /// The sha of the HEAD of the ref where results will be uploaded. If not provided, the Action will use the GITHUB_SHA environment variable. If provided, the ref input must be provided as well. This input is ignored for pull requests from forks.
+  sha: String?
+
+  /// GitHub token to use for authenticating with this instance of GitHub. The token must be the built-in GitHub Actions token, and the workflow must have the `security-events: write` permission. Most of the time it is advisable to avoid specifying this input so that the workflow falls back to using the default value.
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  token: String?
+
+  /// Default if unspecified: `"${{ toJson(matrix) }}"`
+  matrix: String?
+
+  /// String used by Code Scanning for matching the analyses
+  category: String?
+
+  /// If true, the Action will wait for the uploaded SARIF to be processed before completing.
+  ///
+  /// Default if unspecified: `"true"`
+  `wait-for-processing`: Boolean?
+}

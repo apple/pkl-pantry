@@ -123,6 +123,13 @@ local allCoreVersions: Listing<String> = new {
   "actions/create-github-app-token@v2"
   "actions/deploy-pages@v4"
   "actions/dependency-review-action@v4"
+  "github/codeql-action/analyze@v4"
+  "github/codeql-action/autobuild@v4"
+  "github/codeql-action/init@v4"
+  "github/codeql-action/resolve-environment@v4"
+  "github/codeql-action/setup-codeql@v4"
+  "github/codeql-action/start-proxy@v4"
+  "github/codeql-action/upload-sarif@v4"
   for (action in coreActions) {
     "\(action)@\(getLatestVersion(action))"
   }
