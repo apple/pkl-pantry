@@ -259,14 +259,16 @@ local class InputProperty {
       self.name
 
   fixed docCommentValue =
-    if (input.default != null)
+    if (input.default != null && input.description != null)
       """
       \(input.description.trim())
 
       Default if unspecified: `\(pcfRenderer.renderValue(input.default))`
       """
+    else if (input.default != null)
+      "Default if unspecified: `\(pcfRenderer.renderValue(input.default))`"
     else
-      input.description.trim()
+      input.description?.trim()
 
   local deprecation: AnnotationNode = new {
     identifier {
@@ -297,8 +299,10 @@ local class InputProperty {
         "hidden"
       }
     }
-    docComment {
-      value = docCommentValue
+    when (docCommentValue != null) {
+      docComment {
+        value = docCommentValue
+      }
     }
     when (input.deprecationMessage != null) {
       annotations {

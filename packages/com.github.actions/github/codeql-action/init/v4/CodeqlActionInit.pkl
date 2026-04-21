@@ -1,0 +1,171 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Set up CodeQL
+module com.github.actions.github.`codeql-action`.init.v4.CodeqlActionInit
+
+extends ".../AbstractTypedStep.pkl"
+
+fixed action: "github/codeql-action/init"
+
+fixed version: "v4"
+
+with: With?
+
+class With {
+  /// By default, the Action will use the recommended version of the CodeQL Bundle to analyze your project. You can override this choice using this input. One of:
+  /// - A local path to a CodeQL Bundle tarball, or - The URL of a CodeQL Bundle tarball GitHub release asset, or - A special value `linked` which uses the version of the CodeQL tools
+  ///   that the Action has been bundled with.
+  /// - A special value `nightly` which uses the latest nightly version of the
+  ///   CodeQL tools. Note that this is unstable and not recommended for
+  ///   production use.
+  ///
+  /// If not specified, the Action will check in several places until it finds the CodeQL tools.
+  tools: String?
+
+  /// A comma-separated list of CodeQL languages to analyze.
+  /// Due to the performance benefit of parallelizing builds, we recommend specifying languages to analyze using a matrix and providing `\$\{{ matrix.language }}` as this input.
+  /// For more information, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning#changing-the-languages-that-are-analyzed.
+  hidden languagesList: Listing<String>?
+
+  /// A comma-separated list of CodeQL languages to analyze.
+  /// Due to the performance benefit of parallelizing builds, we recommend specifying languages to analyze using a matrix and providing `\$\{{ matrix.language }}` as this input.
+  /// For more information, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning#changing-the-languages-that-are-analyzed.
+  ///
+  /// To set as a [Listing], use [languagesList].
+  languages: String? = languagesList?.join(",")
+
+  /// The build mode that will be used to analyze the language. This input is only available when analyzing a single CodeQL language per job, for example using a matrix.
+  /// Available build modes will differ based on the language being analyzed. One of:
+  /// - `none`:      The database will be created without building the source code.
+  ///                Available for all interpreted languages and some compiled languages.
+  /// - `autobuild`: The database will be created by attempting to automatically build the source
+  ///                code. Available for all compiled languages.
+  /// - `manual`:   The database will be created by building the source code using a manually
+  ///                specified build command. To use this build mode, specify manual build steps in
+  ///                your workflow between the `init` and `analyze` steps. Available for all
+  ///                compiled languages.
+  `build-mode`: ("none" | "autobuild" | "manual")?
+
+  /// [Internal] A comma-separated list of analysis kinds to enable. This input is intended for internal-use only at this time and the behaviour is subject to changes. Some features may not be available depending on which analysis kinds are enabled.
+  /// Available options are:
+  /// - `code-scanning`: The default, security-focused analysis. - `code-quality`: Analysis focused on code quality. This must be enabled in conjunction
+  ///                   with `code-scanning`.
+  ///
+  /// Default if unspecified: `"code-scanning"`
+  `analysis-kinds`: ("code-scanning" | "code-quality")?
+
+  /// GitHub token to use for authenticating with this instance of GitHub. To download custom packs from multiple registries, use the registries input.
+  ///
+  /// Default if unspecified: `"${{ github.token }}"`
+  token: String?
+
+  /// Use this input only when you need to download CodeQL packages from another instance of GitHub. If you only need to download packages from this GitHub instance, use the token input instead.
+  ///
+  /// A YAML string that defines the list of GitHub container registries to use for downloading packs. The string is in the following form (the | is required on the first line):
+  ///
+  /// registries: |
+  ///     - url: https://containers.GHEHOSTNAME1/v2/
+  ///       packages:
+  ///         - my-company/*
+  ///         - my-company2/*
+  ///       token: \$\{{ secrets.GHEHOSTNAME1_TOKEN }}
+  ///
+  ///     - url: https://ghcr.io/v2/
+  ///       packages: */*
+  ///       token: \$\{{ secrets.GHCR_TOKEN }}
+  ///
+  /// The `url` property contains the URL to the container registry you want to connect to.
+  ///
+  /// The `packages` property contains a single glob string or a list of glob strings, specifying which packages should be retrieved from this particular container registry. Order is important. Earlier entries will match before later entries.
+  ///
+  /// The `token` property contains a connection token for this registry.    required: false
+  registries: String?
+
+  /// Default if unspecified: `"${{ toJson(matrix) }}"`
+  matrix: String?
+
+  /// Path of the config file to use
+  `config-file`: String?
+
+  /// Path where CodeQL databases should be created. If not specified, a temporary directory will be used.
+  `db-location`: String?
+
+  /// Configuration passed as a YAML string in the same format as the config-file input. This takes precedence over the config-file input.
+  config: String?
+
+  /// Comma-separated list of additional queries to run. By default, this overrides the same setting in a configuration file; prefix with "+" to use both sets of queries.
+  hidden queriesList: Listing<String>?
+
+  /// Comma-separated list of additional queries to run. By default, this overrides the same setting in a configuration file; prefix with "+" to use both sets of queries.
+  ///
+  /// To set as a [Listing], use [queriesList].
+  queries: String? = queriesList?.join(",")
+
+  /// [Internal] DEPRECATED. Comma-separated list of code quality queries to run.
+  hidden `quality-queries-list`: Listing<String>?
+
+  /// [Internal] DEPRECATED. Comma-separated list of code quality queries to run.
+  ///
+  /// To set as a [Listing], use [`quality-queries-list`].
+  `quality-queries`: String? = `quality-queries-list`?.join(",")
+
+  /// Comma-separated list of packs to run. Reference a pack in the format `scope/name[@version]`. If `version` is not specified, then the latest version of the pack is used. By default, this overrides the same setting in a configuration file; prefix with "+" to use both sets of packs.
+  /// This input is only available in single-language analyses. To use packs in multi-language analyses, you must specify packs in the codeql-config.yml file.
+  hidden packsList: Listing<String>?
+
+  /// Comma-separated list of packs to run. Reference a pack in the format `scope/name[@version]`. If `version` is not specified, then the latest version of the pack is used. By default, this overrides the same setting in a configuration file; prefix with "+" to use both sets of packs.
+  /// This input is only available in single-language analyses. To use packs in multi-language analyses, you must specify packs in the codeql-config.yml file.
+  ///
+  /// To set as a [Listing], use [packsList].
+  packs: String? = packsList?.join(",")
+
+  /// A token for fetching external config files and queries if they reside in a private repository in the same GitHub instance that is running this action.
+  `external-repository-token`: String?
+
+  /// DEPRECATED. This option is ignored since CodeQL Action no longer installs Python dependencies as of versions 3.25.0 and 2.25.0.
+  `setup-python-dependencies`: Boolean?
+
+  /// Path of the root source code directory, relative to $GITHUB_WORKSPACE.
+  `source-root`: String?
+
+  /// The amount of memory in MB that can be used by CodeQL extractors. By default, CodeQL extractors will use most of the memory available in the system (which for GitHub-hosted runners is 6GB for Linux, 5.5GB for Windows, and 13GB for macOS). This input also sets the amount of memory that can later be used by the "analyze" action.
+  ram: Int?
+
+  /// The number of threads that can be used by CodeQL extractors. By default, CodeQL extractors will use all the hardware threads available in the system (which for GitHub-hosted runners is 2 for Linux and Windows and 3 for macOS). This input also sets the number of threads that can later be used by the "analyze" action.
+  threads: Int?
+
+  /// Enable debugging mode. This will result in more output being produced which may be useful when debugging certain issues. Debugging mode is enabled automatically when step debug logging is turned on.
+  ///
+  /// Default if unspecified: `"false"`
+  debug: Boolean?
+
+  /// The name of the artifact to store debugging information in. This is only used when debug mode is enabled.
+  `debug-artifact-name`: String?
+
+  /// The name of the database uploaded to the debugging artifact. This is only used when debug mode is enabled.
+  `debug-database-name`: String?
+
+  /// Explicitly enable or disable TRAP caching rather than respecting the feature flag for it.
+  `trap-caching`: Boolean?
+
+  /// Explicitly enable or disable caching of project build dependencies.
+  `dependency-caching`: Boolean?
+
+  /// [Internal] The ID of the check run, as provided by the Actions runtime environment. Do not set this value manually.
+  ///
+  /// Default if unspecified: `"${{ job.check_run_id }}"`
+  `check-run-id`: String?
+}

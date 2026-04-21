@@ -1,0 +1,124 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+amends "@io.github.typesafegithub/ActionTypes.pkl"
+
+inputs {
+  ["tools"] {
+    type = "string"
+  }
+  ["languages"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
+    }
+  }
+  ["token"] {
+    type = "string"
+  }
+  ["registries"] {
+    type = "string"
+  }
+  ["matrix"] {
+    type = "string"
+  }
+  ["config-file"] {
+    type = "string"
+  }
+  ["db-location"] {
+    type = "string"
+  }
+  ["queries"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
+    }
+  }
+  ["packs"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
+    }
+  }
+  ["external-repository-token"] {
+    type = "string"
+  }
+  ["setup-python-dependencies"] {
+    type = "boolean"
+  }
+  ["source-root"] {
+    type = "string"
+  }
+  ["ram"] {
+    type = "integer"
+  }
+  ["threads"] {
+    type = "integer"
+  }
+  ["debug"] {
+    type = "boolean"
+  }
+  ["debug-artifact-name"] {
+    type = "string"
+  }
+  ["debug-database-name"] {
+    type = "string"
+  }
+  ["trap-caching"] {
+    type = "boolean"
+  }
+  ["build-mode"] {
+    type = "enum"
+    `allowed-values` {
+      "none"
+      "autobuild"
+      "manual"
+    }
+  }
+  ["config"] {
+    type = "string"
+  }
+  ["dependency-caching"] {
+    type = "boolean"
+  }
+  ["analysis-kinds"] {
+    type = "enum"
+    `allowed-values` {
+      "code-scanning"
+      "code-quality"
+    }
+  }
+  ["quality-queries"] {
+    type = "list"
+    separator = ","
+    `list-item` {
+      type = "string"
+    }
+  }
+  ["check-run-id"] {
+    type = "string"
+  }
+}
+outputs {
+  ["codeql-path"] {
+    type = "string"
+  }
+  ["codeql-version"] {
+    type = "string"
+  }
+}

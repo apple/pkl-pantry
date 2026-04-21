@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,16 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Utility modules for working with GitHub Actions.
-amends "../basePklProject.pkl"
+amends "@io.github.typesafegithub/ActionTypes.pkl"
 
-dependencies {
-  ["com.github.actions"] = import("../com.github.actions/PklProject")
-  ["io.github.typesafegithub"] = import("../io.github.typesafegithub/PklProject")
-  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
-  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
-}
-
-package {
-  version = "1.0.11"
+inputs {
+  ["token"] {
+    type = "string"
+  }
+  ["matrix"] {
+    type = "string"
+  }
+  ["language"] {
+    type = "string"
+  }
+  ["working-directory"] {
+    type = "string"
+  }
+  ["tools"] {
+    type = "string"
+  }
+  ["external-repository-token"] {
+    type = "string"
+  }
 }
