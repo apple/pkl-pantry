@@ -45,7 +45,7 @@ registries: Mapping<String(matches(Regex(".+"))), Registry>(length >= 1)?
 
 class Update {
   /// Package manager to use
-  `package-ecosystem`: PackageEcosystem?
+  `package-ecosystem`: PackageEcosystem
 
   /// Customize which updates are allowed
   allow: Listing<Allow>?
@@ -114,7 +114,9 @@ class Update {
   registries: (*Listing<String(!isEmpty)>(!isEmpty, isDistinct) | "*")?
 
   /// Schedule preferences
-  schedule: Schedule
+  ///
+  /// Required if [`multi-ecosystem-group`] is null.
+  schedule: Schedule?((`multi-ecosystem-group` == null).implies(this != null))
 
   /// Specify a different branch for manifest files and for pull requests.
   `target-branch`: String(!isEmpty)?
@@ -128,7 +130,11 @@ class Update {
 
   /// Array of dependency patterns to include in a multi-ecosystem group. Required when using
   /// multi-ecosystem-group. Use '*' to include all dependencies.
-  patterns: Listing<String(!isEmpty)>(!isEmpty, isDistinct)?
+  ///
+  /// This field is required if [`multi-ecosystem-group`] is non-null.
+  patterns: Listing<String(!isEmpty)>(!isEmpty, isDistinct)?(
+    (`multi-ecosystem-group` != null).implies(this != null)
+  )
 
   /// String identifier linking this ecosystem to a multi-ecosystem group
   `multi-ecosystem-group`: String(!isEmpty)?
@@ -230,7 +236,7 @@ class PullRequestBranchName {
 
 /// Schedule preferences
 class Schedule {
-  interval: ScheduleInterval?
+  interval: ScheduleInterval
 
   /// Specify an alternative day to check for updates
   day: ScheduleDay?
@@ -242,7 +248,9 @@ class Schedule {
   timezone: Timezone?
 
   /// Specify a valid cron expression for updates
-  cronjob: String?
+  ///
+  /// Required if [interval] is set to "cron".
+  cronjob: String?((interval == "cron").implies(this != null))
 }
 
 class Registry {
