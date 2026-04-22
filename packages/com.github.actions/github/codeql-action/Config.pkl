@@ -16,7 +16,7 @@
 /// Configuration values when initializing CodeQL.
 ///
 /// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#custom-configuration-files>
-module com.github.actions.github.`codeql-action`.init.Config
+module com.github.actions.github.`codeql-action`.Config
 
 /// The query packs used for scanning.
 ///

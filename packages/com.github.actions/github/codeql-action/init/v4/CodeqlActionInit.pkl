@@ -18,7 +18,7 @@ module com.github.actions.github.`codeql-action`.init.v4.CodeqlActionInit
 
 extends ".../AbstractTypedStep.pkl"
 
-import "../Config.pkl"
+import "../../Config.pkl"
 
 fixed action: "github/codeql-action/init"
 
