@@ -1,0 +1,114 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Configuration values when initializing CodeQL.
+///
+/// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#custom-configuration-files>
+module com.github.actions.github.`codeql-action`.Config
+
+/// The query packs used for scanning.
+///
+/// The full format for specifying a query pack is `scope/name[@version][:path]`.
+/// Both `version` and `path` are optional.
+/// `version` is semver version range.
+/// If it is missing, the latest version is used.
+///
+/// If you have a workflow that generates more than one CodeQL database, you can specify any CodeQL query packs to run
+/// in a custom configuration file using a nested map of packs.
+///
+/// Example:
+/// ```
+/// packs {
+///   "scope/pack1"
+///   "scope/pack2@1.2.3"
+/// }
+/// ```
+///
+/// Example of using different packs for different analyses:
+///
+/// ```
+/// packs = new Packs {
+///   ["javascript"] {
+///     "scope/js-pack1"
+///   }
+///   ["java"] {
+///     "scope/java-pack1"
+///   }
+/// }
+/// ```
+///
+/// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#specifying-codeql-query-packs>
+packs: (*Listing<String> | Packs)?
+
+/// The default threat model includes remote sources of untrusted data.
+/// You can extend the CodeQL threat model to include local sources of untrusted data
+/// (for example: command-line arguments, environment variables, file systems, and databases) by specifying\
+/// `threat-model = "local"`
+`threat-models`: "local"?
+
+/// Additional queries to run as part of the scan.
+///
+/// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#specifying-additional-queries>
+queries: Listing<Query>?
+
+/// Disable default security queries.
+///
+/// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#disabling-the-default-queries>
+`disable-default-queries`: Boolean?
+
+/// Specify queries to include or exclude in the analysis.
+///
+/// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#excluding-specific-queries-from-analysis>
+`query-filters`: Listing<QueryFilter>?
+
+/// Restrict scanning to just the specified set of paths.
+///
+/// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#specifying-directories-to-scan>
+paths: Listing<String>?
+
+/// Exclude directories from scanning.
+///
+/// See <https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options#specifying-directories-to-scan>
+`paths-ignore`: Listing<String>?
+
+class Query {
+  /// The query file, query suite definition file, or a directory containing query files.
+  uses: String
+}
+
+class QueryFilter {
+  /// Queries to exclude from scanning.
+  ///
+  /// When you execute an exclude instructions on a set of queries, any queries that match your conditions are removed
+  /// from the selection, and queries that don’t match are retained.
+  exclude: Listing<QueryFilterItem>?
+
+  /// Queries to include in scanning.
+  ///
+  /// When you execute an include instruction on a set of queries, any queries that match your conditions are retained
+  /// in the selection, and queries that don’t match are removed.
+  include: Listing<QueryFilterItem>?
+}
+
+class QueryFilterItem {
+  /// The name of the query
+  id: String
+}
+
+typealias Packs = Mapping<String, Listing<String>>
+
+output {
+  renderer = new YamlRenderer {}
+}

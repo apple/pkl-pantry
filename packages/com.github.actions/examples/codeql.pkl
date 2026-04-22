@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,16 +13,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Utility modules for working with GitHub Actions.
-amends "../basePklProject.pkl"
+amends "../Workflow.pkl"
 
-dependencies {
-  ["com.github.actions"] = import("../com.github.actions/PklProject")
-  ["io.github.typesafegithub"] = import("../io.github.typesafegithub/PklProject")
-  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
-  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
+import "../catalog.pkl"
+
+on {
+  push {
+    branches {
+      "main"
+    }
+  }
 }
 
-package {
-  version = "1.0.12"
+jobs {
+  ["codeql"] {
+    `runs-on` = "ubuntu-latest"
+    steps {
+      catalog.`actions/checkout@v6`
+      (catalog.`github/codeql-action/init@v4`) {
+        with {
+          codeQLConfig {
+            `paths-ignore` {
+              "foo/"
+              "bar/"
+            }
+          }
+        }
+      }
+    }
+  }
 }
