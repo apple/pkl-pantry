@@ -18,6 +18,8 @@ module com.github.actions.github.`codeql-action`.init.v4.CodeqlActionInit
 
 extends ".../AbstractTypedStep.pkl"
 
+import "../Config.pkl"
+
 fixed action: "github/codeql-action/init"
 
 fixed version: "v4"
@@ -26,7 +28,9 @@ with: With?
 
 class With {
   /// By default, the Action will use the recommended version of the CodeQL Bundle to analyze your project. You can override this choice using this input. One of:
-  /// - A local path to a CodeQL Bundle tarball, or - The URL of a CodeQL Bundle tarball GitHub release asset, or - A special value `linked` which uses the version of the CodeQL tools
+  /// - A local path to a CodeQL Bundle tarball, or
+  /// - The URL of a CodeQL Bundle tarball GitHub release asset, or
+  /// - A special value `linked` which uses the version of the CodeQL tools
   ///   that the Action has been bundled with.
   /// - A special value `nightly` which uses the latest nightly version of the
   ///   CodeQL tools. Note that this is unstable and not recommended for
@@ -61,21 +65,26 @@ class With {
 
   /// [Internal] A comma-separated list of analysis kinds to enable. This input is intended for internal-use only at this time and the behaviour is subject to changes. Some features may not be available depending on which analysis kinds are enabled.
   /// Available options are:
-  /// - `code-scanning`: The default, security-focused analysis. - `code-quality`: Analysis focused on code quality. This must be enabled in conjunction
+  /// - `code-scanning`: The default, security-focused analysis.
+  /// - `code-quality`: Analysis focused on code quality. This must be enabled in conjunction
   ///                   with `code-scanning`.
   ///
   /// Default if unspecified: `"code-scanning"`
   `analysis-kinds`: ("code-scanning" | "code-quality")?
 
-  /// GitHub token to use for authenticating with this instance of GitHub. To download custom packs from multiple registries, use the registries input.
+  /// GitHub token to use for authenticating with this instance of GitHub. To download custom packs from multiple
+  /// registries, use the registries input.
   ///
   /// Default if unspecified: `"${{ github.token }}"`
   token: String?
 
-  /// Use this input only when you need to download CodeQL packages from another instance of GitHub. If you only need to download packages from this GitHub instance, use the token input instead.
+  /// Use this input only when you need to download CodeQL packages from another instance of GitHub.
+  /// If you only need to download packages from this GitHub instance, use the token input instead.
   ///
-  /// A YAML string that defines the list of GitHub container registries to use for downloading packs. The string is in the following form (the | is required on the first line):
+  /// A YAML string that defines the list of GitHub container registries to use for downloading packs.
+  /// The string is in the following form (the | is required on the first line):
   ///
+  /// ```
   /// registries: |
   ///     - url: https://containers.GHEHOSTNAME1/v2/
   ///       packages:
@@ -86,12 +95,15 @@ class With {
   ///     - url: https://ghcr.io/v2/
   ///       packages: */*
   ///       token: \$\{{ secrets.GHCR_TOKEN }}
+  /// ```
   ///
   /// The `url` property contains the URL to the container registry you want to connect to.
   ///
-  /// The `packages` property contains a single glob string or a list of glob strings, specifying which packages should be retrieved from this particular container registry. Order is important. Earlier entries will match before later entries.
+  /// The `packages` property contains a single glob string or a list of glob strings, specifying which packages should
+  /// be retrieved from this particular container registry. Order is important.
+  /// Earlier entries will match before later entries.
   ///
-  /// The `token` property contains a connection token for this registry.    required: false
+  /// The `token` property contains a connection token for this registry.
   registries: String?
 
   /// Default if unspecified: `"${{ toJson(matrix) }}"`
@@ -103,10 +115,19 @@ class With {
   /// Path where CodeQL databases should be created. If not specified, a temporary directory will be used.
   `db-location`: String?
 
-  /// Configuration passed as a YAML string in the same format as the config-file input. This takes precedence over the config-file input.
-  config: String?
+  /// Configuration settings for CodeQL.
+  hidden codeQLConfig: Config?
 
-  /// Comma-separated list of additional queries to run. By default, this overrides the same setting in a configuration file; prefix with "+" to use both sets of queries.
+  /// Configuration passed as a YAML string in the same format as the config-file input.
+  ///
+  /// This takes precedence over the config-file input.
+  ///
+  /// To specify config in a structured way, set [codeQLConfig].
+  config: String? = codeQLConfig?.output?.text
+
+  /// Comma-separated list of additional queries to run.
+  ///
+  /// By default, this overrides the same setting in a configuration file; prefix with "+" to use both sets of queries.
   hidden queriesList: Listing<String>?
 
   /// Comma-separated list of additional queries to run. By default, this overrides the same setting in a configuration file; prefix with "+" to use both sets of queries.
