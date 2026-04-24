@@ -1,9 +1,10 @@
 [versions]
-pkl = "0.31.+"
+pkl = "0.31.1"
+ktfmt = "0.62"
 kotlin = "2.2.20"
-junit = "5.+"
+junit = "6.0.3"
 spotless = "6.25.0"
-junitPlatformLauncher = "1.+"
+junitPlatformLauncher = "6.0.3"
 
 [libraries]
 junitEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }

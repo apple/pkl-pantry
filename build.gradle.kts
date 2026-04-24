@@ -36,17 +36,15 @@ plugins {
   alias(libs.plugins.spotless)
 }
 
+configurations { all { resolutionStrategy { failOnDynamicVersions() } } }
+
 class PklFormatterStep : Serializable {
   companion object {
     @Serial private const val serialVersionUID: Long = 1L
   }
 
   fun create(): FormatterStep {
-    return FormatterStep.createLazy(
-      "pkl",
-      { PklFormatterStep() },
-      { PklFormatterFunc() },
-    )
+    return FormatterStep.createLazy("pkl", { PklFormatterStep() }, { PklFormatterFunc() })
   }
 }
 
@@ -107,14 +105,13 @@ val ghaForkedFileLicense =
   // See the License for the specific language governing permissions and
   // limitations under the License.
   //===----------------------------------------------------------------------===//
-"""
+  """
     .trimIndent()
 
-@Suppress("CanConvertToMultiDollarString") // ktfmt can't
 val blockHeader =
-  """
+  $$"""
   /**
-   * Copyright © ${'$'}YEAR Apple Inc. and the Pkl project authors. All rights reserved.
+   * Copyright © $YEAR Apple Inc. and the Pkl project authors. All rights reserved.
    *
    * Licensed under the Apache License, Version 2.0 (the "License");
    * you may not use this file except in compliance with the License.
@@ -137,35 +134,35 @@ spotless {
   kotlin {
     licenseHeader(blockHeader)
     target("src/**/*.kt", "buildSrc/**/*.kt")
-    ktfmt().googleStyle()
+    ktfmt(libs.versions.ktfmt.get()).googleStyle()
   }
   kotlinGradle {
     licenseHeader(blockHeader, "([a-zA-Z]|@file|//)")
-    ktfmt().googleStyle()
+    ktfmt(libs.versions.ktfmt.get()).googleStyle()
     target("*.kts", "buildSrc/**/*.kts")
   }
   format("pkl") {
     val delimiter = "(/// |/\\*\\*|module |import |amends |(\\w+))"
     licenseHeader(
-        """
-            //===----------------------------------------------------------------------===//
-            // Copyright © ${'$'}YEAR Apple Inc. and the Pkl project authors. All rights reserved.
-            //
-            // Licensed under the Apache License, Version 2.0 (the "License");
-            // you may not use this file except in compliance with the License.
-            // You may obtain a copy of the License at
-            //
-            //     https://www.apache.org/licenses/LICENSE-2.0
-            //
-            // Unless required by applicable law or agreed to in writing, software
-            // distributed under the License is distributed on an "AS IS" BASIS,
-            // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-            // See the License for the specific language governing permissions and
-            // limitations under the License.
-            //===----------------------------------------------------------------------===//
+        $$"""
+        //===----------------------------------------------------------------------===//
+        // Copyright © $YEAR Apple Inc. and the Pkl project authors. All rights reserved.
+        //
+        // Licensed under the Apache License, Version 2.0 (the "License");
+        // you may not use this file except in compliance with the License.
+        // You may obtain a copy of the License at
+        //
+        //     https://www.apache.org/licenses/LICENSE-2.0
+        //
+        // Unless required by applicable law or agreed to in writing, software
+        // distributed under the License is distributed on an "AS IS" BASIS,
+        // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        // See the License for the specific language governing permissions and
+        // limitations under the License.
+        //===----------------------------------------------------------------------===//
         """
           .trimIndent(),
-        delimiter
+        delimiter,
       )
       .named("base-license-header")
     licenseHeader(ghaForkedFileLicense, delimiter).named("pkl-gha").onlyIfContentMatches("gha-fork")
@@ -238,91 +235,89 @@ fun gatherDependentPackages(packageDirName: String): List<String> {
   }
 }
 
-val decorateFailureWithDependentPackageInformation by
-  tasks.registering {
-    onlyIf {
-      @Suppress("SENSELESS_COMPARISON")
-      createPackages.get().state.failure != null
-    }
-    doLast {
-      val createPackagesTask = createPackages.get()
-
-      @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
-      val failureMessage = createPackagesTask.state.failure!!.cause?.message ?: return@doLast
-      if (!failureMessage.contains("was already published with different contents")) {
-        return@doLast
-      }
-      val packageName = Regex("`(.+)`").find(failureMessage)?.groups?.get(1)?.value ?: return@doLast
-      val dirName =
-        packageName
-          .drop("package://pkg.pkl-lang.org/pkl-pantry/".length)
-          .dropLastWhile { it != '@' }
-          .dropLast(1)
-      val dependentPackages = gatherDependentPackages(dirName)
-      if (dependentPackages.isEmpty()) {
-        return@doLast
-      }
-      val msg = buildString {
-        appendLine(
-          "The following packages depend on this package, and also need to have their version updated:"
-        )
-        for (pkgName in dependentPackages) {
-          appendLine("* $pkgName")
-        }
-      }
-      createPackagesTask.state.addFailure(
-        TaskExecutionException(createPackagesTask, RuntimeException(msg))
-      )
-    }
+val decorateFailureWithDependentPackageInformation by tasks.registering {
+  onlyIf {
+    @Suppress("SENSELESS_COMPARISON")
+    createPackages.get().state.failure != null
   }
+  doLast {
+    val createPackagesTask = createPackages.get()
+
+    @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
+    val failureMessage = createPackagesTask.state.failure!!.cause?.message ?: return@doLast
+    if (!failureMessage.contains("was already published with different contents")) {
+      return@doLast
+    }
+    val packageName = Regex("`(.+)`").find(failureMessage)?.groups?.get(1)?.value ?: return@doLast
+    val dirName =
+      packageName
+        .drop("package://pkg.pkl-lang.org/pkl-pantry/".length)
+        .dropLastWhile { it != '@' }
+        .dropLast(1)
+    val dependentPackages = gatherDependentPackages(dirName)
+    if (dependentPackages.isEmpty()) {
+      return@doLast
+    }
+    val msg = buildString {
+      appendLine(
+        "The following packages depend on this package, and also need to have their version updated:"
+      )
+      for (pkgName in dependentPackages) {
+        appendLine("* $pkgName")
+      }
+    }
+    createPackagesTask.state.addFailure(
+      TaskExecutionException(createPackagesTask, RuntimeException(msg))
+    )
+  }
+}
 
 createPackages.get().finalizedBy(decorateFailureWithDependentPackageInformation)
 
 repositories { mavenCentral() }
 
-val prepareReleases by
-  tasks.registering {
-    group = "build"
-    dependsOn(createPackages)
-    inputs.files(projectDirs)
+val prepareReleases by tasks.registering {
+  group = "build"
+  dependsOn(createPackages)
+  inputs.files(projectDirs)
 
-    doLast {
-      val releaseDir = file(outputDir.dir("releases"))
-      releaseDir.deleteRecursively()
-      val count = projectDirs.count()
-      val fmt = "%${ceil(log10(count.toDouble())).toInt()}d"
-      for (i in projectDirs.indices) {
-        val dir = projectDirs[i]
-        print(" [${fmt.format(i + 1)}/$count] $dir: ")
-        val allVersions = file(outputDir.dir("generated/packages/${dir.name}")).list()
-        if (allVersions == null) {
-          println("∅")
-          continue
-        }
-        val latestVersion = allVersions.map(Version::parse).sortedWith(Version.comparator()).last()
-        val pkg = "${dir.name}@$latestVersion"
-        print("$pkg: ")
-        val conn =
-          URI("${repositoryUrl}/releases/tag/${dir.name}@$latestVersion").toURL().openConnection()
-            as HttpsURLConnection
-        if (conn.responseCode == 200) {
-          println("⏩")
-          continue
-        }
-        val execProvider = providers.exec { commandLine("git", "tag", "-l", pkg) }
-        execProvider.result.get()
-        if (execProvider.standardOutput.asText.get().contains(pkg)) {
-          println("☑️")
-          continue
-        }
-        for (artifact in
-          file(outputDir.dir("generated/packages/${dir.name}/$latestVersion")).listFiles()!!) {
-          artifact.copyTo(releaseDir.resolve("$pkg/${artifact.name}"), true)
-        }
-        println("✅")
+  doLast {
+    val releaseDir = file(outputDir.dir("releases"))
+    releaseDir.deleteRecursively()
+    val count = projectDirs.count()
+    val fmt = "%${ceil(log10(count.toDouble())).toInt()}d"
+    for (i in projectDirs.indices) {
+      val dir = projectDirs[i]
+      print(" [${fmt.format(i + 1)}/$count] $dir: ")
+      val allVersions = file(outputDir.dir("generated/packages/${dir.name}")).list()
+      if (allVersions == null) {
+        println("∅")
+        continue
       }
+      val latestVersion = allVersions.map(Version::parse).sortedWith(Version.comparator()).last()
+      val pkg = "${dir.name}@$latestVersion"
+      print("$pkg: ")
+      val conn =
+        URI("${repositoryUrl}/releases/tag/${dir.name}@$latestVersion").toURL().openConnection()
+          as HttpsURLConnection
+      if (conn.responseCode == 200) {
+        println("⏩")
+        continue
+      }
+      val execProvider = providers.exec { commandLine("git", "tag", "-l", pkg) }
+      execProvider.result.get()
+      if (execProvider.standardOutput.asText.get().contains(pkg)) {
+        println("☑️")
+        continue
+      }
+      for (artifact in
+        file(outputDir.dir("generated/packages/${dir.name}/$latestVersion")).listFiles()!!) {
+        artifact.copyTo(releaseDir.resolve("$pkg/${artifact.name}"), true)
+      }
+      println("✅")
     }
   }
+}
 
 val testTarExamples by
   tasks.registering(Exec::class) {
