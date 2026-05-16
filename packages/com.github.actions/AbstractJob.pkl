@@ -318,6 +318,9 @@ class Environment {
 
   /// The URL of the environment.
   url: String?
+
+  /// Set to `false` to use an environment's secrets and variables without creating a deployment object.
+  deployment: Boolean?
 }
 
 class Defaults {
