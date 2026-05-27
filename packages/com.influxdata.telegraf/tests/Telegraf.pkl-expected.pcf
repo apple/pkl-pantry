@@ -20,6 +20,29 @@ examples {
     paths = [ "Uptime" ]
     """
   }
+  ["dockerInput.toml"] {
+    """
+    [[inputs.docker]]
+    endpoint = "unix:///var/run/docker.sock"
+    gather_services = false
+    source_tag = false
+    container_name_include = [ "frontend-*" ]
+    container_name_exclude = [ "test-*" ]
+    container_state_include = [ "running", "paused" ]
+    storage_objects = [ "container", "image" ]
+    timeout = "5s"
+    podman_cache_ttl = "60s"
+    perdevice_include = [ "cpu" ]
+    total_include = [ "cpu", "blkio", "network" ]
+    docker_label_include = [ "com.example.*" ]
+    docker_label_exclude = [ "com.example.secret" ]
+    tag_env = [ "JAVA_HOME", "HEAP_SIZE" ]
+    tls_ca = "/etc/telegraf/ca.pem"
+    tls_cert = "/etc/telegraf/cert.pem"
+    tls_key = "/etc/telegraf/key.pem"
+    insecure_skip_verify = false
+    """
+  }
   ["opentelemetry-output.toml"] {
     """
     [[outputs.opentelemetry]]
