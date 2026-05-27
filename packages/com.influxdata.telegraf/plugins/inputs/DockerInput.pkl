@@ -1,0 +1,126 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The [Docker input plugin](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/docker/README.md)
+/// uses the Docker Engine API to gather metrics on running Docker containers.
+///
+/// The docker plugin uses the [Official Docker Client](https://github.com/moby/moby/tree/master/client)
+/// to gather stats from the [Engine API](https://docs.docker.com/engine/api/v1.24/).
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.DockerInput
+
+extends "Input.pkl"
+
+typealias PerDeviceClass = "cpu" | "blkio" | "network"
+
+typealias ContainerState =
+  "created" | "restarting" | "running" | "removing" | "paused" | "exited" | "dead"
+
+typealias StorageObject = "container" | "image" | "volume"
+
+/// Endpoint, either `tcp://<ip>:<port>` for TCP, `unix://<path>` for socket or
+/// `ENV` for using environment variables (i.e., docker-machine)
+///
+/// Default: `unix:///var/run/docker.sock`
+endpoint: String?
+
+/// Collect Swarm metrics (desired_replicas, running_replicas)
+/// Note: Configure this for one of the manager nodes in a Swarm cluster only
+/// as you will see duplicate metrics otherwise.
+///
+/// Default: `false`
+gather_services: Boolean?
+
+/// Use container ID hostname as source (trimmed to 12 characters)
+///
+/// Default: `false`
+source_tag: Boolean?
+
+/// Containers to include, accepting wildcards; all if empty.
+///
+/// Default: `[]`
+container_name_include: Listing<String>?
+
+/// Containers to exclude, accepting wildcards.
+///
+/// Default: `[]`
+container_name_exclude: Listing<String>?
+
+/// Container states to include accepting wildcards.
+///
+/// Default: `["running"]`
+container_state_include: Listing<ContainerState>?
+
+/// Container states to exclude accepting wildcards.
+///
+/// Default: `[]`
+container_state_exclude: Listing<ContainerState>?
+
+/// Objects to include for disk usage query.
+///
+/// Default: `[]`
+storage_objects: Listing<StorageObject>?
+
+/// Timeout for docker list, info, and stats commands.
+///
+/// Default: `5.s`
+timeout: Duration?
+
+/// Podman compatibility settings (auto-enabled when Podman detected). Cache
+/// TTL for accurate CPU percentage calculation. Should be higher than your
+/// collection interval for accurate measurements. Zero will keep cache entries
+/// forever (not recommended for dynamic environments).
+///
+/// Default: `60.s`
+podman_cache_ttl: Duration?
+
+/// Emit per-device metric for the given classes.
+///
+/// Default: `["cpu"]`
+perdevice_include: Listing<PerDeviceClass>?
+
+/// Which class metrics should be issued as 'total' values.
+///
+/// Default: `["cpu", "blkio", "network"]`
+total_include: Listing<PerDeviceClass>?
+
+/// Container labels to include as tags accepting wildcards; all if empty.
+///
+/// Default: `[]`
+docker_label_include: Listing<String>?
+
+/// Container labels to exclude as tags, accepting wildcards.
+///
+/// Default: `[]`
+docker_label_exclude: Listing<String>?
+
+/// Which environment variables should we use as a tag
+///
+/// Default: `[]`
+tag_env: Listing<String>?
+
+/// TLS CA cert.
+tls_ca: String?
+
+/// TLS client cert.
+tls_cert: String?
+
+/// TLS client key.
+tls_key: String?
+
+/// Use TLS but skip chain & host verification.
+///
+/// Default: `false`
+insecure_skip_verify: Boolean?
