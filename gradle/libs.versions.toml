@@ -3,7 +3,7 @@ pkl = "0.31.1"
 ktfmt = "0.62"
 kotlin = "2.3.21"
 junit = "6.0.3"
-spotless = "8.4.0"
+spotless = "8.5.1"
 junitPlatformLauncher = "6.0.3"
 
 [libraries]
