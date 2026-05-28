@@ -4,7 +4,7 @@ ktfmt = "0.62"
 kotlin = "2.3.21"
 junit = "6.0.3"
 spotless = "8.5.1"
-junitPlatformLauncher = "6.0.3"
+junitPlatformLauncher = "6.1.0"
 
 [libraries]
 junitEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
