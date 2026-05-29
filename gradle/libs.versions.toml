@@ -4,12 +4,11 @@ ktfmt = "0.62"
 kotlin = "2.3.21"
 junit = "6.1.0"
 spotless = "8.5.1"
-junitPlatformLauncher = "6.1.0"
 
 [libraries]
 junitEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
 junitParams = { group = "org.junit.jupiter", name = "junit-jupiter-params", version.ref = "junit" }
-junitPlatformLauncher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatformLauncher" }
+junitPlatformLauncher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit" }
 pklCore = { group = "org.pkl-lang", name = "pkl-core", version.ref = "pkl" }
 pklParser = { group = "org.pkl-lang", name = "pkl-parser", version.ref = "pkl" }
 

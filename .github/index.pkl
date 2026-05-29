@@ -50,7 +50,7 @@ local buildAndTest: Workflow = new {
         new {
           run = "./gradlew build"
         }
-        (catalog.`actions/upload-artifact@v5`) {
+        (catalog.`actions/upload-artifact@v7`) {
           with {
             name = "build"
             path = "build"
@@ -78,7 +78,7 @@ main = (buildAndTest) {
             `fetch-depth` = 0
           }
         }
-        (catalog.`actions/download-artifact@v6`) {
+        (catalog.`actions/download-artifact@v8`) {
           with {
             name = "build"
             path = "build"
