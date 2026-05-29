@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+set -eo pipefail
+
 # Generates actions and `catalog.pkl` files
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Index module of actions maintained by GitHub (actions within the `actions` and `github` orgs).
+/// Index module of all actions within the `actions/` GitHub org.
 open module com.github.actions.catalog
 
 import "actions/cache/restore/v4/CacheRestore.pkl" as CacheRestoreV4
@@ -26,14 +26,19 @@ import "actions/checkout/v6/Checkout.pkl" as CheckoutV6
 import "actions/configure-pages/v5/ConfigurePages.pkl" as ConfigurePagesV5
 import "actions/configure-pages/v6/ConfigurePages.pkl" as ConfigurePagesV6
 import "actions/create-github-app-token/v2/CreateGithubAppToken.pkl" as CreateGithubAppTokenV2
+import "actions/create-github-app-token/v3/CreateGithubAppToken.pkl" as CreateGithubAppTokenV3
 import "actions/create-release/v1/CreateRelease.pkl" as CreateReleaseV1
 import "actions/dependency-review-action/v4/DependencyReviewAction.pkl" as DependencyReviewActionV4
+import "actions/dependency-review-action/v5/DependencyReviewAction.pkl" as DependencyReviewActionV5
 import "actions/deploy-pages/v4/DeployPages.pkl" as DeployPagesV4
+import "actions/deploy-pages/v5/DeployPages.pkl" as DeployPagesV5
 import "actions/download-artifact/v5/DownloadArtifact.pkl" as DownloadArtifactV5
 import "actions/download-artifact/v6/DownloadArtifact.pkl" as DownloadArtifactV6
+import "actions/download-artifact/v8/DownloadArtifact.pkl" as DownloadArtifactV8
 import "actions/first-interaction/v1/FirstInteraction.pkl" as FirstInteractionV1
 import "actions/first-interaction/v3/FirstInteraction.pkl" as FirstInteractionV3
 import "actions/github-script/v7/GithubScript.pkl" as GithubScriptV7
+import "actions/github-script/v9/GithubScript.pkl" as GithubScriptV9
 import "actions/labeler/v5/Labeler.pkl" as LabelerV5
 import "actions/labeler/v6/Labeler.pkl" as LabelerV6
 import "actions/setup-dotnet/v4/SetupDotnet.pkl" as SetupDotnetV4
@@ -48,8 +53,10 @@ import "actions/stale/v9/Stale.pkl" as StaleV9
 import "actions/stale/v10/Stale.pkl" as StaleV10
 import "actions/upload-artifact/v4/UploadArtifact.pkl" as UploadArtifactV4
 import "actions/upload-artifact/v5/UploadArtifact.pkl" as UploadArtifactV5
+import "actions/upload-artifact/v7/UploadArtifact.pkl" as UploadArtifactV7
 import "actions/upload-pages-artifact/v3/UploadPagesArtifact.pkl" as UploadPagesArtifactV3
 import "actions/upload-pages-artifact/v4/UploadPagesArtifact.pkl" as UploadPagesArtifactV4
+import "actions/upload-pages-artifact/v5/UploadPagesArtifact.pkl" as UploadPagesArtifactV5
 import "github/codeql-action/analyze/v4/CodeqlActionAnalyze.pkl" as CodeqlActionAnalyzeV4
 import "github/codeql-action/autobuild/v4/CodeqlActionAutobuild.pkl" as CodeqlActionAutobuildV4
 import "github/codeql-action/init/v4/CodeqlActionInit.pkl" as CodeqlActionInitV4
@@ -94,20 +101,32 @@ import
 /// GitHub Action for creating a GitHub App installation access token
 `actions/create-github-app-token@v2`: CreateGithubAppTokenV2
 
+/// GitHub Action for creating a GitHub App installation access token
+`actions/create-github-app-token@v3`: CreateGithubAppTokenV3
+
 /// Create a release for a tag in your repository
 `actions/create-release@v1`: CreateReleaseV1
 
 /// Prevent the introduction of dependencies with known vulnerabilities
 `actions/dependency-review-action@v4`: DependencyReviewActionV4
 
+/// Prevent the introduction of dependencies with known vulnerabilities
+`actions/dependency-review-action@v5`: DependencyReviewActionV5
+
 /// A GitHub Action to deploy an artifact as a GitHub Pages site
 `actions/deploy-pages@v4`: DeployPagesV4
+
+/// A GitHub Action to deploy an artifact as a GitHub Pages site
+`actions/deploy-pages@v5`: DeployPagesV5
 
 /// Download a build artifact that was previously uploaded in the workflow by the upload-artifact action
 `actions/download-artifact@v5`: DownloadArtifactV5
 
 /// Download a build artifact that was previously uploaded in the workflow by the upload-artifact action
 `actions/download-artifact@v6`: DownloadArtifactV6
+
+/// Download a build artifact that was previously uploaded in the workflow by the upload-artifact action
+`actions/download-artifact@v8`: DownloadArtifactV8
 
 /// Greet new contributors when they create their first issue or open their first pull request
 `actions/first-interaction@v1`: FirstInteractionV1
@@ -117,6 +136,9 @@ import
 
 /// Run simple scripts using the GitHub client
 `actions/github-script@v7`: GithubScriptV7
+
+/// Run simple scripts using the GitHub client
+`actions/github-script@v9`: GithubScriptV9
 
 /// Automatically label new pull requests based on the paths of files being changed
 `actions/labeler@v5`: LabelerV5
@@ -160,11 +182,17 @@ import
 /// Upload a build artifact that can be used by subsequent workflow steps
 `actions/upload-artifact@v5`: UploadArtifactV5
 
+/// Upload a build artifact that can be used by subsequent workflow steps
+`actions/upload-artifact@v7`: UploadArtifactV7
+
 /// A composite action that prepares your static assets to be deployed to GitHub Pages
 `actions/upload-pages-artifact@v3`: UploadPagesArtifactV3
 
 /// A composite action that prepares your static assets to be deployed to GitHub Pages
 `actions/upload-pages-artifact@v4`: UploadPagesArtifactV4
+
+/// A composite action that prepares your static assets to be deployed to GitHub Pages
+`actions/upload-pages-artifact@v5`: UploadPagesArtifactV5
 
 /// Finalize CodeQL database
 `github/codeql-action/analyze@v4`: CodeqlActionAnalyzeV4
