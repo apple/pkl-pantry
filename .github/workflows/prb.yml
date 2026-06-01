@@ -46,6 +46,14 @@ jobs:
         name: test-results-xml-build
         path: build/test-results/**/*.xml
         if-no-files-found: ignore
+  verdict:
+    if: '!cancelled() && !failure()'
+    needs:
+    - check-pkl-github-actions
+    - build
+    runs-on: ubuntu-latest
+    steps:
+    - run: 'true'
   upload-event-file:
     runs-on: ubuntu-latest
     steps:
