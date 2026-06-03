@@ -20,6 +20,15 @@ examples {
     paths = [ "Uptime" ]
     """
   }
+  ["diskioInput.toml"] {
+    """
+    [[inputs.diskio]]
+    devices = [ "sda", "sdb", "vd*" ]
+    skip_serial_number = true
+    device_tags = [ "ID_FS_TYPE", "ID_FS_USAGE" ]
+    name_templates = [ "$ID_FS_LABEL", "$DM_VG_NAME/$DM_LV_NAME" ]
+    """
+  }
   ["dockerInput.toml"] {
     """
     [[inputs.docker]]
@@ -41,6 +50,21 @@ examples {
     tls_cert = "/etc/telegraf/cert.pem"
     tls_key = "/etc/telegraf/key.pem"
     insecure_skip_verify = false
+    """
+  }
+  ["kernelInput.toml"] {
+    """
+    [[inputs.kernel]]
+    collect = [ "ksm", "psi" ]
+    """
+  }
+  ["memInput.toml"] {
+    """
+    [[inputs.mem]]
+    interval = "30s"
+    
+    [inputs.mem.tags]
+    host_role = "database"
     """
   }
   ["opentelemetry-output.toml"] {
@@ -67,6 +91,29 @@ examples {
     x-api-key = "my-api-key"
     """
   }
+  ["processesInput.toml"] {
+    """
+    [[inputs.processes]]
+    use_sudo = true
+    """
+  }
+  ["redisInput.toml"] {
+    """
+    [[inputs.redis]]
+    servers = [ "tcp://localhost:6379", "unix:///var/run/redis.sock" ]
+    username = "telegraf"
+    password = "hunter2"
+    tls_ca = "/etc/telegraf/ca.pem"
+    tls_cert = "/etc/telegraf/cert.pem"
+    tls_key = "/etc/telegraf/key.pem"
+    insecure_skip_verify = true
+    
+    [[inputs.redis.commands]]
+    command = [ "get", "sample-key" ]
+    field = "sample_key_value"
+    type = "string"
+    """
+  }
   ["simple.toml"] {
     """
     [[outputs.file]]
@@ -88,6 +135,18 @@ examples {
     
     [global_tags]
     user = "alice"
+    """
+  }
+  ["swapInput.toml"] {
+    """
+    [[inputs.swap]]
+    name_prefix = "host_"
+    """
+  }
+  ["systemInput.toml"] {
+    """
+    [[inputs.system]]
+    fielddrop = [ "uptime_format" ]
     """
   }
   ["x509CertInput.toml"] {

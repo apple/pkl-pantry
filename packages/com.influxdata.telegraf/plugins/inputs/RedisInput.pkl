@@ -1,0 +1,68 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The [Redis input plugin](https://docs.influxdata.com/telegraf/v1/input-plugins/redis/)
+/// gathers metrics from [Redis](https://redis.io/) servers.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.RedisInput
+
+extends "./Input.pkl"
+
+/// One or more URLs of Redis servers, matching the pattern
+/// `[protocol://][username:password]@address[:port]`, for example:
+///
+/// - `tcp://localhost:6379`
+/// - `tcp://username:password@192.168.99.100`
+/// - `unix:///var/run/redis.sock`
+///
+/// If no servers are specified, then `localhost` is used as the host.
+/// If no port is specified, `6379` is used.
+servers: Listing<String>?
+
+/// Optional Redis commands to retrieve additional values.
+commands: Listing<Command>?
+
+/// Username for ACL authentication (Redis 6.0+). You can add this
+/// to the server URI above or specify it here. The values here take
+/// precedence.
+username: String?
+
+/// Password for ACL authentication (Redis 6.0+). You can add this
+/// to the server URI above or specify it here. The values here take
+/// precedence.
+password: String?
+
+/// Optional TLS Config.
+tls_ca: String?
+tls_cert: String?
+tls_key: String?
+
+/// Use TLS but skip chain & host verification.
+insecure_skip_verify: Boolean?
+
+/// A Redis command whose result is stored in a field.
+class Command {
+  /// The command to send to the Redis server, given as the command name
+  /// followed by its arguments.
+  ///
+  /// For example, `new { "get"; "sample-key" }`.
+  command: Listing<String>
+
+  /// The field to store the result in.
+  field: String
+
+  /// The type of the result.
+  type: "string" | "integer" | "float"
+}

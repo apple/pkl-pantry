@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,14 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+/// The [Processes input plugin](https://docs.influxdata.com/telegraf/v1/input-plugins/processes/)
+/// gathers the number of processes and groups them by status.
+///
+/// This plugin only supports non-Windows systems.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.ProcessesInput
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
-}
+extends "./Input.pkl"
 
-package {
-  version = "1.8.0"
-}
+/// Use `sudo` to run the `ps` command on \*BSD systems.
+///
+/// Linux systems read `/proc`, so this does not apply there.
+use_sudo: Boolean?

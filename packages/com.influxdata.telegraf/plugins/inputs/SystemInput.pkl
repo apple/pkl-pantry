@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,14 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+/// The [System input plugin](https://docs.influxdata.com/telegraf/v1/input-plugins/system/)
+/// collects metrics about system load, uptime, and the number of logged-in users.
+///
+/// This plugin has no configuration beyond the options common to every input.
+/// The deprecated `uptime_format` field can be removed with `fielddrop = new { "uptime_format" }`.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.SystemInput
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
-}
-
-package {
-  version = "1.8.0"
-}
+extends "./Input.pkl"
