@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,14 +13,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Templates for configuring [Telegraf](https://docs.influxdata.com/telegraf),
-/// a plugin-driven server agent for collecting and reporting metrics.
-amends "../basePklProject.pkl"
+/// The [Kernel input plugin](https://docs.influxdata.com/telegraf/v1/input-plugins/kernel/)
+/// gathers kernel statistics from `/proc/stat`.
+///
+/// This plugin only supports Linux.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.KernelInput
 
-dependencies {
-  ["toml"] = import("../pkl.toml/PklProject")
-}
+extends "Input.pkl"
 
-package {
-  version = "1.8.0"
-}
+/// Additional metrics to gather beyond the standard kernel statistics.
+///
+/// Possible options:
+///
+/// - `"ksm"`: kernel same-page merging
+/// - `"psi"`: pressure stall information (requires kernel 4.20+)
+collect: Listing<"ksm" | "psi">?

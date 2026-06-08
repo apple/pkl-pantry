@@ -1,0 +1,48 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// The [DiskIO input plugin](https://docs.influxdata.com/telegraf/v1/input-plugins/diskio/)
+/// gathers metrics about disk I/O by device.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module com.influxdata.telegraf.plugins.inputs.DiskioInput
+
+extends "Input.pkl"
+
+/// Devices to collect stats for.
+///
+/// Wildcards are supported, except for disk synonyms like `/dev/disk/by-id/`.
+///
+/// Default: `["*"]` (all devices, including partitions)
+devices: Listing<String>?
+
+/// Skip gathering of the disk's serial numbers.
+skip_serial_number: Boolean?
+
+/// Device metadata to add as tags, on systems that support it (Linux only).
+/// Use 'udevadm info -q property -n <device>' to get a list of properties.
+/// Note: Most, but not all, udev properties can be accessed this way. Properties
+/// that are currently inaccessible include DEVTYPE, DEVNAME, and DEVPATH.
+device_tags: Listing<String>?
+
+/// Templates used to customize the device name tag.
+///
+/// Using the same metadata source as device_tags, you can also customize the
+/// name of the device via templates. The 'name_templates' parameter is a list
+/// of templates to try and apply to the device. The template may contain
+/// variables in the form of '$PROPERTY' or '${PROPERTY}'. The first template
+/// which does not contain any variables not present for the device is used as
+/// the device name tag. The typical use case is for LVM volumes, to get the
+/// VG/LV name instead of the near-meaningless DM-0 name.
+name_templates: Listing<String>?
