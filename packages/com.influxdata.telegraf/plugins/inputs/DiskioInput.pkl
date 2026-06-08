@@ -18,7 +18,7 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module com.influxdata.telegraf.plugins.inputs.DiskioInput
 
-extends "./Input.pkl"
+extends "Input.pkl"
 
 /// Devices to collect stats for.
 ///

@@ -20,7 +20,7 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module com.influxdata.telegraf.plugins.inputs.KernelInput
 
-extends "./Input.pkl"
+extends "Input.pkl"
 
 /// Additional metrics to gather beyond the standard kernel statistics.
 ///

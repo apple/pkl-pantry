@@ -21,4 +21,4 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module com.influxdata.telegraf.plugins.inputs.SystemInput
 
-extends "./Input.pkl"
+extends "Input.pkl"

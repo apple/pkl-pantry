@@ -20,7 +20,7 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module com.influxdata.telegraf.plugins.inputs.ProcessesInput
 
-extends "./Input.pkl"
+extends "Input.pkl"
 
 /// Use `sudo` to run the `ps` command on \*BSD systems.
 ///

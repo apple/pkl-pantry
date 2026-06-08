@@ -18,7 +18,7 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module com.influxdata.telegraf.plugins.inputs.RedisInput
 
-extends "./Input.pkl"
+extends "Input.pkl"
 
 /// One or more URLs of Redis servers, matching the pattern
 /// `[protocol://][username:password]@address[:port]`, for example:
