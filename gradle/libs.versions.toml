@@ -3,7 +3,7 @@ pkl = "0.31.1"
 ktfmt = "0.62"
 kotlin = "2.4.0"
 junit = "6.1.0"
-spotless = "8.6.0"
+spotless = "8.7.0"
 
 [libraries]
 junitEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
