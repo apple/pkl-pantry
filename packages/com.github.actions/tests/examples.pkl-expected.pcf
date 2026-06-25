@@ -52,6 +52,27 @@ examples {
     
     """
   }
+  ["parallel.pkl"] {
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    'on': {}
+    jobs:
+      parallel:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v6
+        - parallel:
+          - name: Build frontend
+            run: npm run build:frontend
+          - name: Build backend
+            run: npm run build:backend
+          - name: Build docs
+            run: npm run build:docs
+        - name: Run tests after all builds complete
+          run: npm test
+    
+    """
+  }
   ["prebuildActions.pkl"] {
     """
     # Generated from Workflow.pkl. DO NOT EDIT.
@@ -232,6 +253,29 @@ examples {
             git add wiki/README.md || echo "No changes to commit"
             git commit -m 'Re-build TOC in README.md' || echo "No changes to commit"
             git push origin || echo "No changes to commit"
+    
+    """
+  }
+  ["wait-all.pkl"] {
+    """
+    # Generated from Workflow.pkl. DO NOT EDIT.
+    'on': {}
+    jobs:
+      wait-all:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Start database
+          id: db
+          background: true
+          run: docker run -d postgres:15
+        - name: Start cache
+          id: cache
+          background: true
+          run: docker -d run redis:7
+        - name: Run integration tests
+          run: npm run test:integration
+        - name: Wait for all services to stop
+          wait-all:
     
     """
   }

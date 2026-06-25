@@ -27,7 +27,7 @@
 //
 // -----------------------------------------------------------------------------
 //
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@
 /** gha-fork */
 abstract module com.github.actions.AbstractStep
 
+import "AbstractJob.pkl"
 import "Workflow.pkl"
 
 /// A name for your step to display on GitHub.
@@ -69,6 +70,9 @@ id: String?
 /// For more information, see Evaluate expressions in workflows and actions.
 @SourceCode { language = "GithubExpressionLanguage" }
 `if`: String?
+
+/// Prevents a job from failing when a step fails. Set to true to allow a job to pass when this step fails.
+`continue-on-error`: Boolean?
 
 /// The maximum number of minutes to run the step before killing the process.
 ///
@@ -119,5 +123,30 @@ env: Workflow.EnvironmentVariables?
 ///
 /// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell>
 shell: Shell?
+
+/// Runs a step asynchronously so the job continues to the next step without waiting for it to finish.
+///
+/// Use `background: true` for long-running processes, such as databases, servers, or monitoring tasks, that need to
+/// run alongside other steps.
+/// You synchronize with background steps later using [wait] or [wait-all] or stop them with cancel.
+///
+/// You can use background on steps that use run or uses.
+/// To reference a background step from wait or cancel, give it an id.
+/// A maximum of 10 background steps can run concurrently in a single job; additional background steps are queued until
+/// a slot is free.
+///
+/// Outputs and environment changes from a background step are only available after you run a [wait] or [wait-all] step
+/// that includes it. If a background step fails, the job fails at the next [wait] or [wait-all] that includes it
+/// (unless [continue-on-error] is set on that step).
+/// An implicit `wait-all` runs before any post-job cleanup.
+///
+/// Use [background] when you need fine-grained control: starting a long-running process (like a server or database)
+/// that stays up while later steps run, referencing a specific step with [wait] or [cancel], or interleaving
+/// background work with other steps.
+/// If you instead have a self-contained group of steps that should all finish before the job continues,
+/// [parallel] is a more convenient shorthand.
+///
+/// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsbackground>
+background: Boolean?
 
 typealias Shell = "pwsh" | "bash" | "sh" | "cmd" | "powershell" | "python" | String

@@ -1,0 +1,5 @@
+examples {
+  ["exclusively set properties"] {
+    "Cannot set these properties together: uses, run, cancel"
+  }
+}
