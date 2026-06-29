@@ -27,7 +27,7 @@
 //
 // -----------------------------------------------------------------------------
 //
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,8 @@ module com.github.actions.Step
 
 extends "AbstractStep.pkl"
 
-import "internal/util.pkl"
+import "AbstractTypedStep.pkl"
+import "Step.pkl"
 
 /// Selects an action to run as part of a step in your job.
 ///
@@ -79,7 +80,68 @@ uses: String?
 /// You can choose a different shell and customize the shell used to run commands.
 /// For more information, see [shell].
 /// Each `run` keyword represents a new process and shell in the runner environment.
-run: String(length < 21_000)?(util.isExclusive(this, uses))
+run: String(length < 21_000)?
+
+/// Pauses the job until one or more background steps complete.
+/// A `wait` step performs no work itself, it only blocks until the referenced background steps finish.
+/// Provide a single step `id` as a string, or multiple step `id`s as an array.
+///
+/// After a `wait` step completes, the outputs of the referenced background steps become available to subsequent steps.
+/// If a referenced background step failed, the `wait` step fails too.
+///
+/// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepswait>
+wait: (String | *Listing<String>)?
+
+/// Pauses the job until all active background steps complete.
+///
+/// This is useful when several background steps are running and you want them all to finish before continuing.
+/// Like [wait], the [wait-all] step fails if any of the background steps it waits on failed, unless you set
+/// [continue-on-error] to true.
+///
+/// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepswait-all>
+`wait-all`: Boolean?
+
+/// Gracefully terminates a running background step.
+///
+/// The runner sends the step's process a termination signal (`SIGTERM`) so it can clean up, and forcibly stops it
+/// (`SIGKILL`) if it does not exit within a short grace period.
+///
+/// The `cancel` keyword targets a single background step by its `id`.
+///
+/// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscancel>
+cancel: String?
+
+/// Runs a group of steps concurrently, then waits for all of them to finish before continuing.
+/// The `parallel` keyword is shorthand: every step in the group runs as a background step, with an implicit `wait` at
+/// the end of the group.
+/// Use it when you have an independent group of steps that can run at the same time and you don't need to reference them individually.
+///
+/// Use `parallel` when you have a self-contained group of steps that should all finish before the job moves on,
+/// such as building several components at once.
+/// Use [background] when you need finer control: starting a long-running process (like a server or database) that
+/// stays up while later steps run, referencing a specific step with [wait] or [cancel], or interleaving background work
+/// with other steps.
+/// In short, `parallel` is more limited but more convenient for the "run this group at once" case, while `background`
+/// is the general-purpose primitive.
+///
+/// Each step in the group is subject to the same 10-step concurrency limit as other background steps.
+///
+/// Docs: <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscancel>
+parallel: Listing<*Step | AbstractTypedStep>?
 
 /// Inputs to the action.
-with: Mapping<String, String | Number | Boolean>?
+with: Mapping<String, String | Number | Boolean>?(
+  /* class-level constraint */
+  hasExclusivelySetProperties
+)
+
+local exclusiveProperties = List("uses", "run", "wait", "wait-all", "cancel", "parallel")
+
+local hasExclusivelySetProperties =
+  let (setProperties = exclusiveProperties.filter((it) -> this.getProperty(it) != null))
+    if (setProperties.length == 1)
+      true
+    else if (setProperties.length == 0)
+      throw("One of the following properties must be set: \(exclusiveProperties.join(", "))")
+    else
+      throw("Cannot set these properties together: \(setProperties.join(", "))")

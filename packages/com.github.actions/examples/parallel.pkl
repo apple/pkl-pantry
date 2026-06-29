@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,16 +13,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Utility modules for working with GitHub Actions.
-amends "../basePklProject.pkl"
+amends "../Workflow.pkl"
 
-dependencies {
-  ["com.github.actions"] = import("../com.github.actions/PklProject")
-  ["io.github.typesafegithub"] = import("../io.github.typesafegithub/PklProject")
-  ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
-  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
-}
+import "../catalog.pkl"
 
-package {
-  version = "1.0.15"
+jobs {
+  ["parallel"] {
+    `runs-on` = "ubuntu-latest"
+    steps {
+      catalog.`actions/checkout@v6`
+      new {
+        parallel {
+          new {
+            name = "Build frontend"
+            run = "npm run build:frontend"
+          }
+          new {
+            name = "Build backend"
+            run = "npm run build:backend"
+          }
+          new {
+            name = "Build docs"
+            run = "npm run build:docs"
+          }
+        }
+      }
+      new {
+        name = "Run tests after all builds complete"
+        run = "npm test"
+      }
+    }
+  }
 }
