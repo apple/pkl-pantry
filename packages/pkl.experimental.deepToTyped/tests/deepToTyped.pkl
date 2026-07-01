@@ -356,4 +356,10 @@ facts {
       keyTransform = (prop) -> prop.annotations.findOrNull((it) -> it is KeyTransform)?.name
     }.apply(ClassWithKeyTranform, input) == expectedClassWithKeyTranform
   }
+
+  ["deepToTyped.attemptApply() missing field does not throw"] {
+    // Foo requires the x field to be defined. This should return
+    // a converstion failure and **not** throw an error
+    t.attemptApply(Foo, new Mapping {}) is t.ConversionFailure
+  }
 }

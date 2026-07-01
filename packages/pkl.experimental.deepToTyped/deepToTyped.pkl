@@ -170,10 +170,12 @@ local function applyProperty(valueAsMap: Map, prop: reflect.Property) =
   )
     if (valueAsMap.containsKey(propName))
       applyType(prop.type, valueAsMap[propName])
-    else if (!(prop.type is reflect.NullableType) && prop.defaultValue != null)
+    else if (prop.type is reflect.NullableType)
+      null
+    else if (prop.defaultValue != null)
       prop.defaultValue
     else
-      null
+      Fail("missing \(if (prop.type is reflect.DeclaredType) prop.type.referent.name else "Unknown")")
 
 local function applyDynamicOrMapping(
   type: reflect.Class,
