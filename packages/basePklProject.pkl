@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,23 +21,24 @@ import "pkl:reflect"
 
 local myModule = reflect.Module(module)
 
-local packageName: String =
-  findRootModule(myModule)
-    .relativePathTo(module)
-    .last
+local packageName: String = findRootModule(myModule).relativePathTo(module).last
 
 local function findRootModule(mod: reflect.Module): Module =
   let (supermodule = mod.supermodule)
-    if (supermodule == null || !supermodule.isAmend) mod.reflectee
-    else findRootModule(supermodule)
+    if (supermodule == null || !supermodule.isAmend)
+      mod.reflectee
+    else
+      findRootModule(supermodule)
 
-const local allTests = import*("**/tests/**.pkl").keys.filter((it) -> !it.contains("tests/fixtures/"))
+local const allTests =
+  import*("**/tests/**.pkl").keys.filter((it) -> !it.contains("tests/fixtures/"))
 
 package {
   name = packageName
   apiTests = tests // api tests are shared with module tests
   baseUri = "package://pkg.pkl-lang.org/pkl-pantry/\(name)"
-  packageZipUrl = "https://github.com/apple/pkl-pantry/releases/download/\(name)@\(version)/\(name)@\(version).zip"
+  packageZipUrl =
+    "https://github.com/apple/pkl-pantry/releases/download/\(name)@\(version)/\(name)@\(version).zip"
   license = "Apache-2.0"
   authors {
     "The Pkl Authors <pkl-oss@group.apple.com>"
@@ -49,7 +50,8 @@ package {
   description = myModule.docComment
   issueTracker = "https://github.com/apple/pkl-pantry/issues"
   sourceCode = "https://github.com/apple/pkl-pantry/tree/\(name)@\(version)/packages/\(name)"
-  sourceCodeUrlScheme = "https://github.com/apple/pkl-pantry/blob/\(name)@\(version)/packages/\(name)%{path}#L%{line}-%{endLine}"
+  sourceCodeUrlScheme =
+    "https://github.com/apple/pkl-pantry/blob/\(name)@\(version)/packages/\(name)%{path}#L%{line}-%{endLine}"
 }
 
 tests {
