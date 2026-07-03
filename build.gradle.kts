@@ -175,14 +175,6 @@ kotlin { jvmToolchain(21) }
 
 repositories { mavenCentral() }
 
-dependencies {
-  testImplementation(libs.pklCore)
-  testImplementation(libs.pklParser)
-  testImplementation(libs.junitEngine)
-  testImplementation(libs.junitParams)
-  testRuntimeOnly(libs.junitPlatformLauncher)
-}
-
 val repositoryUrl = "https://github.com/apple/pkl-pantry"
 
 val repositoryApiUrl = repositoryUrl.replace(Regex("github.com/"), "api.github.com/repos/")
@@ -203,6 +195,13 @@ pkl.project {
     junitReportsDir = outputDir.dir("test-results")
   }
 }
+
+val moduleNamesTest by
+  pkl.tests.registering {
+    sourceModules.add(file("packages/moduleNameTest.pkl"))
+    junitReportsDir = outputDir.dir("test-results")
+    transitiveModules.from(fileTree("packages/") { include("*.pkl") })
+  }
 
 tasks.withType<BasePklTask> { color = true }
 
@@ -332,9 +331,9 @@ val testTarExamples by
   }
 
 tasks.test {
-  useJUnitPlatform()
   dependsOn(createPackages)
   dependsOn(testTarExamples)
+  dependsOn(moduleNamesTest.name)
 }
 
 tasks.build { dependsOn(prepareReleases) }
