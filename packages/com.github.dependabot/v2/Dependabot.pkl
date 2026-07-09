@@ -78,8 +78,8 @@ class Update {
   `exclude-paths`: Listing<String>(length >= 0, isDistinct)?
 
   /// Configure groups for dependencies. Each 'groups' property is arbitrary will appear in pull request
-  /// titles and branch names. For example, the code snippet '{"groups": {"NPM dependencies":
-  /// {"patterns": ["*"]}}}' sets the group name to 'NPM dependencies'.
+  /// titles and branch names. For example, the code snippet `'{"groups": {"NPM dependencies": {"patterns": ["*"]}}}'`
+  /// sets the group name to 'NPM dependencies'.
   groups: Mapping<String, Group>(length >= 1)?
 
   /// Ignore certain dependencies or versions
@@ -210,6 +210,9 @@ class Group {
 
   /// Specify the semantic versioning level to include in the group
   `update-types`: Listing<"major" | "minor" | "patch">(!isEmpty, isDistinct)?
+
+  /// Specify how Dependabot should group updates across multiple directories in a monorepo.
+  `group-by`: "dependency-name"?
 }
 
 class Ignore {
