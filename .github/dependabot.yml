@@ -4,10 +4,10 @@ updates:
   cooldown:
     default-days: 7
     exclude:
-    - org.pkl-lang:*
+    - org.pkl-lang
   directory: /
   schedule:
-    interval: weekly
+    interval: quarterly
 - package-ecosystem: github-actions
   cooldown:
     default-days: 7
