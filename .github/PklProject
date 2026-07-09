@@ -17,7 +17,7 @@ amends "pkl:Project"
 
 dependencies {
   ["pkl.impl.ghactions"] {
-    uri = "package://pkg.pkl-lang.org/pkl-project-commons/pkl.impl.ghactions@1.8.1"
+    uri = "package://pkg.pkl-lang.org/pkl-project-commons/pkl.impl.ghactions@1.8.2"
   }
   ["com.github.actions"] = import("../packages/com.github.actions/PklProject")
 }
