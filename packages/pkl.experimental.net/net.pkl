@@ -374,7 +374,12 @@ class IPv4Network {
       + ".in-addr.arpa"
 
   /// Calculate all subnets of this network with prefix [target].
+  ///
   /// For example, given IPv4Network("10.53.120.0/21").subdivideTo(24), it outputs 8 /24 networks
+  ///
+  /// Note: this enumerates all subnets eagerly. If the target prefix is much larger than this
+  /// network's prefix, this can take a long time! See [subnet()] for a way to compute a single
+  /// subnet.
   function subdivideTo(target: UInt(isBetween(0, bitWidth) && this >= prefix)): Listing<IPv4Network> =
     if (prefix == target)
       new { self }
@@ -385,6 +390,24 @@ class IPv4Network {
           base = new { repr = self.base.repr + 1.shl(bitWidth - self.prefix - 1) }
           prefix = self.prefix + 1
         }.subdivideTo(target)
+      }
+
+  /// Compute the [n]th subnet of this network with prefix [target].
+  ///
+  /// For example, given `IPv4Network("10.53.120.0/21").subnet(24, 3)`, it outputs
+  /// `IPv4Network("10.53.123.0/24")`.
+  function subnet(
+    target: UInt(isBetween(0, bitWidth) && this >= prefix),
+    n: UInt32
+  ): net.IPv4Network =
+    if (1.shl(target - prefix) <= n)
+      throw(
+        "subnet number \(n) exceeds maximum possible between prefix /\(prefix) and target /\(target)"
+      )
+    else
+      new net.IPv4Network {
+        base = new net.IPv4Address { repr = firstAddress.repr + n.shl(bitWidth - target) }
+        prefix = target
       }
 
   function toString(): String = "\(base.toString())/\(prefix)"
@@ -447,6 +470,10 @@ class IPv6Network {
   /// Calculate all subnets of this network with prefix [target].
   ///
   /// For example, given `IPv6Network("2620:149:a:960::/61").subdivideTo(64)`, it outputs 8 /64 networks
+  ///
+  /// Note: this enumerates all subnets eagerly. If the target prefix is much larger than this
+  /// network's prefix, this can take a long time! See [subnet()] for a way to compute a single
+  /// subnet.
   function subdivideTo(target: UInt(isBetween(0, bitWidth) && this >= prefix)): Listing<IPv6Network> =
     if (prefix == target)
       new { self }
@@ -457,6 +484,28 @@ class IPv6Network {
           base { repr = self.base.repr.add(u128.one.shl(bitWidth - self.prefix - 1)) }
           prefix = self.prefix + 1
         }.subdivideTo(target)
+      }
+
+  /// Compute the [n]th subnet of this network with prefix [target].
+  ///
+  /// For example, given `IPv6Network("2620:149:a:960::/64").subnet(80, 10)`, it outputs
+  /// `IPv6Network("2620:149:a:960:a::/80")`.
+  function subnet(
+    target: UInt(isBetween(0, bitWidth) && this >= prefix),
+    n: UInt32
+  ): net.IPv6Network =
+    // `target - prefix == bitWidth` (only possible when prefix == 0 and target == bitWidth) is skipped:
+    // the true subnet count, 2^bitWidth, isn't representable as a UInt128, and shl() wraps around to 0
+    // in that case. The check is safe to skip here since n is a UInt32, always < 2^bitWidth.
+    if (target - prefix < bitWidth && u128.one.shl(target - prefix).le(u128.UInt128(0, 0, 0, n)))
+      throw(
+        "subnet number \(n) exceeds maximum possible between prefix /\(prefix) and target /\(target)"
+      )
+    else
+      new net.IPv6Network {
+        local delta: u128.UInt128 = (u128.UInt128(0, 0, 0, n)).shl(bitWidth - target)
+        base = (firstAddress) { repr = firstAddress.repr.add(delta) }
+        prefix = target
       }
 
   function toString(): String = "\(base)/\(prefix)"
