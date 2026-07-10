@@ -281,6 +281,33 @@ facts {
     !("" is net.IPv6CIDRString)
     !("0.0.0.0/10" is net.IPv6CIDRString)
   }
+  ["IPv4NetworkString"] {
+    "10.0.0.0/24" is net.IPv4NetworkString
+    "0.0.0.0/0" is net.IPv4NetworkString // whole address space: no host bits to be non-zero
+    "255.255.255.255/32" is net.IPv4NetworkString // single host: every bit is a network bit
+    !("10.0.0.1/24" is net.IPv4NetworkString) // host bits set
+    !("not a cidr" is net.IPv4NetworkString)
+    !("" is net.IPv4NetworkString)
+  }
+  ["IPv6NetworkString"] {
+    "2001:db8::/32" is net.IPv6NetworkString
+    "::/0" is net.IPv6NetworkString // whole address space: no host bits to be non-zero
+    "::1/128" is net.IPv6NetworkString // single host: every bit is a network bit
+    "fe80::%1/64" is net.IPv6NetworkString // scoped, but still canonical
+    !("2001:db8::1/32" is net.IPv6NetworkString) // host bits set
+    !("fe80::1/64" is net.IPv6NetworkString) // host bits set
+    !("fe80::1%1/64" is net.IPv6NetworkString) // scoped, host bits set
+    !("not a cidr" is net.IPv6NetworkString)
+    !("" is net.IPv6NetworkString)
+  }
+  ["IPNetworkString"] {
+    "10.0.0.0/24" is net.IPNetworkString
+    "2001:db8::/32" is net.IPNetworkString
+    !("10.0.0.1/24" is net.IPNetworkString) // host bits set
+    !("2001:db8::1/32" is net.IPNetworkString) // host bits set
+    !("not a cidr" is net.IPNetworkString)
+    !("" is net.IPNetworkString)
+  }
   ["IPv4AddressPortString"] {
     "0.0.0.0:0" is net.IPv4AddressPortString
     "255.255.255.255:65535" is net.IPv4AddressPortString

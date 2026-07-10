@@ -94,6 +94,9 @@ typealias IPAddressPortString = IPv4AddressPortString|IPv6AddressPortString
 /// A string that contains either an IPv4 or IPv6 CIDR range.
 typealias IPCIDRString = IPv4CIDRString|IPv6CIDRString
 
+/// A string that contains either a IPv4 of IPv6 network.
+typealias IPNetworkString = IPv4NetworkString|IPv6NetworkString
+
 /// An IPv4 or IPv6 address.
 typealias IPAddress = IPv4Address|IPv6Address
 
@@ -127,6 +130,18 @@ typealias IPv4CIDRString = String(matches(Regex(#"\#(net.ipv4String)/[0-9]{1,2}"
 /// A string that contains an IPv6 address.
 // language=RegExp
 typealias IPv6CIDRString = String(matches(Regex(#"\#(net.ipv6String)/[0-9]{1,3}"#)))
+
+/// A string that contains a strict IPv4 network, i.e. an IPv4 CIDR block whose address has no bits
+/// set beyond its prefix.
+///
+/// For example, `"10.0.0.0/24"` qualifies, but `"10.0.0.1/24"` does not, since the latter has host bits set.
+typealias IPv4NetworkString = String(this is IPv4CIDRString && let (n = net.IPv4Network(this)) n.base == n.firstAddress)
+
+/// A string that contains a strict IPv6 network, i.e. an IPv6 CIDR block whose address has no bits
+/// set beyond its prefix.
+///
+/// For example, `"2001:db8::/32"` qualifies, but `"2001:db8::1/32"` does not, since the latter has host bits set.
+typealias IPv6NetworkString = String(this is IPv6CIDRString && let (n = net.IPv6Network(this)) n.base == n.firstAddress)
 
 /// Creates an [IPAddress] from an [IPAddressString].
 function IP(ip: IPAddressString): IPAddress =
