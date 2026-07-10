@@ -140,14 +140,14 @@ typealias IPv6CIDRString = String(matches(Regex(#"\#(net.ipv6String)/[0-9]{1,3}"
 ///
 /// For example, `"10.0.0.0/24"` qualifies, but `"10.0.0.1/24"` does not, since the latter has host bits set.
 typealias IPv4NetworkString =
-  String(this is IPv4CIDRString && let (n = net.IPv4Network(this)) n.base == n.firstAddress)
+  String(this is IPv4CIDRString, let (n = net.IPv4Network(this)) n.base == n.firstAddress)
 
 /// A string that contains a strict IPv6 network, i.e. an IPv6 CIDR block whose address has no bits
 /// set beyond its prefix.
 ///
 /// For example, `"2001:db8::/32"` qualifies, but `"2001:db8::1/32"` does not, since the latter has host bits set.
 typealias IPv6NetworkString =
-  String(this is IPv6CIDRString && let (n = net.IPv6Network(this)) n.base == n.firstAddress)
+  String(this is IPv6CIDRString, let (n = net.IPv6Network(this)) n.base == n.firstAddress)
 
 /// Creates an [IPAddress] from an [IPAddressString].
 function IP(ip: IPAddressString): IPAddress =
@@ -385,11 +385,13 @@ class IPv4Network {
   function contains(ip: IPv4Address): Boolean =
     firstAddress.repr <= ip.repr && ip.repr <= lastAddress.repr
 
-  /// Return true if [other] is a subnet of this network, i.e. every address in [other] is also in this network.
+  /// Return true if [other] is a subnet of this network, i.e. other's prefix starts with this
+  /// network's prefix.
   function containsNetwork(other: IPv4Network): Boolean =
-    self.contains(other.firstAddress) && self.contains(other.lastAddress)
+    prefix <= other.prefix && firstAddress.repr == other.base.repr.and(other.base.maskHi(prefix))
 
-  /// Return true if this network and [other] share at least one address.
+  /// Return true if this network overlaps with the other, i.e. either [other] is a subnet of this
+  /// network or vice versa.
   function overlaps(other: IPv4Network): Boolean =
     self.containsNetwork(other) || other.containsNetwork(self)
 
@@ -421,10 +423,7 @@ class IPv4Network {
   ///
   /// For example, given `IPv4Network("10.53.120.0/21").subnet(24, 3)`, it outputs
   /// `IPv4Network("10.53.123.0/24")`.
-  function subnet(
-    target: UInt(isBetween(0, bitWidth) && this >= prefix),
-    n: UInt32
-  ): net.IPv4Network =
+  function subnet(target: UInt(isBetween(0, bitWidth), this >= prefix), n: UInt32): net.IPv4Network =
     if (1.shl(target - prefix) <= n)
       throw(
         "subnet number \(n) exceeds maximum possible between prefix /\(prefix) and target /\(target)"
@@ -482,14 +481,18 @@ class IPv6Network {
       && ip.repr.le(lastAddress.repr)
       && (base.scopeId == ip.scopeId || base.scopeId == null || ip.scopeId == null)
 
-  /// Return true if [other] is a subnet of this network, i.e. every address in [other] is also in this network.
+  /// Return true if [other] is a subnet of this network, i.e. other's prefix starts with this
+  /// network's prefix.
   ///
   /// If both [base.scopeId][IPv6Address.scopeId] and [other.base.scopeId][IPv6Address.scopeId] are non-[null],
   /// they must match. If either is [null] then scope ID is ignored.
   function containsNetwork(other: IPv6Network): Boolean =
-    self.contains(other.firstAddress) && self.contains(other.lastAddress)
+    prefix <= other.prefix
+      && firstAddress.repr == other.base.repr.and(other.base.maskHi(prefix))
+      && (base.scopeId == other.base.scopeId || base.scopeId == null || other.base.scopeId == null)
 
-  /// Return true if this network and [other] share at least one address.
+  /// Return true if this network overlaps with the other, i.e. either [other] is a subnet of this
+  /// network or vice versa.
   ///
   /// If both [base.scopeId][IPv6Address.scopeId] and [other.base.scopeId][IPv6Address.scopeId] are non-[null],
   /// they must match. If either is [null] then scope ID is ignored.
@@ -529,10 +532,7 @@ class IPv6Network {
   ///
   /// For example, given `IPv6Network("2620:149:a:960::/64").subnet(80, 10)`, it outputs
   /// `IPv6Network("2620:149:a:960:a::/80")`.
-  function subnet(
-    target: UInt(isBetween(0, bitWidth) && this >= prefix),
-    n: UInt32
-  ): net.IPv6Network =
+  function subnet(target: UInt(isBetween(0, bitWidth), this >= prefix), n: UInt32): net.IPv6Network =
     // `target - prefix == bitWidth` (only possible when prefix == 0 and target == bitWidth) is skipped:
     // the true subnet count, 2^bitWidth, isn't representable as a UInt128, and shl() wraps around to 0
     // in that case. The check is safe to skip here since n is a UInt32, always < 2^bitWidth.
