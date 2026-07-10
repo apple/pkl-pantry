@@ -410,6 +410,47 @@ facts {
     net.IPv6Network("fe80::/64").firstAddress.scopeId == null
     net.IPv6Network("fe80::/64").lastAddress.scopeId == null
   }
+  ["IPv4Network.subnet()"] {
+    net.IPv4Network("10.53.120.0/21").subnet(24, 3) == net.IPv4Network("10.53.123.0/24")
+    net.IPv4Network("10.53.120.0/21").subnet(24, 0) == net.IPv4Network("10.53.120.0/24")
+    net.IPv4Network("10.53.120.0/21").subnet(24, 7) == net.IPv4Network("10.53.127.0/24") // last valid subnet
+    net.IPv4Network("10.53.120.0/21").subnet(21, 0) == net.IPv4Network("10.53.120.0/21") // target == prefix
+    module.catch(() -> net.IPv4Network("10.53.120.0/21").subnet(24, 8)) != null // one past the last valid subnet
+  }
+  ["IPv4Network.subnet() at the top of the address space (/32)"] {
+    // subdividing all the way down to individual hosts, right at the last IP in the address space
+    net.IPv4Network("255.255.255.252/30").subnet(32, 3) == net.IPv4Network("255.255.255.255/32")
+    // self is already a single-host (/32) network
+    net.IPv4Network("10.0.0.1/32").subnet(32, 0) == net.IPv4Network("10.0.0.1/32")
+    module.catch(() -> net.IPv4Network("10.0.0.1/32").subnet(32, 1)) != null
+    // target - prefix == bitWidth: subdividing the entire address space (/0) down to /32 hosts
+    net.IPv4Network("0.0.0.0/0").subnet(32, 0) == net.IPv4Network("0.0.0.0/32")
+    net.IPv4Network("0.0.0.0/0").subnet(32, 4294967295) == net.IPv4Network("255.255.255.255/32")
+  }
+  ["IPv6Network.subnet()"] {
+    net.IPv6Network("2620:149:a:960::/64").subnet(80, 10) == net.IPv6Network("2620:149:a:960:a::/80")
+    net.IPv6Network("2620:149:a:960::/64").subnet(80, 0) == net.IPv6Network("2620:149:a:960::/80")
+    net.IPv6Network("2620:149:a:960::/64").subnet(80, 65535) == net.IPv6Network("2620:149:a:960:ffff::/80") // last valid subnet
+    net.IPv6Network("2620:149:a:960::/64").subnet(64, 0) == net.IPv6Network("2620:149:a:960::/64") // target == prefix
+    module.catch(() -> net.IPv6Network("2620:149:a:960::/64").subnet(80, 65536)) != null // one past the last valid subnet
+  }
+  ["IPv6Network.subnet() at the top of the address space (/128)"] {
+    // subdividing all the way down to individual hosts, right at the last IP in the address space
+    net.IPv6Network("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffc/126").subnet(128, 3) ==
+      net.IPv6Network("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128")
+    // self is already a single-host (/128) network
+    net.IPv6Network("::1/128").subnet(128, 0) == net.IPv6Network("::1/128")
+    module.catch(() -> net.IPv6Network("::1/128").subnet(128, 1)) != null
+    // target - prefix == bitWidth: subdividing the entire address space (/0) down to /128 hosts.
+    // 2^128 isn't representable as a UInt128, so this exercises the fallback path that skips the
+    // (otherwise-overflowing) bounds check.
+    net.IPv6Network("::/0").subnet(128, 0) == net.IPv6Network("::/128")
+    net.IPv6Network("::/0").subnet(128, 4294967295) == net.IPv6Network("::ffff:ffff/128")
+  }
+  ["IPv6Network.subnet() preserves scopeId"] {
+    net.IPv6Network("fe80::%1/64").subnet(80, 10).base.scopeId == 1
+    net.IPv6Network("fe80::/64").subnet(80, 10).base.scopeId == null
+  }
   ["IPv6Range() preserves scopeId as appropriate"] {
     net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%1")).toList().every((ip) -> ip.scopeId == 1)
     net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%2")).toList().every((ip) -> ip.scopeId == null)
