@@ -337,6 +337,12 @@ class IPv4Network {
   /// Return true if this network contains [ip].
   function contains(ip: IPv4Address): Boolean = firstAddress.repr <= ip.repr && ip.repr <= lastAddress.repr
 
+  /// Return true if [other] is a subnet of this network, i.e. every address in [other] is also in this network.
+  function containsNetwork(other: IPv4Network): Boolean = self.contains(other.firstAddress) && self.contains(other.lastAddress)
+
+  /// Return true if this network and [other] share at least one address.
+  function overlaps(other: IPv4Network): Boolean = self.containsNetwork(other) || other.containsNetwork(self)
+
   /// Generate the name of the reverse DNS zone for this network.
   function reverse(): String = base.toString().split(".").take(prefix ~/ reverseBitResolution).reverse().join(".") + ".in-addr.arpa"
 
@@ -393,6 +399,18 @@ class IPv6Network {
   /// If either is [null] then scope ID is ignored.
   function contains(ip: IPv6Address): Boolean = firstAddress.repr.le(ip.repr) && ip.repr.le(lastAddress.repr) &&
     (base.scopeId == ip.scopeId || base.scopeId == null || ip.scopeId == null)
+
+  /// Return true if [other] is a subnet of this network, i.e. every address in [other] is also in this network.
+  ///
+  /// If both [base.scopeId][IPv6Address.scopeId] and [other.base.scopeId][IPv6Address.scopeId] are non-[null],
+  /// they must match. If either is [null] then scope ID is ignored.
+  function containsNetwork(other: IPv6Network): Boolean = self.contains(other.firstAddress) && self.contains(other.lastAddress)
+
+  /// Return true if this network and [other] share at least one address.
+  ///
+  /// If both [base.scopeId][IPv6Address.scopeId] and [other.base.scopeId][IPv6Address.scopeId] are non-[null],
+  /// they must match. If either is [null] then scope ID is ignored.
+  function overlaps(other: IPv6Network): Boolean = self.containsNetwork(other) || other.containsNetwork(self)
 
   /// Generate the name of the reverse DNS zone for this network.
   function reverse(): String = (base) { scopeId = null }.toExpandedString().replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
