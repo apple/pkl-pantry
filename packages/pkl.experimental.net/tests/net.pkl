@@ -404,6 +404,41 @@ facts {
     net.IPv6Network("fe80::/96").contains(net.IPv6Address("fe80::1%1"))
     !net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1%2"))
   }
+  ["IPv6Network.containsNetwork()"] {
+    net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("2001:db8:0:1::/64")) // narrower prefix inside wider
+    !net.IPv6Network("2001:db8:0:1::/64").containsNetwork(net.IPv6Network("2001:db8::/32")) // wider isn't a subnet of narrower
+    net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("2001:db8::/32")) // identical
+    !net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("2001:db9::/32")) // disjoint
+    !net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("::/0")) // other is wider than self, not narrower
+    // ::/0 is the entire address space: it contains every other network, including itself
+    net.IPv6Network("::/0").containsNetwork(net.IPv6Network("2001:db8::/32"))
+    net.IPv6Network("::/0").containsNetwork(net.IPv6Network("::1/128"))
+    net.IPv6Network("::/0").containsNetwork(net.IPv6Network("::/0"))
+    // ::1/128 is a single host: it only contains itself
+    net.IPv6Network("::1/128").containsNetwork(net.IPv6Network("::1/128"))
+    !net.IPv6Network("::1/128").containsNetwork(net.IPv6Network("2001:db8::/32"))
+    !net.IPv6Network("::1/128").containsNetwork(net.IPv6Network("::2/128"))
+  }
+  ["IPv6Network.containsNetwork() and scopeId"] {
+    net.IPv6Network("fe80::%1/64").containsNetwork(net.IPv6Network("fe80::%1/96")) // same scope
+    net.IPv6Network("fe80::/64").containsNetwork(net.IPv6Network("fe80::%1/96")) // self unscoped: ignored
+    net.IPv6Network("fe80::%1/64").containsNetwork(net.IPv6Network("fe80::/96")) // other unscoped: ignored
+    !net.IPv6Network("fe80::%1/64").containsNetwork(net.IPv6Network("fe80::%2/96")) // different scope
+  }
+  ["IPv6Network.overlaps()"] {
+    net.IPv6Network("2001:db8::/32").overlaps(net.IPv6Network("2001:db8::/32")) // identical
+    net.IPv6Network("2001:db8::/32").overlaps(net.IPv6Network("2001:db8:0:1::/64")) // other nested inside self
+    net.IPv6Network("2001:db8:0:1::/64").overlaps(net.IPv6Network("2001:db8::/32")) // self nested inside other
+    net.IPv6Network("::/0").overlaps(net.IPv6Network("2001:db8::/32")) // /0 overlaps everything
+    !net.IPv6Network("2001:db8::/32").overlaps(net.IPv6Network("2001:db9::/32")) // disjoint
+    !net.IPv6Network("2001:db8::/33").overlaps(net.IPv6Network("2001:db8:8000::/33")) // adjacent halves of a /32
+  }
+  ["IPv6Network.overlaps() and scopeId"] {
+    net.IPv6Network("fe80::%1/64").overlaps(net.IPv6Network("fe80::%1/96")) // same scope
+    net.IPv6Network("fe80::/64").overlaps(net.IPv6Network("fe80::%1/96")) // self unscoped: ignored
+    net.IPv6Network("fe80::%1/64").overlaps(net.IPv6Network("fe80::/96")) // other unscoped: ignored
+    !net.IPv6Network("fe80::%1/64").overlaps(net.IPv6Network("fe80::%2/96")) // different scope
+  }
   ["IPv6Network.subdivideTo() preserves scopeId"] {
     net.IPv6Network("fe80::%1/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == 1)
     net.IPv6Network("fe80::/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == null)
@@ -413,6 +448,21 @@ facts {
     net.IPv6Network("fe80::%1/64").lastAddress.scopeId == 1
     net.IPv6Network("fe80::/64").firstAddress.scopeId == null
     net.IPv6Network("fe80::/64").lastAddress.scopeId == null
+  }
+  ["IPv4Network.containsNetwork()"] {
+    net.IPv4Network("10.0.0.0/16").containsNetwork(net.IPv4Network("10.0.5.0/24")) // narrower prefix inside wider
+    !net.IPv4Network("10.0.5.0/24").containsNetwork(net.IPv4Network("10.0.0.0/16")) // wider isn't a subnet of narrower
+    net.IPv4Network("10.0.0.0/24").containsNetwork(net.IPv4Network("10.0.0.0/24")) // identical
+    !net.IPv4Network("10.0.0.0/24").containsNetwork(net.IPv4Network("192.168.0.0/24")) // disjoint
+    !net.IPv4Network("10.0.5.0/24").containsNetwork(net.IPv4Network("0.0.0.0/0")) // other is wider than self, not narrower
+  }
+  ["IPv4Network.overlaps()"] {
+    net.IPv4Network("10.0.0.0/24").overlaps(net.IPv4Network("10.0.0.0/24")) // identical
+    net.IPv4Network("10.0.0.0/16").overlaps(net.IPv4Network("10.0.5.0/24")) // other nested inside self
+    net.IPv4Network("10.0.5.0/24").overlaps(net.IPv4Network("10.0.0.0/16")) // self nested inside other
+    net.IPv4Network("0.0.0.0/0").overlaps(net.IPv4Network("10.0.5.0/24")) // /0 overlaps everything
+    !net.IPv4Network("10.0.0.0/24").overlaps(net.IPv4Network("192.168.0.0/24")) // disjoint
+    !net.IPv4Network("10.0.0.0/25").overlaps(net.IPv4Network("10.0.0.128/25")) // adjacent halves of a /24
   }
   ["IPv4Network.subnet()"] {
     net.IPv4Network("10.53.120.0/21").subnet(24, 3) == net.IPv4Network("10.53.123.0/24")
