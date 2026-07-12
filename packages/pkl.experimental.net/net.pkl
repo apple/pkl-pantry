@@ -390,8 +390,7 @@ class IPv4Network {
   function containsNetwork(other: IPv4Network): Boolean =
     prefix <= other.prefix && firstAddress.repr == other.base.repr.and(other.base.maskHi(prefix))
 
-  /// Return true if this network overlaps with the other, i.e. either [other] is a subnet of this
-  /// network or vice versa.
+  /// Return true [other] is a subnet of this network or vice versa.
   function overlaps(other: IPv4Network): Boolean =
     self.containsNetwork(other) || other.containsNetwork(self)
 
@@ -491,8 +490,7 @@ class IPv6Network {
       && firstAddress.repr == other.base.repr.and(other.base.maskHi(prefix))
       && (base.scopeId == other.base.scopeId || base.scopeId == null || other.base.scopeId == null)
 
-  /// Return true if this network overlaps with the other, i.e. either [other] is a subnet of this
-  /// network or vice versa.
+  /// Return true [other] is a subnet of this network or vice versa.
   ///
   /// If both [base.scopeId][IPv6Address.scopeId] and [other.base.scopeId][IPv6Address.scopeId] are non-[null],
   /// they must match. If either is [null] then scope ID is ignored.
