@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ local baseIP = net.IPv6Address("::")
 
 facts {
   ["MACAddress"] {
-    net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toExpandedString() == "0000:0000:0000:0000:3673:5aff:fefa:af22"
+    net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toExpandedString()
+      == "0000:0000:0000:0000:3673:5aff:fefa:af22"
   }
   // note: IPv4Address() and IPv6Address() must be invoked prior to any tests that reference the IPv[46]AddressString
   // typealiases. This works around a pkl 0.25 bug that otherwise causes java exceptions.
@@ -281,6 +282,33 @@ facts {
     !("" is net.IPv6CIDRString)
     !("0.0.0.0/10" is net.IPv6CIDRString)
   }
+  ["IPv4NetworkString"] {
+    "10.0.0.0/24" is net.IPv4NetworkString
+    "0.0.0.0/0" is net.IPv4NetworkString // whole address space: no host bits to be non-zero
+    "255.255.255.255/32" is net.IPv4NetworkString // single host: every bit is a network bit
+    !("10.0.0.1/24" is net.IPv4NetworkString) // host bits set
+    !("not a cidr" is net.IPv4NetworkString)
+    !("" is net.IPv4NetworkString)
+  }
+  ["IPv6NetworkString"] {
+    "2001:db8::/32" is net.IPv6NetworkString
+    "::/0" is net.IPv6NetworkString // whole address space: no host bits to be non-zero
+    "::1/128" is net.IPv6NetworkString // single host: every bit is a network bit
+    "fe80::%1/64" is net.IPv6NetworkString // scoped, but still canonical
+    !("2001:db8::1/32" is net.IPv6NetworkString) // host bits set
+    !("fe80::1/64" is net.IPv6NetworkString) // host bits set
+    !("fe80::1%1/64" is net.IPv6NetworkString) // scoped, host bits set
+    !("not a cidr" is net.IPv6NetworkString)
+    !("" is net.IPv6NetworkString)
+  }
+  ["IPNetworkString"] {
+    "10.0.0.0/24" is net.IPNetworkString
+    "2001:db8::/32" is net.IPNetworkString
+    !("10.0.0.1/24" is net.IPNetworkString) // host bits set
+    !("2001:db8::1/32" is net.IPNetworkString) // host bits set
+    !("not a cidr" is net.IPNetworkString)
+    !("" is net.IPNetworkString)
+  }
   ["IPv4AddressPortString"] {
     "0.0.0.0:0" is net.IPv4AddressPortString
     "255.255.255.255:65535" is net.IPv4AddressPortString
@@ -314,7 +342,8 @@ facts {
   }
   ["IPv6Address()"] {
     net.IPv6Address("fe80::1").repr == u128.UInt128(0xFE800000, 0, 0, 1)
-    net.IPv6Address("1:10:100:1000:ff00:0ff0:00ff:f00f").repr == u128.UInt128(0x10010, 0x1001000, 0xff000ff0, 0xfff00f)
+    net.IPv6Address("1:10:100:1000:ff00:0ff0:00ff:f00f").repr
+      == u128.UInt128(0x10010, 0x1001000, 0xff000ff0, 0xfff00f)
     net.IPv6Address("::a:b").repr == u128.UInt128(0, 0, 0, 0xa000b)
     net.IPv6Address("2001::").repr == u128.UInt128(0x20010000, 0, 0, 0)
     net.IPv6Address("::ffff:129.144.52.38").repr == u128.UInt128(0, 0, 0xffff, 0x81903426)
@@ -329,14 +358,16 @@ facts {
     net.IPv6Address("fe80::%123").scopeId == 123
     net.IPv6Address("fe80::%0").scopeId == 0
     // check that manually-constructed addresses respect restrictions on scopeId
-    let (ip = net.IPv6Address("::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
-    let (ip = net.IPv6Address("::1")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
-    let (ip = net.IPv6Address("fec0::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
-    let (ip = net.IPv6Address("2001:db8::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
-    let (ip = net.IPv6Address("ff0e::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
-    let (ip = net.IPv6Address("ff0f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
-    let (ip = net.IPv6Address("fe7f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
-    let (ip = net.IPv6Address("fe80:0:0:1::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+    let (ip = net.IPv6Address("::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
+    let (ip = net.IPv6Address("::1")) module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
+    let (ip = net.IPv6Address("fec0::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
+    let (ip = net.IPv6Address("2001:db8::"))
+      module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
+    let (ip = net.IPv6Address("ff0e::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
+    let (ip = net.IPv6Address("ff0f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
+    let (ip = net.IPv6Address("fe7f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
+    let (ip = net.IPv6Address("fe80:0:0:1::"))
+      module.catch(() -> (ip) { scopeId = 1 }.scopeId) != null
   }
   ["IPv6Address methods work with scopeId"] {
     net.IPv6Address("fe80::%1").next() == net.IPv6Address("fe80::1%1")
@@ -400,6 +431,41 @@ facts {
     net.IPv6Network("fe80::/96").contains(net.IPv6Address("fe80::1%1"))
     !net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1%2"))
   }
+  ["IPv6Network.containsNetwork()"] {
+    net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("2001:db8:0:1::/64")) // narrower prefix inside wider
+    !net.IPv6Network("2001:db8:0:1::/64").containsNetwork(net.IPv6Network("2001:db8::/32")) // wider isn't a subnet of narrower
+    net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("2001:db8::/32")) // identical
+    !net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("2001:db9::/32")) // disjoint
+    !net.IPv6Network("2001:db8::/32").containsNetwork(net.IPv6Network("::/0")) // other is wider than self, not narrower
+    // ::/0 is the entire address space: it contains every other network, including itself
+    net.IPv6Network("::/0").containsNetwork(net.IPv6Network("2001:db8::/32"))
+    net.IPv6Network("::/0").containsNetwork(net.IPv6Network("::1/128"))
+    net.IPv6Network("::/0").containsNetwork(net.IPv6Network("::/0"))
+    // ::1/128 is a single host: it only contains itself
+    net.IPv6Network("::1/128").containsNetwork(net.IPv6Network("::1/128"))
+    !net.IPv6Network("::1/128").containsNetwork(net.IPv6Network("2001:db8::/32"))
+    !net.IPv6Network("::1/128").containsNetwork(net.IPv6Network("::2/128"))
+  }
+  ["IPv6Network.containsNetwork() and scopeId"] {
+    net.IPv6Network("fe80::%1/64").containsNetwork(net.IPv6Network("fe80::%1/96")) // same scope
+    net.IPv6Network("fe80::/64").containsNetwork(net.IPv6Network("fe80::%1/96")) // self unscoped: ignored
+    net.IPv6Network("fe80::%1/64").containsNetwork(net.IPv6Network("fe80::/96")) // other unscoped: ignored
+    !net.IPv6Network("fe80::%1/64").containsNetwork(net.IPv6Network("fe80::%2/96")) // different scope
+  }
+  ["IPv6Network.overlaps()"] {
+    net.IPv6Network("2001:db8::/32").overlaps(net.IPv6Network("2001:db8::/32")) // identical
+    net.IPv6Network("2001:db8::/32").overlaps(net.IPv6Network("2001:db8:0:1::/64")) // other nested inside self
+    net.IPv6Network("2001:db8:0:1::/64").overlaps(net.IPv6Network("2001:db8::/32")) // self nested inside other
+    net.IPv6Network("::/0").overlaps(net.IPv6Network("2001:db8::/32")) // /0 overlaps everything
+    !net.IPv6Network("2001:db8::/32").overlaps(net.IPv6Network("2001:db9::/32")) // disjoint
+    !net.IPv6Network("2001:db8::/33").overlaps(net.IPv6Network("2001:db8:8000::/33")) // adjacent halves of a /32
+  }
+  ["IPv6Network.overlaps() and scopeId"] {
+    net.IPv6Network("fe80::%1/64").overlaps(net.IPv6Network("fe80::%1/96")) // same scope
+    net.IPv6Network("fe80::/64").overlaps(net.IPv6Network("fe80::%1/96")) // self unscoped: ignored
+    net.IPv6Network("fe80::%1/64").overlaps(net.IPv6Network("fe80::/96")) // other unscoped: ignored
+    !net.IPv6Network("fe80::%1/64").overlaps(net.IPv6Network("fe80::%2/96")) // different scope
+  }
   ["IPv6Network.subdivideTo() preserves scopeId"] {
     net.IPv6Network("fe80::%1/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == 1)
     net.IPv6Network("fe80::/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == null)
@@ -410,12 +476,85 @@ facts {
     net.IPv6Network("fe80::/64").firstAddress.scopeId == null
     net.IPv6Network("fe80::/64").lastAddress.scopeId == null
   }
+  ["IPv4Network.containsNetwork()"] {
+    net.IPv4Network("10.0.0.0/16").containsNetwork(net.IPv4Network("10.0.5.0/24")) // narrower prefix inside wider
+    !net.IPv4Network("10.0.5.0/24").containsNetwork(net.IPv4Network("10.0.0.0/16")) // wider isn't a subnet of narrower
+    net.IPv4Network("10.0.0.0/24").containsNetwork(net.IPv4Network("10.0.0.0/24")) // identical
+    !net.IPv4Network("10.0.0.0/24").containsNetwork(net.IPv4Network("192.168.0.0/24")) // disjoint
+    !net.IPv4Network("10.0.5.0/24").containsNetwork(net.IPv4Network("0.0.0.0/0")) // other is wider than self, not narrower
+  }
+  ["IPv4Network.overlaps()"] {
+    net.IPv4Network("10.0.0.0/24").overlaps(net.IPv4Network("10.0.0.0/24")) // identical
+    net.IPv4Network("10.0.0.0/16").overlaps(net.IPv4Network("10.0.5.0/24")) // other nested inside self
+    net.IPv4Network("10.0.5.0/24").overlaps(net.IPv4Network("10.0.0.0/16")) // self nested inside other
+    net.IPv4Network("0.0.0.0/0").overlaps(net.IPv4Network("10.0.5.0/24")) // /0 overlaps everything
+    !net.IPv4Network("10.0.0.0/24").overlaps(net.IPv4Network("192.168.0.0/24")) // disjoint
+    !net.IPv4Network("10.0.0.0/25").overlaps(net.IPv4Network("10.0.0.128/25")) // adjacent halves of a /24
+  }
+  ["IPv4Network.subnet()"] {
+    net.IPv4Network("10.53.120.0/21").subnet(24, 3) == net.IPv4Network("10.53.123.0/24")
+    net.IPv4Network("10.53.120.0/21").subnet(24, 0) == net.IPv4Network("10.53.120.0/24")
+    net.IPv4Network("10.53.120.0/21").subnet(24, 7) == net.IPv4Network("10.53.127.0/24") // last valid subnet
+    net.IPv4Network("10.53.120.0/21").subnet(21, 0) == net.IPv4Network("10.53.120.0/21") // target == prefix
+    module.catch(() -> net.IPv4Network("10.53.120.0/21").subnet(24, 8)) != null // one past the last valid subnet
+  }
+  ["IPv4Network.subnet() at the top of the address space (/32)"] {
+    // subdividing all the way down to individual hosts, right at the last IP in the address space
+    net.IPv4Network("255.255.255.252/30").subnet(32, 3) == net.IPv4Network("255.255.255.255/32")
+    // self is already a single-host (/32) network
+    net.IPv4Network("10.0.0.1/32").subnet(32, 0) == net.IPv4Network("10.0.0.1/32")
+    module.catch(() -> net.IPv4Network("10.0.0.1/32").subnet(32, 1)) != null
+    // target - prefix == bitWidth: subdividing the entire address space (/0) down to /32 hosts
+    net.IPv4Network("0.0.0.0/0").subnet(32, 0) == net.IPv4Network("0.0.0.0/32")
+    net.IPv4Network("0.0.0.0/0").subnet(32, 4294967295) == net.IPv4Network("255.255.255.255/32")
+  }
+  ["IPv6Network.subnet()"] {
+    net.IPv6Network("2620:149:a:960::/64").subnet(80, 10)
+      == net.IPv6Network("2620:149:a:960:a::/80")
+    net.IPv6Network("2620:149:a:960::/64").subnet(80, 0) == net.IPv6Network("2620:149:a:960::/80")
+    net.IPv6Network("2620:149:a:960::/64").subnet(80, 65535)
+      == net.IPv6Network("2620:149:a:960:ffff::/80") // last valid subnet
+    net.IPv6Network("2620:149:a:960::/64").subnet(64, 0) == net.IPv6Network("2620:149:a:960::/64") // target == prefix
+    module.catch(() -> net.IPv6Network("2620:149:a:960::/64").subnet(80, 65536)) != null // one past the last valid subnet
+  }
+  ["IPv6Network.subnet() at the top of the address space (/128)"] {
+    // subdividing all the way down to individual hosts, right at the last IP in the address space
+    net.IPv6Network("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffc/126").subnet(128, 3)
+      == net.IPv6Network("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128")
+    // self is already a single-host (/128) network
+    net.IPv6Network("::1/128").subnet(128, 0) == net.IPv6Network("::1/128")
+    module.catch(() -> net.IPv6Network("::1/128").subnet(128, 1)) != null
+    // target - prefix == bitWidth: subdividing the entire address space (/0) down to /128 hosts.
+    // 2^128 isn't representable as a UInt128, so this exercises the fallback path that skips the
+    // (otherwise-overflowing) bounds check.
+    net.IPv6Network("::/0").subnet(128, 0) == net.IPv6Network("::/128")
+    net.IPv6Network("::/0").subnet(128, 4294967295) == net.IPv6Network("::ffff:ffff/128")
+  }
+  ["IPv6Network.subnet() preserves scopeId"] {
+    net.IPv6Network("fe80::%1/64").subnet(80, 10).base.scopeId == 1
+    net.IPv6Network("fe80::/64").subnet(80, 10).base.scopeId == null
+  }
   ["IPv6Range() preserves scopeId as appropriate"] {
-    net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%1")).toList().every((ip) -> ip.scopeId == 1)
-    net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%2")).toList().every((ip) -> ip.scopeId == null)
-    net.IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10%1")).toList().every((ip) -> ip.scopeId == null)
-    net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10")).toList().every((ip) -> ip.scopeId == null)
-    net.IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10")).toList().every((ip) -> ip.scopeId == null)
+    net
+      .IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%1"))
+      .toList()
+      .every((ip) -> ip.scopeId == 1)
+    net
+      .IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%2"))
+      .toList()
+      .every((ip) -> ip.scopeId == null)
+    net
+      .IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10%1"))
+      .toList()
+      .every((ip) -> ip.scopeId == null)
+    net
+      .IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10"))
+      .toList()
+      .every((ip) -> ip.scopeId == null)
+    net
+      .IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10"))
+      .toList()
+      .every((ip) -> ip.scopeId == null)
   }
   ["IPv4AddressString can't contain unicode digits"] {
     // U+FF11 is FULLWIDTH DIGIT ONE
