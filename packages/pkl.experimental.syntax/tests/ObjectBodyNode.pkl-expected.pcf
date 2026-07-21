@@ -38,4 +38,11 @@ examples {
     }
     """
   }
+  ["parameters"] {
+    """
+    { foo, _, baz: List ->
+    
+    }
+    """
+  }
 }

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ module pkl.experimental.syntax.tests.ObjectBodyNode
 
 amends "pkl:test"
 
-import "../ObjectBodyNode.pkl"
 import "../ExpressionNode.pkl"
+import "../ObjectBodyNode.pkl"
 import "../TypeNode.pkl"
 
 local personDotName = new ExpressionNode.QualifiedMemberAccessExpressionNode {
@@ -153,6 +153,22 @@ examples {
                 propertyName { value = "conditionalProperty" }
                 assignment = new ExpressionNode.LiteralValueExpressionNode { value = true }
               }
+            }
+          }
+        }
+      }
+    }.render("")
+  }
+  ["parameters"] {
+    new ObjectBodyNode {
+      parameters {
+        new { name { value = "foo" } }
+        new { name { value = "_" } }
+        new {
+          name { value = "baz" }
+          typeAnnotation {
+            type = new TypeNode.DeclaredTypeNode {
+              name { parts { new { value = "List" } } }
             }
           }
         }
