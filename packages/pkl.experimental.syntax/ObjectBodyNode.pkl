@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,19 +35,23 @@ module pkl.experimental.syntax.ObjectBodyNode
 
 extends "Node.pkl"
 
+import "DocCommentNode.pkl"
+import "ExpressionNode.pkl"
 import "IdentifierNode.pkl"
 import "Node.pkl"
 import "ObjectBodyNode.pkl"
-import "ExpressionNode.pkl"
-import "DocCommentNode.pkl"
 import "ParameterNode.pkl"
 
 members: Listing<MemberNode>
 
+/// Object body parameters.
+parameters: Listing<ParameterNode>
+
 /// Renders all members inline instead of on newlines
 renderInline: Boolean = false
 
-typealias MemberNode = PropertyMemberNode|ElementMemberNode|EntryMemberNode|ForGeneratorNode|WhenGeneratorNode
+typealias MemberNode =
+  PropertyMemberNode | ElementMemberNode | EntryMemberNode | ForGeneratorNode | WhenGeneratorNode
 
 class PropertyMemberNode extends Node {
   docComment: DocCommentNode?
@@ -61,20 +65,23 @@ class PropertyMemberNode extends Node {
   // The right hand side of a property cannot be both an assignment and an object body (e.g. `foo = { ... }` is illegal)
   assignment: ExpressionNode(body == null)?
 
-  local function renderRhs(currentIndent: String) = if (body != null) body.render(currentIndent) else "= " + assignment.render(currentIndent)
+  local function renderRhs(currentIndent: String) =
+    if (body != null) body.render(currentIndent) else "= " + assignment.render(currentIndent)
 
-  local function renderPropertyLine(currentIndent: String) = new Listing {
-    ...?modifiers
-    propertyName.render(currentIndent)
-    renderRhs(currentIndent)
-  }.join(" ")
+  local function renderPropertyLine(currentIndent: String) =
+    new Listing {
+      ...?modifiers
+      propertyName.render(currentIndent)
+      renderRhs(currentIndent)
+    }.join(" ")
 
-  function render(currentIndent: String) = List(
-    docComment?.render(currentIndent),
-    renderPropertyLine(currentIndent)
-  )
-    .filterNonNull()
-    .join("\n")
+  function render(currentIndent: String) =
+    List(
+      docComment?.render(currentIndent),
+      renderPropertyLine(currentIndent)
+    )
+      .filterNonNull()
+      .join("\n")
 }
 
 class ElementMemberNode extends Node {
@@ -91,9 +98,11 @@ class EntryMemberNode extends Node {
   // The right hand side of an entry cannot be both an assignment and an object body (e.g. `foo = { ... }` is illegal)
   propertyValue: ExpressionNode(body == null)?
 
-  local function renderRhs(currentIndent: String) = if (body != null) body.render(currentIndent) else "= " + propertyValue.render(currentIndent)
+  local function renderRhs(currentIndent: String) =
+    if (body != null) body.render(currentIndent) else "= " + propertyValue.render(currentIndent)
 
-  function render(currentIndent: String) = "[\(keyValue.render(currentIndent))] \(renderRhs(currentIndent))"
+  function render(currentIndent: String) =
+    "[\(keyValue.render(currentIndent))] \(renderRhs(currentIndent))"
 }
 
 class ForGeneratorNode extends Node {
@@ -105,14 +114,18 @@ class ForGeneratorNode extends Node {
 
   body: ObjectBodyNode?
 
-  function doRenderLoopControl(currentIndent: String): String = List(
-    keyParameter?.render(currentIndent)?.ifNonNull((it) -> it + ","),
-    valueParameter.render(currentIndent),
-    "in",
-    collection.render(currentIndent)
-  ).filterNonNull().join(" ")
+  function doRenderLoopControl(currentIndent: String): String =
+    List(
+      keyParameter?.render(currentIndent)?.ifNonNull((it) -> it + ","),
+      valueParameter.render(currentIndent),
+      "in",
+      collection.render(currentIndent)
+    )
+      .filterNonNull()
+      .join(" ")
 
-  function render(currentIndent: String): String = "for (\(doRenderLoopControl(currentIndent))) \(body.render(currentIndent))"
+  function render(currentIndent: String): String =
+    "for (\(doRenderLoopControl(currentIndent))) \(body.render(currentIndent))"
 }
 
 class WhenGeneratorNode extends Node {
@@ -120,13 +133,25 @@ class WhenGeneratorNode extends Node {
 
   body: ObjectBodyNode?
 
-  function render(currentIndent: String): String = "when (\(condition.render(currentIndent))) \(body.render(currentIndent))"
+  function render(currentIndent: String): String =
+    "when (\(condition.render(currentIndent))) \(body.render(currentIndent))"
 }
 
-local function doRenderInline(currentIndent: String) = "{ " + members.toList().map((m) -> m.render(currentIndent)).join("; ") + " }"
+local function doRenderInline(currentIndent: String) =
+  "{ " + members.toList().map((m) -> m.render(currentIndent)).join("; ") + " }"
 
 local function doRenderMultiline(currentIndent: String) =
   let (innerIndent = currentIndent + indent)
-    "{\n" + members.toList().map((m) -> innerIndent + m.render(innerIndent)).join("\n") + "\n\(currentIndent)}"
+  let (
+    paramList =
+      if (parameters.isEmpty)
+        ""
+      else
+        " " + parameters.toList().map((it) -> it.render(currentIndent)).join(", ") + " ->"
+  )
+    "{\(paramList)\n"
+      + members.toList().map((m) -> innerIndent + m.render(innerIndent)).join("\n")
+      + "\n\(currentIndent)}"
 
-function render(currentIndent: String) = if (renderInline) doRenderInline(currentIndent) else doRenderMultiline(currentIndent)
+function render(currentIndent: String) =
+  if (renderInline) doRenderInline(currentIndent) else doRenderMultiline(currentIndent)

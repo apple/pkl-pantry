@@ -32,10 +32,12 @@ local maybeQuoteIdentifier = (part: String) ->
   if (part.matches(Regex(#"[a-zA-Z$_][a-zA-Z0-9$_]*"#))) part else "`\(part)`"
 
 local function expectedModuleName(packageName: String, modulePath: String) =
+  let (packageNameParts = packageName.split("."))
+  let (packageNamePath = packageNameParts.map(maybeQuoteIdentifier).join("."))
   let (pathWithinModule = modulePath.replaceFirst("\(packageName)/", "").replaceLast(".pkl", ""))
   let (parts = pathWithinModule.split("/"))
   let (packagePath = parts.map(maybeQuoteIdentifier).join("."))
-    "\(packageName).\(packagePath)"
+    "\(packageNamePath).\(packagePath)"
 
 facts {
   for (packageName, myPklModules in allPklModules.keys.groupBy((it) -> it.split("/").first)) {
