@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,70 +17,104 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module pkl.lua.lua
 
-import "pkl:reflect"
 import "pkl:base"
 import "pkl:math"
+import "pkl:reflect"
+
 import "lua.pkl"
 
-local const pathSpecRegex: Regex = let (prop = #"(?:[^\[\]^*.]+)"#) Regex(#"""
-  (?x)
-  \^?
-  (?:
-    (?:
-      \#(prop)
-    | \*
-    | \[(?:\#(prop)|\*)\]
+local const pathSpecRegex: Regex =
+  let (prop = #"(?:[^\[\]^*.]+)"#)
+    Regex(
+      #"""
+      (?x)
+      \^?
+      (?:
+        (?:
+          \#(prop)
+        | \*
+        | \[(?:\#(prop)|\*)\]
+        )
+        (?:
+          \.\#(prop)
+        | \.\*
+        | \[(?:\#(prop)|\*)\]
+        )*
+      )?
+      """#
     )
-    (?:
-      \.\#(prop)
-    | \.\*
-    | \[(?:\#(prop)|\*)\]
-    )*
-  )?
-  """#)
 local const pathSpecSplitRegex: Regex = Regex(#"\.|(?=\[)|(?<=[\^\]])"#)
 
 // Returns a [Prop] for string keys, otherwise [splatKey].
-local const function Prop(k: Any): Prop|Key =
-  if (k is String) new Prop { name = k } else splatKey
+local const function Prop(k: Any): Prop | Key = if (k is String) new Prop { name = k } else splatKey
 
 local class Prop {
   name: String
 }
 
 // Returns a [Key] for string keys, otherwise [splatKey]
-local const function Key(k: Any): Key =
-  if (k is String) new Key { key = k } else splatKey
+local const function Key(k: Any): Key = if (k is String) new Key { key = k } else splatKey
 
 local class Key {
   key: String
 }
 
-local typealias PathEntry = Prop|Key|"^"
+local typealias PathEntry = Prop | Key | "^"
 
 local const splatKey: Key = new Key { key = "*" }
 
-local const function splitPathConverters(converterMap: Map<Class|String, (unknown) -> unknown>): List<Pair<List<PathEntry>, (unknown) -> unknown>> =
+local const function splitPathConverters(
+  converterMap: Map<Class | String, (unknown) -> unknown>
+): List<Pair<List<PathEntry>, (unknown) -> unknown>> =
   converterMap
     .filter((key, _) -> key is String)
     .mapKeys((key, _) ->
-    if (key.matches(pathSpecRegex))
-      if (key == "") List("^") else // PcfRenderer treats empty path as "^"
-        key
-          .split(pathSpecSplitRegex)
-          .map((it) ->
-            if (it == "^") "^"
-            else if (it.startsWith("[")) new Key { key = it.substring(1, it.length-1) }
-            else new Prop { name = it })
-          .reverse()
-    else throw("Converter path `\(key)` has invalid syntax."))
+      if (key.matches(pathSpecRegex))
+        if (key == "")
+          List("^")
+        else // PcfRenderer treats empty path as "^"
+          key
+            .split(pathSpecSplitRegex)
+            .map((it) ->
+              if (it == "^")
+                "^"
+              else if (it.startsWith("["))
+                new Key { key = it.substring(1, it.length - 1) }
+              else
+                new Prop { name = it })
+            .reverse()
+      else
+        throw("Converter path `\(key)` has invalid syntax.")
+    )
     .entries
 
 /// A string that is a Lua reserved keyword.
 ///
 /// These strings are not allowed to be used as identifiers.
 @AlsoKnownAs { names { "LuaKeyword" } }
-typealias Keyword = "and"|"break"|"do"|"else"|"elseif"|"end"|"false"|"for"|"function"|"goto"|"if"|"in"|"local"|"nil"|"not"|"or"|"repeat"|"return"|"then"|"true"|"until"|"while"
+typealias Keyword =
+  "and"
+    | "break"
+    | "do"
+    | "else"
+    | "elseif"
+    | "end"
+    | "false"
+    | "for"
+    | "function"
+    | "goto"
+    | "if"
+    | "in"
+    | "local"
+    | "nil"
+    | "not"
+    | "or"
+    | "repeat"
+    | "return"
+    | "then"
+    | "true"
+    | "until"
+    | "while"
 
 /// Obsolete alias for [Keyword].
 @Deprecated { message = "Use [Keyword] instead."; replaceWith = "lua.Keyword"; since = "1.1.0" }
@@ -91,14 +125,18 @@ typealias LuaKeyword = Keyword
 typealias Identifier = String(matches(Regex("[a-zA-Z_][a-zA-Z0-9_]*")) && !(this is lua.Keyword))
 
 /// Obsolete alias for [Identifier].
-@Deprecated { message = "Use [Identifier] instead."; replaceWith = "lua.Identifier"; since = "1.1.0" }
+@Deprecated {
+  message = "Use [Identifier] instead."
+  replaceWith = "lua.Identifier"
+  since = "1.1.0"
+}
 typealias LuaIdentifier = Identifier
 
 /// Pkl representation of a Lua value.
-typealias Value = Null|Boolean|Number|String|Listing|Dynamic|Mapping
+typealias Value = Null | Boolean | Number | String | Listing | Dynamic | Mapping
 
 /// Pkl representation of a valid Lua table key.
-typealias TableKey = Boolean|Number(!isNaN)|String|Listing|Dynamic|Mapping
+typealias TableKey = Boolean | Number(!isNaN) | String | Listing | Dynamic | Mapping
 
 // region Renderer
 
@@ -116,7 +154,11 @@ class RenderDirective {
 }
 
 /// Obsolete alias for [RenderDirective].
-@Deprecated { message = "Use [RenderDirective] instead."; replaceWith = "lua.RenderDirective"; since = "1.1.0" }
+@Deprecated {
+  message = "Use [RenderDirective] instead."
+  replaceWith = "lua.RenderDirective"
+  since = "1.1.0"
+}
 typealias LuaRenderDirective = RenderDirective
 
 /// Renders values as Lua.
@@ -144,7 +186,7 @@ class Renderer extends ValueRenderer {
   /// when rendering a [Dynamic], any entries with a [String] key will have converters applied as
   /// though the entry was a property. This means paths like `x[foo]` only apply when rendering
   /// a [Mapping], or when a class converter converts an entry key into a [String].
-  converters: Mapping<(Class|String), (unknown) -> Any>
+  converters: Mapping<(Class | String), (unknown) -> Any>
 
   extension = "lua"
 
@@ -155,35 +197,47 @@ class Renderer extends ValueRenderer {
   function renderDocument(value: Any): String =
     let (path = List("^"))
     let (value = convert(value, path))
-      if (value is base.RenderDirective) "\(value.text)\n"
-      else if (value is RenderDirective) "\(value.before ?? "")\(render(value.value, path, 0))\(value.after ?? "")\n"
-      else if (value is Dynamic|Typed)
-        value.toMap().fold("", (acc, k, v) ->
-          let (isProp = k is String)
-          let (k = if (isProp) k else convert(k, null))
-          let (path = path.add(if (isProp) Prop(k) else Key(k)))
-          let (v = convert(v, path))
-            if (omitNullProperties && v == null && isProp) acc
-            else acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
-        + (if (value is Dynamic) value.toList() else List()).foldIndexed("", (idx, acc, v) ->
-          let (path = path.add(splatKey))
-          let (v = convert(v, path))
-            // remember, Lua indexes are 1-based
-            acc + "_ENV[\(idx+1)] = \(render(v, path, 0))\n")
-      else if (value is Mapping|Map)
+      if (value is base.RenderDirective)
+        "\(value.text)\n"
+      else if (value is RenderDirective)
+        "\(value.before ?? "")\(render(value.value, path, 0))\(value.after ?? "")\n"
+      else if (value is Dynamic | Typed)
+        value
+          .toMap()
+          .fold("", (acc, k, v) ->
+            let (isProp = k is String)
+            let (k = if (isProp) k else convert(k, null))
+            let (path = path.add(if (isProp) Prop(k) else Key(k)))
+            let (v = convert(v, path))
+              if (omitNullProperties && v == null && isProp)
+                acc
+              else
+                acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n"
+          )
+          + (if (value is Dynamic) value.toList() else List()).foldIndexed("", (idx, acc, v) ->
+            let (path = path.add(splatKey))
+            let (v = convert(v, path))
+              // remember, Lua indexes are 1-based
+              acc + "_ENV[\(idx + 1)] = \(render(v, path, 0))\n"
+          )
+      else if (value is Mapping | Map)
         value.fold("", (acc, k, v) ->
           let (k = convert(k, null))
           let (path = path.add(Key(k)))
           let (v = convert(v, path))
-            acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n")
-      else throw("The top-level value of a Lua document must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `\(value.getClass())`")
+            acc + "\(renderKey(k, "_ENV")) = \(render(v, path, 0))\n"
+        )
+      else
+        throw(
+          "The top-level value of a Lua document must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `\(value.getClass())`"
+        )
 
   // region Converters
 
   local converterMap = converters.toMap()
 
   // path specs are already in reversed order
-  local pathConverters: List<Pair<List<PathEntry>,(unknown) -> Any>> =
+  local pathConverters: List<Pair<List<PathEntry>, (unknown) -> Any>> =
     splitPathConverters(converterMap)
 
   // [true] if the converters define any class converters.
@@ -192,143 +246,205 @@ class Renderer extends ValueRenderer {
   // but we'll match the bug for now for performance reasons.
   local hasTypedConverters: Boolean =
     let (typedClass = reflect.Class(Typed))
-      converterMap.any((k,_) -> k is Class && reflect.Class(k).isSubclassOf(typedClass))
+      converterMap.any((k, _) -> k is Class && reflect.Class(k).isSubclassOf(typedClass))
 
   local function convert(value: Any, path: List<PathEntry>?): Any =
-    let (f =
-      if (path != null && !pathConverters.isEmpty)
-        let (path = path.reverse())
-          pathConverters.findOrNull((p) -> comparePaths(path, p.key))?.value
-      else null)
+    let (
+      f =
+        if (path != null && !pathConverters.isEmpty)
+          let (path = path.reverse())
+            pathConverters.findOrNull((p) -> comparePaths(path, p.key))?.value
+        else
+          null
+    )
     let (klass = value.getClass())
     let (f = f ?? converterMap.getOrNull(klass))
-    let (f = f ?? if (hasTypedConverters && value is Typed) findTypedConverter(reflect.Class(klass).superclass) else null) // find superclass converters
+    let (
+      f =
+        f
+          ?? if (hasTypedConverters && value is Typed)
+            findTypedConverter(reflect.Class(klass).superclass)
+          else
+            null
+    ) // find superclass converters
       if (f != null) f.apply(value) else value
 
   // the path and spec must already be reversed
   local function comparePaths(path: List<PathEntry>, pathSpec: List<PathEntry>): Boolean =
-    path.length >= pathSpec.length && path.zip(pathSpec).every((p) ->
-      if (p.second is Prop && p.second.name == "*") p.first is Prop
-      else if (p.second is Key && p.second.key == "*") p.first is Key
-      else p.first == p.second
-    )
+    path.length >= pathSpec.length
+      && path
+        .zip(pathSpec)
+        .every((p) ->
+          if (p.second is Prop && p.second.name == "*")
+            p.first is Prop
+          else if (p.second is Key && p.second.key == "*")
+            p.first is Key
+          else
+            p.first == p.second
+        )
 
   local function findTypedConverter(klass: reflect.Class?): ((unknown) -> Any)? =
-    if (klass == null) null
-    else converters.getOrNull(klass.reflectee) ?? findTypedConverter(klass.superclass)
+    if (klass == null)
+      null
+    else
+      converters.getOrNull(klass.reflectee) ?? findTypedConverter(klass.superclass)
 
   // endregion
   // region Rendering functions
 
   local function render(value: Any, path: List<PathEntry>, level: UInt?): String =
-    if (value is String) renderString(value, level != null)
-    else if (value is Boolean) value.toString()
-    else if (value is Number) renderNumber(value)
-    else if (value is Null) "nil"
-    else if (value is Mapping|Map) renderMap(value, path, level)
-    else if (value is Listing|List) renderList(value, path, level)
-    else if (value is Dynamic) renderDynamic(value, path, level)
-    else if (value is base.RenderDirective) value.text
-    else if (value is RenderDirective) "\(value.before ?? "")\(render(value.value, path, level))\(value.after ?? "")"
-    else if (value is Typed) renderDynamic(value, path, level)
-    else throw("Cannot render value of type `\(value.getClass())` as Lua.\nValue: \(value)")
+    if (value is String)
+      renderString(value, level != null)
+    else if (value is Boolean)
+      value.toString()
+    else if (value is Number)
+      renderNumber(value)
+    else if (value is Null)
+      "nil"
+    else if (value is Mapping | Map)
+      renderMap(value, path, level)
+    else if (value is Listing | List)
+      renderList(value, path, level)
+    else if (value is Dynamic)
+      renderDynamic(value, path, level)
+    else if (value is base.RenderDirective)
+      value.text
+    else if (value is RenderDirective)
+      "\(value.before ?? "")\(render(value.value, path, level))\(value.after ?? "")"
+    else if (value is Typed)
+      renderDynamic(value, path, level)
+    else
+      throw("Cannot render value of type `\(value.getClass())` as Lua.\nValue: \(value)")
 
   local function renderKey(key: Any, prefix: String): String =
-    if (key is Null) throw("Lua table keys cannot be null")
-    else if (key is Number && key.isNaN) throw("Lua table keys cannot be NaN")
-    else if (key is Identifier) key
-    else if (key is base.RenderDirective) key.text
-    else "\(prefix)[\(render(key, List(), null))]"
+    if (key is Null)
+      throw("Lua table keys cannot be null")
+    else if (key is Number && key.isNaN)
+      throw("Lua table keys cannot be NaN")
+    else if (key is Identifier)
+      key
+    else if (key is base.RenderDirective)
+      key.text
+    else
+      "\(prefix)[\(render(key, List(), null))]"
 
   local function renderString(value: String, multiline: Boolean): String =
     let (delim = if (value.contains("\"") && !value.contains("'")) "'" else "\"")
-    if (multiline && value.contains(Regex(#"[^\n]\n++[^\n]"#)))
-      // there are interior newlines, we'll do a multiline style
-      if (value.contains(Regex(#"[\p{Cntrl}\#(delim)&&[^\n ]]"#)))
-        // we need escapes, we'll do multiline with escaped newlines
-        "\(delim)\(escapeString(value, delim, true))\(delim)"
+      if (multiline && value.contains(Regex(#"[^\n]\n++[^\n]"#)))
+        // there are interior newlines, we'll do a multiline style
+        if (value.contains(Regex(#"[\p{Cntrl}\#(delim)&&[^\n ]]"#)))
+          // we need escapes, we'll do multiline with escaped newlines
+          "\(delim)\(escapeString(value, delim, true))\(delim)"
+        else
+          IntSeq(0, 10)
+            .map((n) -> "=".repeat(n))
+            .findOrNull((eq) -> !value.contains("]\(eq)]"))
+            .ifNonNull((eq) -> "[\(eq)[\n\(value)]\(eq)]")
+            // if we can't find a good ]==] ending, use the other style
+            ?? "\(delim)\(escapeString(value, delim, true))\(delim)"
       else
-        IntSeq(0, 10)
-          .map((n) -> "=".repeat(n))
-          .findOrNull((eq) -> !value.contains("]\(eq)]"))
-          .ifNonNull((eq) -> "[\(eq)[\n\(value)]\(eq)]")
-        // if we can't find a good ]==] ending, use the other style
-        ?? "\(delim)\(escapeString(value, delim, true))\(delim)"
-    else "\(delim)\(escapeString(value, delim, false))\(delim)"
+        "\(delim)\(escapeString(value, delim, false))\(delim)"
 
   local function escapeString(value: String, delim: String, multiline: Boolean): String =
     value.replaceAllMapped(Regex(#"[\p{Cntrl}\\\#(delim)&&[^ ]]"#), (match) ->
-      if (match.value == "\u{7}") "\\a"
-      else if (match.value == "\u{8}") "\\b"
-      else if (match.value == "\u{c}") "\\f"
-      else if (match.value == "\n") if (multiline) "\\\n" else "\\n"
-      else if (match.value == "\r") "\\r"
-      else if (match.value == "\t") "\\t"
-      else if (match.value == "\u{b}") "\\v"
-      else if (match.value == delim) "\\\(delim)"
-      else "\\u{\(match.value.codePoints.first.toRadixString(16))}")
+      if (match.value == "\u{7}")
+        "\\a"
+      else if (match.value == "\u{8}")
+        "\\b"
+      else if (match.value == "\u{c}")
+        "\\f"
+      else if (match.value == "\n")
+        if (multiline) "\\\n" else "\\n"
+      else if (match.value == "\r")
+        "\\r"
+      else if (match.value == "\t")
+        "\\t"
+      else if (match.value == "\u{b}")
+        "\\v"
+      else if (match.value == delim)
+        "\\\(delim)"
+      else
+        "\\u{\(match.value.codePoints.first.toRadixString(16))}"
+    )
 
   local function renderNumber(value: Number): String =
-    if (value.isNaN) "(0/0)"
-    else if (value.isInfinite) "(\(value.sign.toInt())/0)"
-    else value.toString()
+    if (value.isNaN)
+      "(0/0)"
+    else if (value.isInfinite)
+      "(\(value.sign.toInt())/0)"
+    else
+      value.toString()
 
-  local function renderMap(value: Mapping|Map, path: List<PathEntry>, level: UInt?): String =
-    if (value.isEmpty) "{}" else
+  local function renderMap(value: Mapping | Map, path: List<PathEntry>, level: UInt?): String =
+    if (value.isEmpty)
+      "{}"
+    else
       let (map = value.toMap())
       let (multiline = map.length >= multilineThreshold && level != null && value is Mapping)
       let (level_ = if (multiline) level!! + 1 else level)
         (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
-        + new Listing {
-          for (k,v in map) {
-            let (k = convert(k, null))
-            let (path = path.add(Key(k)))
-            "\(renderKey(k, "")) = \(render(convert(v, path), path, level_));"
-          }
-        }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
-        + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
+          + new Listing {
+            for (k, v in map) {
+              let (k = convert(k, null))
+              let (path = path.add(Key(k)))
+                "\(renderKey(k, "")) = \(render(convert(v, path), path, level_));"
+            }
+          }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
+          + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
 
-  local function renderList(value: Listing|List, path: List<PathEntry>, level: UInt?): String =
-    if (value.isEmpty) "{}" else
+  local function renderList(value: Listing | List, path: List<PathEntry>, level: UInt?): String =
+    if (value.isEmpty)
+      "{}"
+    else
       let (path = path.add(splatKey))
       let (multiline = value.length >= multilineThreshold && level != null && !(value is List))
       let (level_ = if (multiline) level!! + 1 else level)
         (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
-        + value.toList()
-          .map((it) -> render(convert(it, path), path, level_))
-          .join(if (multiline) ",\n\(indent.repeat(level_!!))" else ", ")
-        + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
+          + value
+            .toList()
+            .map((it) -> render(convert(it, path), path, level_))
+            .join(if (multiline) ",\n\(indent.repeat(level_!!))" else ", ")
+          + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
 
-  local function renderDynamic(value: Dynamic|Typed, path: List<PathEntry>, level: UInt?): String =
+  local function renderDynamic(value: Dynamic | Typed, path: List<PathEntry>, level: UInt?): String =
     let (list = if (value is Dynamic) value.toList() else List())
     let (map = value.toMap())
     // note: Map.keys.toList() is O(1), other ways of converting are O(n) (as of Pkl 0.25.3)
-    let (entries = map.keys.toList().mapNonNull((k_) ->
-      let (isProp = k_ is String)
-      let (k = if (isProp) k_ else convert(k_, null))
-      let (path = path.add(if (isProp) Prop(k) else Key(k)))
-      let (v = convert(map[k_], path))
-        if (omitNullProperties && v == null && isProp) null
-        else Pair(k, Pair(path, v))
-    ))
-      if (entries.isEmpty && list.isEmpty) "{}" else
+    let (
+      entries =
+        map.keys
+          .toList()
+          .mapNonNull((k_) ->
+            let (isProp = k_ is String)
+            let (k = if (isProp) k_ else convert(k_, null))
+            let (path = path.add(if (isProp) Prop(k) else Key(k)))
+            let (v = convert(map[k_], path))
+              if (omitNullProperties && v == null && isProp)
+                null
+              else
+                Pair(k, Pair(path, v))
+          )
+    )
+      if (entries.isEmpty && list.isEmpty)
+        "{}"
+      else
         let (multiline = entries.length + list.length >= multilineThreshold && level != null)
         let (level_ = if (multiline) level!! + 1 else level)
         let (listPath = if (list.isEmpty) path else path.add(splatKey))
           (if (multiline) "{\n\(indent.repeat(level_!!))" else "{ ")
-          + new Listing {
-            for (kpv in entries) { // kpv = Pair(key, Pair(path, value))
-              "\(renderKey(kpv.key, "")) = \(render(kpv.value.value, kpv.value.key, level_));"
-            }
-            for (i,elt in list) {
-              when (i < list.lastIndex) {
-                "\(render(convert(elt, listPath), listPath, level_)),"
-              } else {
-                render(convert(list.last, listPath), listPath, level_)
+            + new Listing {
+              for (kpv in entries) { // kpv = Pair(key, Pair(path, value))
+                "\(renderKey(kpv.key, "")) = \(render(kpv.value.value, kpv.value.key, level_));"
               }
-            }
-          }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
-          + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
+              for (i, elt in list) {
+                when (i < list.lastIndex) {
+                  "\(render(convert(elt, listPath), listPath, level_)),"
+                } else {
+                  render(convert(list.last, listPath), listPath, level_)
+                }
+              }
+            }.join(if (multiline) "\n\(indent.repeat(level_!!))" else " ")
+            + if (multiline) "\n\(indent.repeat(level!!))}" else " }"
 
   // endregion
 }
@@ -398,7 +514,7 @@ class Parser {
   ///
   /// For further information see [ValueRenderer.converters]. Table entries with string keys are treated as properties.
   /// This means paths like `x[foo]` will never match anything.
-  converters: Mapping<(Class|String), (unknown) -> Any>
+  converters: Mapping<(Class | String), (unknown) -> Any>
 
   // region Parsing functions
 
@@ -409,202 +525,323 @@ class Parser {
   /// If [source] is a [Resource], the resource URI is included in parse error messages.
   ///
   /// In the absence of converters this will return a [Dynamic] or a [Mapping<String, Value>][Mapping].
-  function parse(source: Resource|String): unknown =
+  function parse(source: Resource | String): unknown =
     let (uri = if (source is Resource) source.uri else null)
     let (source = if (source is Resource) source.text else source)
     let (source = source.replaceAll(Regex(#"\r\n?|\n\r"#), "\n")) // normalize line endings
     let (tokens = tokenRegex.findMatchesIn(source))
-    let (state: ParseState = tokens.fold(new ParseState { path = List("^") }, (state: ParseState, token) ->
-      // the way parsing works is by folding over a list of tokens and maintaining state in the ParseState object.
-      // since we don't have enums with associated values, we instead rely on knowing which combinations of state fields
-      // are reachable and which combinations will never occur. This is a complete list of all valid combinations, where
-      // the `type` column is "root" for ParseState and "child" for ChildParseState and the other columns are fields:
-      //
-      //  # | type  |  op     |  key   | negate | valid next token
-      // ---|-------|---------|--------|--------|-----------------
-      // 1a | root  | null    | null   | null   | identifier or ";" or EOF
-      // 1b | child | null    | null   | null   | identifier or value or "[" or "}" or "-"
-      //  2 | child | null    | null   | bool   | number or "-"
-      //  3 | root  | null    | "_ENV" | null   | "["
-      //  4 | any   | null    | !null¹ | null   | "="
-      //  5 | any   | "="     | !null  | null   | value or "-" or "{"
-      //  6 | any   | "="     | !null  | bool   | number or "-"
-      //  7 | any   | "["     | null   | null   | value or "-" or "{"
-      //  8 | any   | "["     | null   | bool   | number or "-"
-      //  9 | any   | "key"   | !null  | null   | "]"
-      // 10 | any   | "]"     | !null  | null   | "="
-      // 11 | child | "value" | null   | null   | "," or ";" or "}"
-      //
-      // ¹In state #4, if the type is root then the key cannot be "_ENV" (see state #2).
-      if (validateToken(token, source, uri).value.startsWith("--")) state // skip comment
+    let (
+      state: ParseState =
+        tokens.fold(
+          new ParseState { path = List("^") },
+          (state: ParseState, token) ->
+            // the way parsing works is by folding over a list of tokens and maintaining state in the ParseState object.
+            // since we don't have enums with associated values, we instead rely on knowing which combinations of state fields
+            // are reachable and which combinations will never occur. This is a complete list of all valid combinations, where
+            // the `type` column is "root" for ParseState and "child" for ChildParseState and the other columns are fields:
+            //
+            //  # | type  |  op     |  key   | negate | valid next token
+            // ---|-------|---------|--------|--------|-----------------
+            // 1a | root  | null    | null   | null   | identifier or ";" or EOF
+            // 1b | child | null    | null   | null   | identifier or value or "[" or "}" or "-"
+            //  2 | child | null    | null   | bool   | number or "-"
+            //  3 | root  | null    | "_ENV" | null   | "["
+            //  4 | any   | null    | !null¹ | null   | "="
+            //  5 | any   | "="     | !null  | null   | value or "-" or "{"
+            //  6 | any   | "="     | !null  | bool   | number or "-"
+            //  7 | any   | "["     | null   | null   | value or "-" or "{"
+            //  8 | any   | "["     | null   | bool   | number or "-"
+            //  9 | any   | "key"   | !null  | null   | "]"
+            // 10 | any   | "]"     | !null  | null   | "="
+            // 11 | child | "value" | null   | null   | "," or ";" or "}"
+            //
+            // ¹In state #4, if the type is root then the key cannot be "_ENV" (see state #2).
+            if (validateToken(token, source, uri).value.startsWith("--"))
+              state // skip comment
+            else if (state.op == null)
+              if (state.key == null)
+                if (state is ChildParseState)
+                  // state #1b/#2, state is ChildParseState
+                  if (state.negate == null && token.value.matches(identifierRegex))
+                    if (token.value is Keyword)
+                      throwError("Unexpected keyword `\(token.value)`", source, uri, token)
+                    else
+                      (state) { key = token.value; mapStart = super.mapStart ?? token } // -> #4
+                  else if (state.negate == null && token.value == "[")
+                    (state) { op = "[" } // -> #7
+                  else if (state.negate == null && token.value == "}")
+                    let (value = state.toValue(useDynamic, source, uri))
+                    let (parent = state.parent)
+                      if (parent.op == "[") // parent is in state #7
+                        parent.setKey(convertKey(value, state), state.brace) // -> #9
+                      else
+                        parent.put(
+                          convert(value, parent.path.add(Prop(parent.key!!))),
+                          state.brace,
+                          useDynamic
+                        ) // -> #11 or #1a
+                  else if (token.value == "-")
+                    state.negate() // -> #2
+                  else
+                    let (
+                      value = parseValue(source, uri, state, token, "identifier or value or [ or }")
+                    )
+                      state.add(convert(value, state.path.add(splatKey)), token) // -> #11
+                else
+                  // state #1a, state is ParseState
+                  if (token.value.matches(identifierRegex))
+                    if (token.value is Keyword)
+                      throwError("Unexpected keyword `\(token.value)`", source, uri, token)
+                    else
+                      (state) { key = token.value } // -> #4
+                  else if (token.value == ";")
+                    state // stay in state #1a
+                  else
+                    throwExpected("identifier or ;", source, uri, token)
+              else if (state.key == "_ENV" && !(state is ChildParseState))
+                // state #2, state is ParseState
+                if (token.value == "[")
+                  (state) { key = null; op = "[" } // -> #7
+                else if (token.value == "=")
+                  throwError("_ENV cannot be assigned to directly", source, uri, token)
+                else
+                  throwExpected("[", source, uri, token)
+              else if (token.value == "=") // key is !null
+                // state #4
+                (state) { op = "=" } // -> #5
+              else
+                throwExpected("=", source, uri, token)
+            else if (state.op == "=")
+              // state #5/#6
+              if (token.value == "-")
+                state.negate() // -> #6
+              else if (token.value == "{" && state.negate == null)
+                new ChildParseState {
+                  parent = state
+                  brace = token
+                  path = state.path.add(Prop(state.key!!))
+                } // -> #1b
+              else
+                let (value = parseValue(source, uri, state, token, "value or {"))
+                  state.put(convert(value, state.path.add(Prop(state.key!!))), token, useDynamic) // -> #11 or #1a
+            else if (state.op == "[")
+              // state #7/#8
+              if (token.value == "-")
+                state.negate() // -> #8
+              else if (token.value == "{" && state.negate == null)
+                new ChildParseState { parent = state; brace = token; path = List() } // -> #1b
+              else
+                let (value = parseValue(source, uri, state, token, "value or {"))
+                  if (value == null)
+                    throwError("Table key cannot be nil", source, uri, token)
+                  else if (value is Number && value.isNaN)
+                    throwError("Table key cannot be NaN", source, uri, token)
+                  else
+                    state.setKey(convertKey(value, state), token) // -> #9
+            else if (state.op == "key")
+              // state #9
+              if (token.value == "]")
+                (state) { op = "]" } // -> #10
+              else
+                throwExpected("]", source, uri, token)
+            else if (state.op == "]")
+              // state #10
+              if (token.value == "=")
+                (state) { op = "=" } // -> #5
+              else
+                throwExpected("=", source, uri, token)
+            else if (state.op == "value" && state is ChildParseState)
+              // state #11, state is ChildParseState
+              if (token.value is "," | ";")
+                (state) { op = null } // -> #1b
+              else if (token.value == "}")
+                let (value = state.toValue(useDynamic, source, uri))
+                let (parent = state.parent)
+                  if (parent.op == "[") // parent is in state #7
+                    parent.setKey(convertKey(value, parent), state.brace) // -> #9
+                  else
+                    parent.put(
+                      convert(value, parent.path.add(Prop(parent.key!!))),
+                      state.brace,
+                      useDynamic
+                    ) // -> #11 or #1a
+              else
+                throwExpected(", or ; or }", source, uri, token)
+            else
+              // invalid state, we can't ever get here
+              throwError("Internal error; invalid state", source, uri, token)
+        )
+    )
+      // We're at EOF, check if we allow EOF here
+      if (state.negate != null)
+        throwExpected("number", source, uri, null) // state #2/#6/#8
       else if (state.op == null)
         if (state.key == null)
           if (state is ChildParseState)
-            // state #1b/#2, state is ChildParseState
-            if (state.negate == null && token.value.matches(identifierRegex))
-              if (token.value is Keyword) throwError("Unexpected keyword `\(token.value)`", source, uri, token)
-              else (state) { key = token.value; mapStart = super.mapStart ?? token } // -> #4
-            else if (state.negate == null && token.value == "[")
-              (state) { op = "[" } // -> #7
-            else if (state.negate == null && token.value == "}")
-              let (value = state.toValue(useDynamic, source, uri))
-                let (parent = state.parent)
-                  if (parent.op == "[") // parent is in state #7
-                    parent.setKey(convertKey(value, state), state.brace) // -> #9
-                  else
-                    parent.put(convert(value, parent.path.add(Prop(parent.key!!))), state.brace, useDynamic) // -> #11 or #1a
-            else if (token.value == "-")
-              state.negate() // -> #2
-            else
-              let (value = parseValue(source, uri, state, token, "identifier or value or [ or }"))
-                state.add(convert(value, state.path.add(splatKey)), token) // -> #11
+            throwExpected("identifier or value or [ or }", source, uri, null) // state #1b
           else
-            // state #1a, state is ParseState
-            if (token.value.matches(identifierRegex))
-              if (token.value is Keyword) throwError("Unexpected keyword `\(token.value)`", source, uri, token)
-              else (state) { key = token.value } // -> #4
-            else if (token.value == ";")
-              state // stay in state #1a
-            else throwExpected("identifier or ;", source, uri, token)
+            convert(state.toValue(useDynamic, source, uri), state.path) // state #1a
         else if (state.key == "_ENV" && !(state is ChildParseState))
-          // state #2, state is ParseState
-          if (token.value == "[")
-            (state) { key = null; op = "[" } // -> #7
-          else if (token.value == "=") throwError("_ENV cannot be assigned to directly", source, uri, token)
-          else throwExpected("[", source, uri, token)
-        else if (token.value == "=") // key is !null
-          // state #4
-          (state) { op = "=" } // -> #5
-        else throwExpected("=", source, uri, token)
-      else if (state.op == "=")
-        // state #5/#6
-        if (token.value == "-")
-          state.negate() // -> #6
-        else if (token.value == "{" && state.negate == null)
-          new ChildParseState { parent = state; brace = token; path = state.path.add(Prop(state.key!!)) } // -> #1b
+          throwExpected("[", source, uri, null) // state #3
         else
-          let (value = parseValue(source, uri, state, token, "value or {"))
-            state.put(convert(value, state.path.add(Prop(state.key!!))), token, useDynamic) // -> #11 or #1a
-      else if (state.op == "[")
-        // state #7/#8
-        if (token.value == "-") state.negate() // -> #8
-        else if (token.value == "{" && state.negate == null)
-          new ChildParseState { parent = state; brace = token; path = List() } // -> #1b
-        else
-          let (value = parseValue(source, uri, state, token, "value or {"))
-            if (value == null) throwError("Table key cannot be nil", source, uri, token)
-            else if (value is Number && value.isNaN) throwError("Table key cannot be NaN", source, uri, token)
-            else state.setKey(convertKey(value, state), token) // -> #9
+          throwExpected("=", source, uri, null) // state #4
+      else if (state.op is "=" | "[")
+        throwExpected("value or {", source, uri, null) // state #5/#7
       else if (state.op == "key")
-        // state #9
-        if (token.value == "]") (state) { op = "]" } // -> #10
-        else throwExpected("]", source, uri, token)
+        throwExpected("]", source, uri, null) // state #9
       else if (state.op == "]")
-        // state #10
-        if (token.value == "=") (state) { op = "=" } // -> #5
-        else throwExpected("=", source, uri, token)
-      else if (state.op == "value" && state is ChildParseState)
-        // state #11, state is ChildParseState
-        if (token.value is ","|";") (state) { op = null } // -> #1b
-        else if (token.value == "}")
-          let (value = state.toValue(useDynamic, source, uri))
-            let (parent = state.parent)
-              if (parent.op == "[") // parent is in state #7
-                parent.setKey(convertKey(value, parent), state.brace) // -> #9
-              else
-                parent.put(convert(value, parent.path.add(Prop(parent.key!!))), state.brace, useDynamic) // -> #11 or #1a
-        else throwExpected(", or ; or }", source, uri, token)
-      else
-        // invalid state, we can't ever get here
-        throwError("Internal error; invalid state", source, uri, token)
-    ))
-      // We're at EOF, check if we allow EOF here
-      if (state.negate != null) throwExpected("number", source, uri, null) // state #2/#6/#8
-      else if (state.op == null)
-        if (state.key == null)
-          if (state is ChildParseState) throwExpected("identifier or value or [ or }", source, uri, null) // state #1b
-          else convert(state.toValue(useDynamic, source, uri), state.path) // state #1a
-        else if (state.key == "_ENV" && !(state is ChildParseState)) throwExpected("[", source, uri, null) // state #3
-        else throwExpected("=", source, uri, null) // state #4
-      else if (state.op is "="|"[") throwExpected("value or {", source, uri, null) // state #5/#7
-      else if (state.op == "key") throwExpected("]", source, uri, null) // state #9
-      else if (state.op == "]") throwExpected("=", source, uri, null) // state #10
+        throwExpected("=", source, uri, null) // state #10
       else /* op is "value" */ throwExpected(", or ; or }", source, uri, null) // state #11
 
-  local function parseValue(source: String, uri: Uri?, state: ParseState, token: RegexMatch, expected: String): (Boolean|Number|String)? =
-    let (value = if (token.value == "nil") null
-    else if (token.value == "true") true
-    else if (token.value == "false") false
-    else if (token.value.startsWith(Regex(#"\.?0[xX]"#)))
-      parseHexLiteral(token, state.negate ?? false, source, uri)
-    else if (token.value.startsWith(Regex(#"\.?[0-9]"#)))
-      parseDecLiteral(token, state.negate ?? false, source, uri)
-    else if (token.value.startsWith(Regex(#"["']"#)))
-      parseShortString(token, source, uri)
-    else if (token.value.startsWith(Regex(#"\[=*+\["#)))
-      parseLongString(token)
-    else throwExpected(if (state.negate == null) expected else "number", source, uri, token))
+  local function parseValue(
+    source: String,
+    uri: Uri?,
+    state: ParseState,
+    token: RegexMatch,
+    expected: String
+  ): (Boolean | Number | String)? =
+    let (
+      value =
+        if (token.value == "nil")
+          null
+        else if (token.value == "true")
+          true
+        else if (token.value == "false")
+          false
+        else if (token.value.startsWith(Regex(#"\.?0[xX]"#)))
+          parseHexLiteral(token, state.negate ?? false, source, uri)
+        else if (token.value.startsWith(Regex(#"\.?[0-9]"#)))
+          parseDecLiteral(token, state.negate ?? false, source, uri)
+        else if (token.value.startsWith(Regex(#"["']"#)))
+          parseShortString(token, source, uri)
+        else if (token.value.startsWith(Regex(#"\[=*+\["#)))
+          parseLongString(token)
+        else
+          throwExpected(if (state.negate == null) expected else "number", source, uri, token)
+    )
       if (state.negate != null && !(value is Number))
         throwError("Attempted to negate non-numeric value", source, uri, token)
-      else value
+      else
+        value
 
-  local function parseHexLiteral(token: RegexMatch, negate: Boolean, source: String, uri: Uri?): Number =
-    let (match = hexLiteralRegex.matchEntire(token.value) ?? throwError("Invalid numeric literal: \(token.value)", source, uri, token))
+  local function parseHexLiteral(
+    token: RegexMatch,
+    negate: Boolean,
+    source: String,
+    uri: Uri?
+  ): Number =
+    let (
+      match =
+        hexLiteralRegex.matchEntire(token.value)
+          ?? throwError("Invalid numeric literal: \(token.value)", source, uri, token)
+    )
     let (intPart = match.groups[1]!!.value)
     let (fracPart = match.groups[2]?.value ?? "")
     let (exp = match.groups[3]?.value?.toInt())
     let (base = if (exp != null || !fracPart.isEmpty) 0.0 else 0)
-    let (intValue: Number =
-      if (negate) intPart.chars.fold(base, (acc: Number, it) -> acc * 16 - parseHex(it))
-      else intPart.chars.fold(base, (acc: Number, it) -> acc * 16 + parseHex(it)))
-    let (fracValue = fracPart.chars.foldBack(0.0, (it, acc: Float) -> acc / 16 + parseHex(it) / 16) as Float)
-    let (value = if (fracPart.isEmpty) intValue else if (negate) intValue - fracValue else intValue + fracValue)
-      if (exp != null) value * (2.0 ** exp)
-      else value
+    let (
+      intValue: Number =
+        if (negate)
+          intPart.chars.fold(base, (acc: Number, it) -> acc * 16 - parseHex(it))
+        else
+          intPart.chars.fold(base, (acc: Number, it) -> acc * 16 + parseHex(it))
+    )
+    let (
+      fracValue =
+        fracPart.chars.foldBack(0.0, (it, acc: Float) -> acc / 16 + parseHex(it) / 16) as Float
+    )
+    let (
+      value =
+        if (fracPart.isEmpty)
+          intValue
+        else if (negate)
+          intValue - fracValue
+        else
+          intValue + fracValue
+    )
+      if (exp != null)
+        value * (2.0 ** exp)
+      else
+        value
 
-  local function parseDecLiteral(token: RegexMatch, negate: Boolean, source: String, uri: Uri?): Number =
+  local function parseDecLiteral(
+    token: RegexMatch,
+    negate: Boolean,
+    source: String,
+    uri: Uri?
+  ): Number =
     let (value = if (negate) "-\(token.value)" else token.value)
       (if (value.contains(Regex("[.eE]"))) value.toFloatOrNull() else value.toIntOrNull())
-      ?? throwError("Invalid numeric literal: \(token.value)", source, uri, token)
+        ?? throwError("Invalid numeric literal: \(token.value)", source, uri, token)
 
   local function parseShortString(token: RegexMatch, source: String, uri: Uri?): String =
-    let (value = token.value.substring(1, token.value.length-1)) // drop quotes
-      value.replaceAllMapped(Regex(#"(?s-U)\\(z[ \f\n\t\x0b]*|x\p{XDigit}{1,2}|\d{1,3}+|u\{\p{XDigit}*}?|.)"#), (it) ->
+    let (value = token.value.substring(1, token.value.length - 1)) // drop quotes
+      value.replaceAllMapped(Regex(
+        #"(?s-U)\\(z[ \f\n\t\x0b]*|x\p{XDigit}{1,2}|\d{1,3}+|u\{\p{XDigit}*}?|.)"#
+      ), (it) ->
         let (value = it.groups[1]!!.value)
-          if (value.startsWith("z")) ""
-          else if (value == "\n") "\n"
-          else if (value == "a") "\u{7}"
-          else if (value == "b") "\u{8}"
-          else if (value == "f") "\u{c}"
-          else if (value == "n") "\n"
-          else if (value == "r") "\r"
-          else if (value == "t") "\t"
-          else if (value == "v") "\u{b}"
-          else if (value is "\\"|"\""|"'") value
+          if (value.startsWith("z"))
+            ""
+          else if (value == "\n")
+            "\n"
+          else if (value == "a")
+            "\u{7}"
+          else if (value == "b")
+            "\u{8}"
+          else if (value == "f")
+            "\u{c}"
+          else if (value == "n")
+            "\n"
+          else if (value == "r")
+            "\r"
+          else if (value == "t")
+            "\t"
+          else if (value == "v")
+            "\u{b}"
+          else if (value is "\\" | "\"" | "'")
+            value
           else if (value.startsWith("x"))
-            if (!value.matches(Regex(#"(?-U)x\p{XDigit}{2}"#))) throwError("Invalid hex escape in string: \(it.value)", source, uri, it)
+            if (!value.matches(Regex(#"(?-U)x\p{XDigit}{2}"#)))
+              throwError("Invalid hex escape in string: \(it.value)", source, uri, it)
             else
               let (c = parseHexOctet(value.drop(1)))
-                if (c > 0x7f) throwError("Non-ascii hex escape in string: \(it.value)", source, uri, it)
-                else c.toChar()
+                if (c > 0x7f)
+                  throwError("Non-ascii hex escape in string: \(it.value)", source, uri, it)
+                else
+                  c.toChar()
           else if (value.startsWith("u"))
-            if (!value.matches(Regex(#"(?-U)u\{\p{XDigit}{1,8}}"#))) throwError("Invalid unicode escape in string: \(it.value)", source, uri, it)
+            if (!value.matches(Regex(#"(?-U)u\{\p{XDigit}{1,8}}"#)))
+              throwError("Invalid unicode escape in string: \(it.value)", source, uri, it)
             else
-              let (c = parseHex32(value.substring(2, value.length-1).padStart(8, "0")))
-                if (c > 0x10FFFF) throwError("Out-of-range unicode escape in string: \(it.value)", source, uri, it)
-                else c.toChar()
+              let (c = parseHex32(value.substring(2, value.length - 1).padStart(8, "0")))
+                if (c > 0x10FFFF)
+                  throwError("Out-of-range unicode escape in string: \(it.value)", source, uri, it)
+                else
+                  c.toChar()
           else if (value.matches(Regex(#"[0-9]{1,3}"#)))
             let (c = value.toInt())
-              if (c > 0x7f) throwError("Non-ascii decimal escape in string: \(it.value)", source, uri, it)
-              else c.toChar()
-          else throwError("Invalid backslash in string: \(it.value)", source, uri, it))
+              if (c > 0x7f)
+                throwError("Non-ascii decimal escape in string: \(it.value)", source, uri, it)
+              else
+                c.toChar()
+          else
+            throwError("Invalid backslash in string: \(it.value)", source, uri, it)
+      )
 
   local function parseLongString(token: RegexMatch): String =
     // we know we start with [=…[ and end with ]=…] (end was validated in validateToken)
     // group 5 is starting equals, group 6 is the whole end
-    let (value = token.value.substring(token.groups[5]!!.end-token.start+1, token.groups[6]!!.start-token.start))
-      if (value.startsWith("\n")) value.drop(1)
-      else value
+    let (
+      value =
+        token.value.substring(
+          token.groups[5]!!.end - token.start + 1,
+          token.groups[6]!!.start - token.start
+        )
+    )
+      if (value.startsWith("\n"))
+        value.drop(1)
+      else
+        value
 
   // endregion
   // region Converters
@@ -620,66 +857,76 @@ class Parser {
       if (f != null) f.apply(value) else value
 
   local function convertKey(value: Value, state: ParseState): unknown =
-    if (state.isListIndex(value) && (useDynamic || state is ChildParseState)) value // don't convert indices
-    else if (value is String) value // String keys are treated as properties
+    if (state.isListIndex(value) && (useDynamic || state is ChildParseState))
+      value // don't convert indices
+    else if (value is String)
+      value // String keys are treated as properties
     else
       let (f = converters.getOrNull(value.getClass()))
         if (f != null) f.apply(value) else value
 
   // the path and spec must already be reversed
   local function comparePaths(path: List<PathEntry>, pathSpec: List<PathEntry>): Boolean =
-    path.length >= pathSpec.length && path.zip(pathSpec).every((p) ->
-      if (p.second is Prop && p.second.name == "*") p.first is Prop
-      else if (p.second is Key && p.second.key == "*") p.first is Key
-      else p.first == p.second
-    )
+    path.length >= pathSpec.length
+      && path
+        .zip(pathSpec)
+        .every((p) ->
+          if (p.second is Prop && p.second.name == "*")
+            p.first is Prop
+          else if (p.second is Key && p.second.key == "*")
+            p.first is Key
+          else
+            p.first == p.second
+        )
 
   // endregion
 }
 
 // region State
 
-local open class ParseState {
+open local class ParseState {
   map: Map // note: can't provide key/value types, converters can return non-Lua types
   list: List
   key: Any = null
-  op: ("["|"key"|"]"|"=")? // op is "["? iff key is null
+  op: ("[" | "key" | "]" | "=")? // op is "["? iff key is null
   negate: Boolean? // negative numbers are unary negation
   path: List<PathEntry>
 
-  function toValue(useDynamic: Boolean, _, _): Dynamic|Mapping =
-    if (useDynamic) (map.toDynamic()) {
-      ...list
-    } else map.toMapping() // list should be empty
+  function toValue(useDynamic: Boolean, _, _): Dynamic | Mapping =
+    if (useDynamic)
+      (map.toDynamic()) {
+        ...list
+      }
+    else
+      map.toMapping() // list should be empty
 
   function put(value, token, useDynamic: Boolean): ParseState =
-    if (useDynamic && isListIndex(key)) add(value, token)
-    else (this) {
-      map = super.map.put(super.key!!, value)
-      key = null
-      op = null
-      negate = null
-    }
+    if (useDynamic && isListIndex(key))
+      add(value, token)
+    else
+      (this) {
+        map = super.map.put(super.key!!, value)
+        key = null
+        op = null
+        negate = null
+      }
 
   // used for _ENV[0]=value expressions when useDynamic is true
-  function add(value, _): ParseState =
-    (this) {
-      list = super.list.add(value)
-      key = null
-      op = null
-      negate = null
-    }
+  function add(value, _): ParseState = (this) {
+    list = super.list.add(value)
+    key = null
+    op = null
+    negate = null
+  }
 
   // only use this for [key]= keys
-  function setKey(value, _): ParseState =
-    (this) {
-      key = value
-      op = "key"
-      negate = null
-    }
+  function setKey(value, _): ParseState = (this) {
+    key = value
+    op = "key"
+    negate = null
+  }
 
-  function negate(): ParseState =
-    (this) { negate = !(super.negate ?? false) }
+  function negate(): ParseState = (this) { negate = !(super.negate ?? false) }
 
   function isListIndex(key): Boolean =
     // note: Lua indexes are 1-based
@@ -689,45 +936,60 @@ local open class ParseState {
 local class ChildParseState extends ParseState {
   parent: ParseState
   brace: RegexMatch // token for opening {, used for error reporting
-  op: ("["|"key"|"]"|"="|"value")? // op is "["|"value"? iff key is null
+  op: ("[" | "key" | "]" | "=" | "value")? // op is "["|"value"? iff key is null
   mapStart: RegexMatch? // non-null if !map.isEmpty
   listStart: RegexMatch? // non-null if !list.isEmpty
 
-  function toValue(useDynamic: Boolean, source: String, uri: Uri?): Dynamic|Mapping|Listing =
-    if (useDynamic) (map.toDynamic()) {
-      ...list
-    } else if (map.isEmpty) list.toListing()
-    else if (list.isEmpty) map.toMapping()
-    else throwError2("Table has both list elements and map entries", source, uri, mapStart!!, "first map entry", listStart!!, "first list entry")
+  function toValue(useDynamic: Boolean, source: String, uri: Uri?): Dynamic | Mapping | Listing =
+    if (useDynamic)
+      (map.toDynamic()) {
+        ...list
+      }
+    else if (map.isEmpty)
+      list.toListing()
+    else if (list.isEmpty)
+      map.toMapping()
+    else
+      throwError2(
+        "Table has both list elements and map entries",
+        source,
+        uri,
+        mapStart!!,
+        "first map entry",
+        listStart!!,
+        "first list entry"
+      )
 
   function put(value, token: RegexMatch, _): ChildParseState =
-    if (isListIndex(key)) add(value, token)
-    else (this) {
-      map = super.map.put(super.key!!, value)
-      key = null
-      op = "value"
-      negate = null
-    }
+    if (isListIndex(key))
+      add(value, token)
+    else
+      (this) {
+        map = super.map.put(super.key!!, value)
+        key = null
+        op = "value"
+        negate = null
+      }
 
-  function add(value, token: RegexMatch): ChildParseState =
-    (this) {
-      list = super.list.add(value)
-      key = null // key could be [int]
-      op = "value"
-      negate = null
-      listStart = super.listStart ?? token
-    }
+  function add(value, token: RegexMatch): ChildParseState = (this) {
+    list = super.list.add(value)
+    key = null // key could be [int]
+    op = "value"
+    negate = null
+    listStart = super.listStart ?? token
+  }
 
-  function setKey(value, token: RegexMatch): ChildParseState =
-    (this) {
-      key = value
-      op = "key"
-      negate = null
-      mapStart =
-        // don't update mapStart if this will become a listing element
-        if (isListIndex(value)) super.mapStart
-        else super.mapStart ?? token
-    }
+  function setKey(value, token: RegexMatch): ChildParseState = (this) {
+    key = value
+    op = "key"
+    negate = null
+    mapStart =
+      // don't update mapStart if this will become a listing element
+      if (isListIndex(value))
+        super.mapStart
+      else
+        super.mapStart ?? token
+  }
 }
 
 // endregion
@@ -741,56 +1003,77 @@ local class ChildParseState extends ParseState {
 // - Group 4 is not "'"?
 // - Group 6 is ""
 // - Last group is non-null
-local const tokenRegex: Regex = Regex(##"""
-  (?x-uU)
-    --(?:               # comment
-      \[(?<eq1>=*)\[    # long comment (equals are GROUP 1)
+local const tokenRegex: Regex =
+  Regex(
+    ##"""
+    (?x-uU)
+      --(?:               # comment
+        \[(?<eq1>=*)\[    # long comment (equals are GROUP 1)
+        (?>(?>
+          [^]]
+        | ](?!\k<eq1>])
+        )*)
+        (]\k<eq1>]|\z)    # match end or EOF (GROUP 2)
+      | .*                # short comment
+      )
+    | [\w&&\D]\w*         # identifier
+    | "(?>(?>             # short literal string (")
+        [^\\\n"]
+      | \\(?>z[\ \f\n\t\x0b]*|x\p{XDigit}{2}|\d{1,3}|u\{\p{XDigit}+}|(?s:.)|\z)
+      )*)("|(?s:.)|\z)    # match string truncated by newline or EOF (GROUP 3)
+    | '(?>(?>             # short literal string (')
+        [^\\\n']
+      | \\(?>z[\ \f\n\t\x0b]*|x\p{XDigit}{2}|\d{1,3}|u\{\p{XDigit}+}|(?s:.)|\z)
+      )*)('|(?s:.)|\z)    # match string truncated by newline or EOF (GROUP 4)
+    | \[(?<eq2>=*)\[      # long literal string (equals are GROUP 5)
       (?>(?>
         [^]]
-      | ](?!\k<eq1>])
+      | ](?!\k<eq2>])
       )*)
-      (]\k<eq1>]|\z)    # match end or EOF (GROUP 2)
-    | .*                # short comment
-    )
-  | [\w&&\D]\w*         # identifier
-  | "(?>(?>             # short literal string (")
-      [^\\\n"]
-    | \\(?>z[\ \f\n\t\x0b]*|x\p{XDigit}{2}|\d{1,3}|u\{\p{XDigit}+}|(?s:.)|\z)
-    )*)("|(?s:.)|\z)    # match string truncated by newline or EOF (GROUP 3)
-  | '(?>(?>             # short literal string (')
-      [^\\\n']
-    | \\(?>z[\ \f\n\t\x0b]*|x\p{XDigit}{2}|\d{1,3}|u\{\p{XDigit}+}|(?s:.)|\z)
-    )*)('|(?s:.)|\z)    # match string truncated by newline or EOF (GROUP 4)
-  | \[(?<eq2>=*)\[      # long literal string (equals are GROUP 5)
-    (?>(?>
-      [^]]
-    | ](?!\k<eq2>])
-    )*)
-    (]\k<eq2>]|\z)      # match end or EOF (GROUP 6)
-    # for the numeric literals, they consume extra periods and hex digits and throw a parse error
-    # this regex aims to match everything Lua 5.3 itself will tokenize as numeric
-  | \.?0[xX](?:(?:[pP][-+]?)?[.\p{XDigit}])*   # hex numeric literal
-  | \.?\d(?:(?:[eE][-+]?)?[.\p{XDigit}])*   # dec numeric literal
-  | [-+*%^\#&|(){}\[\];,]   # single-char operators
-  | <[<=]? | >[>=]? | //? | ~=? | ==? | ::? | \.{1,3}   # multi-char operators
-  | ([^\ \f\n\t\x0b])   # invalid token (last group)
-  """##)
+      (]\k<eq2>]|\z)      # match end or EOF (GROUP 6)
+      # for the numeric literals, they consume extra periods and hex digits and throw a parse error
+      # this regex aims to match everything Lua 5.3 itself will tokenize as numeric
+    | \.?0[xX](?:(?:[pP][-+]?)?[.\p{XDigit}])*   # hex numeric literal
+    | \.?\d(?:(?:[eE][-+]?)?[.\p{XDigit}])*   # dec numeric literal
+    | [-+*%^\#&|(){}\[\];,]   # single-char operators
+    | <[<=]? | >[>=]? | //? | ~=? | ==? | ::? | \.{1,3}   # multi-char operators
+    | ([^\ \f\n\t\x0b])   # invalid token (last group)
+    """##
+  )
 
 // checks the error states documented on tokenRegex
 // returns the same token, or throws an error
 local const function validateToken(token: RegexMatch, source: String, uri: Uri?): RegexMatch =
-  if (token.groups[2]?.value == "") throwError("Expected ]\(token.groups[1]!!.value)], found EOF", source, uri, token.groups[2]!!)
-  else let (g = token.groups[3]) if (g != null && g.value != "\"") throwExpected("\"", source, uri, g)
-  else let (g = token.groups[4]) if (g != null && g.value != "'") throwExpected("'", source, uri, g)
-  else if (token.groups[6]?.value == "") throwError("Expected ]\(token.groups[5]!!.value)], found EOF", source, uri, token.groups[6]!!)
-  else let (g = token.groups.last) if (g != null) throwError("Illegal token \(g.value)", source, uri, g)
-  else token
+  if (token.groups[2]?.value == "")
+    throwError("Expected ]\(token.groups[1]!!.value)], found EOF", source, uri, token.groups[2]!!)
+  else
+    let (g = token.groups[3])
+      if (g != null && g.value != "\"")
+        throwExpected("\"", source, uri, g)
+      else
+        let (g = token.groups[4])
+          if (g != null && g.value != "'")
+            throwExpected("'", source, uri, g)
+          else if (token.groups[6]?.value == "")
+            throwError(
+              "Expected ]\(token.groups[5]!!.value)], found EOF",
+              source,
+              uri,
+              token.groups[6]!!
+            )
+          else
+            let (g = token.groups.last)
+              if (g != null)
+                throwError("Illegal token \(g.value)", source, uri, g)
+              else
+                token
 
 // groups:
 // 1 - integral part (String)
 // 2 - fractional part (String?)
 // 3 - exponent (String(!isEmpty)?)
-local const hexLiteralRegex: Regex = Regex(#"(?-U)0[xX](?=\.?\p{XDigit})(\p{XDigit}*)(?:\.(\p{XDigit}*))?(?:[pP]([-+]?\d+))?"#)
+local const hexLiteralRegex: Regex =
+  Regex(#"(?-U)0[xX](?=\.?\p{XDigit})(\p{XDigit}*)(?:\.(\p{XDigit}*))?(?:[pP]([-+]?\d+))?"#)
 
 local const identifierRegex = Regex("[a-zA-Z_][a-zA-Z0-9_]*")
 
@@ -820,46 +1103,79 @@ local const function errorLocation(source: String, token: RegexMatch): ErrorLoca
       row1 = _row1
       col1 = col0 + 1
       line = "\(rowPrefix)\(_line)"
-      marker = markerPrefix + " ".repeat(col0) + "^".repeat(math.max(1, math.min(_line.length - col0, token.end - token.start)) as UInt)
+      marker =
+        markerPrefix
+          + " ".repeat(col0)
+          + "^".repeat(math.max(1, math.min(_line.length - col0, token.end - token.start)) as UInt)
     }
 
 local const function throwError(msg: String, source: String, uri: Uri?, token: RegexMatch): nothing =
   let (loc = errorLocation(source, token))
-  let (errMsg = "\(msg)\n\n\(loc.line)\n\(loc.marker)\nat \(uri ?? "<input>"):\(loc.row1):\(loc.col1)")
+  let (
+    errMsg = "\(msg)\n\n\(loc.line)\n\(loc.marker)\nat \(uri ?? "<input>"):\(loc.row1):\(loc.col1)"
+  )
     throw(errMsg)
 
-local const function throwError2(msg: String, source: String, uri: Uri?, token1: RegexMatch, note1: String, token2: RegexMatch, note2: String): nothing =
+local const function throwError2(
+  msg: String,
+  source: String,
+  uri: Uri?,
+  token1: RegexMatch,
+  note1: String,
+  token2: RegexMatch,
+  note2: String
+): nothing =
   let (loc1 = errorLocation(source, token1))
   let (loc2 = errorLocation(source, token2))
-  let (errMsg =
-    if (loc1.row1 == loc2.row1) // same line
-      if (loc1.col1 <= loc2.col1) // loc1 comes first
-        "\(msg)\n\n\(loc1.line)\n\(loc1.marker) \(note1)\n\(loc2.marker) \(note2)\nat \(uri ?? "<input>"):\(loc1.row1):\(loc1.col1)"
+  let (
+    errMsg =
+      if (loc1.row1 == loc2.row1) // same line
+        if (loc1.col1 <= loc2.col1) // loc1 comes first
+          "\(msg)\n\n\(loc1.line)\n\(loc1.marker) \(note1)\n\(loc2.marker) \(note2)\nat \(uri ?? "<input>"):\(loc1.row1):\(loc1.col1)"
+        else // loc2 comes first
+          "\(msg)\n\n\(loc1.line)\n\(loc2.marker) \(note2)\n\(loc1.marker) \(note1)\nat \(uri ?? "<input>"):\(loc1.row1):\(loc2.col1)"
+      else if (loc1.row1 < loc2.row1) // loc1 comes first
+        "\(msg)\n\n\(loc1.line)\n\(loc1.marker) \(note1)\n\(loc2.line)\n\(loc2.marker) \(note2)\nat \(uri ?? "<input>"):\(loc1.row1):\(loc1.col1)"
       else // loc2 comes first
-        "\(msg)\n\n\(loc1.line)\n\(loc2.marker) \(note2)\n\(loc1.marker) \(note1)\nat \(uri ?? "<input>"):\(loc1.row1):\(loc2.col1)"
-    else if (loc1.row1 < loc2.row1) // loc1 comes first
-      "\(msg)\n\n\(loc1.line)\n\(loc1.marker) \(note1)\n\(loc2.line)\n\(loc2.marker) \(note2)\nat \(uri ?? "<input>"):\(loc1.row1):\(loc1.col1)"
-    else // loc2 comes first
-      "\(msg)\n\n\(loc2.line)\n\(loc2.marker) \(note2)\n\(loc1.line)\n\(loc1.marker) \(note1)\nat \(uri ?? "<input>"):\(loc2.row1):\(loc2.col1)")
+        "\(msg)\n\n\(loc2.line)\n\(loc2.marker) \(note2)\n\(loc1.line)\n\(loc1.marker) \(note1)\nat \(uri ?? "<input>"):\(loc2.row1):\(loc2.col1)"
+  )
     throw(errMsg)
 
-local const function throwExpected(expected: String, source: String, uri: Uri?, token: RegexMatch?): nothing =
-  let (found =
-    if (token == null) "EOF"
-    else if (token.value == "\n") "newline"
-    else if (token.value.isEmpty) "EOF"
-    else "token `\(token.value.replaceAllMapped(Regex(#"[\n\\]"#), (it) -> if (it.value == "\n") "\\n" else #"\\"#))`")
-    throwError("Expected \(expected), found \(found)", source, uri, token ?? new RegexMatch { value = ""; start = source.length; end = source.length })
+local const function throwExpected(
+  expected: String,
+  source: String,
+  uri: Uri?,
+  token: RegexMatch?
+): nothing =
+  let (
+    found =
+      if (token == null)
+        "EOF"
+      else if (token.value == "\n")
+        "newline"
+      else if (token.value.isEmpty)
+        "EOF"
+      else
+        "token `\(token.value.replaceAllMapped(Regex(#"[\n\\]"#), (it) -> if (it.value == "\n") "\\n" else #"\\"#))`"
+  )
+    throwError(
+      "Expected \(expected), found \(found)",
+      source,
+      uri,
+      token ?? new RegexMatch { value = ""; start = source.length; end = source.length }
+    )
 
 // endregion
 // endregion
 // region Hex
 
 /// parseHex tranforms a single hexadecimal character into its unsigned integer representation.
-local const function parseHex(digit: Char): UInt8 = nybbleLut.getOrNull(digit) ?? throw("Unrecognized hex digit: \(digit)")
+local const function parseHex(digit: Char): UInt8 =
+  nybbleLut.getOrNull(digit) ?? throw("Unrecognized hex digit: \(digit)")
 
 /// parseHexOctet tranforms a two hexadecimal characters into its unsigned integer representation.
-local const function parseHexOctet(octet: String(length == 2)): UInt8 = byteLut.getOrNull(octet) ?? throw("Unrecognized hex octet: \(octet)")
+local const function parseHexOctet(octet: String(length == 2)): UInt8 =
+  byteLut.getOrNull(octet) ?? throw("Unrecognized hex octet: \(octet)")
 
 /// parseHex32 transforms an 8 character hexidecimal string into its UInt32 representation.
 local const function parseHex32(s: String(length == 8)): UInt32 =
@@ -879,8 +1195,8 @@ local const nybbleLut = new Mapping {
 }
 
 local const byteLut = new Mapping {
-  for (k,v in nybbleLut) {
-    for (k2,v2 in nybbleLut) {
+  for (k, v in nybbleLut) {
+    for (k2, v2 in nybbleLut) {
       ["\(k)\(k2)"] = v.shl(4) + v2
     }
   }

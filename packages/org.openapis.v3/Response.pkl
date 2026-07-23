@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@
 module org.openapis.v3.Response
 
 import "Header.pkl"
-import "Reference.pkl"
-import "MediaType.pkl"
 import "Link.pkl"
+import "MediaType.pkl"
+import "Reference.pkl"
 
 /// A short description of the response.
 ///
@@ -32,7 +32,7 @@ description: String
 ///
 /// RFC7230 states header names are case insensitive. If a response header is defined with the name "Content-Type",
 /// it SHALL be ignored.
-headers: Mapping<String, *Header|Reference>?
+headers: Mapping<String, *Header | Reference>?
 
 /// A map containing descriptions of potential response payloads.
 ///
@@ -43,4 +43,4 @@ content: Mapping<String, MediaType>?
 /// A map of operations links that can be followed from the response.
 ///
 /// The key of the map is a short name for the link, following the naming constraints of the names for Component Objects.
-links: Mapping<String, *Link|Reference>?
+links: Mapping<String, *Link | Reference>?

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,15 +21,19 @@ typealias MetricNameFormat = String(matches(Regex(#"[a-zA-Z_:][a-zA-Z0-9_:]*"#))
 
 typealias LabelNameFormat = String(matches(Regex(#"[a-zA-Z_][a-zA-Z0-9_]*"#)))
 
-typealias Labels = Mapping<LabelNameFormat, String|Number|Boolean>
+typealias Labels = Mapping<LabelNameFormat, String | Number | Boolean>
 
-typealias Scheme = *"http"|"https"
+typealias Scheme = *"http" | "https"
 
 local function convertDuration(dur: Duration) =
-  if (dur.unit == "min") dur.value.toString() + "m"
-  else if (dur.unit == "ns") convertDuration(dur.toUnit("ms"))
-  else if (dur.unit == "us") convertDuration(dur.toUnit("ms"))
-  else dur.value.toString() + dur.unit
+  if (dur.unit == "min")
+    dur.value.toString() + "m"
+  else if (dur.unit == "ns")
+    convertDuration(dur.toUnit("ms"))
+  else if (dur.unit == "us")
+    convertDuration(dur.toUnit("ms"))
+  else
+    dur.value.toString() + dur.unit
 
 output {
   renderer = new YamlRenderer {

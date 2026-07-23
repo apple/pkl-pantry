@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@ abstract module pkl.experimental.syntax.ClassOrModuleNode
 
 extends "Node.pkl"
 
-import "Node.pkl"
-import "DocCommentNode.pkl"
 import "AnnotationNode.pkl"
+import "DocCommentNode.pkl"
 import "ExpressionNode.pkl"
-import "TypeAnnotationNode.pkl"
 import "IdentifierNode.pkl"
+import "Node.pkl"
 import "ObjectBodyNode.pkl"
 import "ParameterNode.pkl"
+import "TypeAnnotationNode.pkl"
 
 /// The properties as defined in the class or module.
 properties: Listing<PropertyDefinitionNode>?
@@ -36,7 +36,7 @@ methods: Listing<MethodNode>?
 class PropertyDefinitionNode extends Node {
   docComment: DocCommentNode?
   annotations: Listing<AnnotationNode>?
-  modifiers: Listing<"abstract"|"const"|"external"|"fixed"|"hidden"|"local">(isDistinct)?
+  modifiers: Listing<"abstract" | "const" | "external" | "fixed" | "hidden" | "local">(isDistinct)?
   name: IdentifierNode
   typeAnnotation: TypeAnnotationNode?
 
@@ -48,73 +48,77 @@ class PropertyDefinitionNode extends Node {
   /// * `foo = myBar { ... }` is technically valid syntax but should be acheived using an amends expression node.
   objectBody: ObjectBodyNode(typeAnnotation == null && defaultValue == null)?
 
-  local function renderPropertyLine(currentIndent: String) = currentIndent + List(
-    if (modifiers != null) modifiers.join(" ") + " " else null,
-    name.render(currentIndent),
-    typeAnnotation?.render(currentIndent),
-    if (defaultValue != null) " = " + defaultValue.render(currentIndent) else null,
-    if (objectBody != null) " " + objectBody.render(currentIndent) else null
-  ).filterNonNull().join("")
+  local function renderPropertyLine(currentIndent: String) =
+    currentIndent
+      + List(
+        if (modifiers != null) modifiers.join(" ") + " " else null,
+        name.render(currentIndent),
+        typeAnnotation?.render(currentIndent),
+        if (defaultValue != null) " = " + defaultValue.render(currentIndent) else null,
+        if (objectBody != null) " " + objectBody.render(currentIndent) else null
+      )
+        .filterNonNull()
+        .join("")
 
-  function render(currentIndent: String) = List(
-    docComment?.render(currentIndent),
-    annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
-    renderPropertyLine(currentIndent)
-  )
-    .filter((it) -> it != null && !it.isEmpty)
-    .join("\n")
+  function render(currentIndent: String) =
+    List(
+      docComment?.render(currentIndent),
+      annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
+      renderPropertyLine(currentIndent)
+    )
+      .filter((it) -> it != null && !it.isEmpty)
+      .join("\n")
 }
 
 class MethodNode extends Node {
   docComment: DocCommentNode?
   annotations: Listing<AnnotationNode>?
-  modifiers: Listing<"abstract"|"const"|"external"|"local">(isDistinct)?
+  modifiers: Listing<"abstract" | "const" | "external" | "local">(isDistinct)?
   name: IdentifierNode
   // TODO typeParameters?
   parameters: Listing<ParameterNode>
   returnTypeAnnotation: TypeAnnotationNode?
   body: ExpressionNode
 
-  local function renderMethodHeader(currentIndent: String) = List(
-    currentIndent,
-    if (modifiers != null) modifiers.join(" ") + " " else null,
-    "function ",
-    name.render(currentIndent),
-    "(",
-    parameters?.toList()?.map((p) -> p.render(currentIndent)).join(", "),
-    ")",
-    returnTypeAnnotation?.render(currentIndent),
-    " ="
-  ).filterNonNull().join("")
+  local function renderMethodHeader(currentIndent: String) =
+    List(
+      currentIndent,
+      if (modifiers != null) modifiers.join(" ") + " " else null,
+      "function ",
+      name.render(currentIndent),
+      "(",
+      parameters?.toList()?.map((p) -> p.render(currentIndent)).join(", "),
+      ")",
+      returnTypeAnnotation?.render(currentIndent),
+      " ="
+    )
+      .filterNonNull()
+      .join("")
 
   function renderMethodBody(currentIndent: String) =
     let (header = renderMethodHeader(currentIndent))
-      let (inlineBody = body.render(currentIndent))
-        let (firstInlineBodyLine = inlineBody.takeWhile((it) -> !it.endsWith("\n")))
-          if ("\(header) \(firstInlineBodyLine)".length <= maxColumnWidth)
-            "\(header) \(inlineBody)"
-          else
-            "\(header)\n\(currentIndent + indent)\(body.render(currentIndent + indent))"
+    let (inlineBody = body.render(currentIndent))
+    let (firstInlineBodyLine = inlineBody.takeWhile((it) -> !it.endsWith("\n")))
+      if ("\(header) \(firstInlineBodyLine)".length <= maxColumnWidth)
+        "\(header) \(inlineBody)"
+      else
+        "\(header)\n\(currentIndent + indent)\(body.render(currentIndent + indent))"
 
-  function render(currentIndent: String) = List(
-    docComment?.render(currentIndent),
-    annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
-    renderMethodBody(currentIndent)
-  )
-    .filter((it) -> it != null && !it.isEmpty)
-    .join("\n")
+  function render(currentIndent: String) =
+    List(
+      docComment?.render(currentIndent),
+      annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
+      renderMethodBody(currentIndent)
+    )
+      .filter((it) -> it != null && !it.isEmpty)
+      .join("\n")
 }
 
-function renderProperties(currentIndent: String) = properties
-  ?.toList()
-  ?.map((p) -> p.render(currentIndent))
-  ?.join("\n\n")
+function renderProperties(currentIndent: String) =
+  properties?.toList()?.map((p) -> p.render(currentIndent))?.join("\n\n")
 
-function renderMethods(currentIndent: String) = methods
-  ?.toList()
-  ?.map((m) -> m.render(currentIndent))
-  ?.join("\n\n")
+function renderMethods(currentIndent: String) =
+  methods?.toList()?.map((m) -> m.render(currentIndent))?.join("\n\n")
 
-function render(currentIndent: String) = List(renderProperties(currentIndent), renderMethods(currentIndent))
-  .filterNonNull()
-  .join("\n\n")
+function render(currentIndent: String) =
+  List(renderProperties(currentIndent), renderMethods(currentIndent)).filterNonNull().join("\n\n")

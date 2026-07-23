@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -237,19 +237,22 @@ class KubernetesSdConfig extends HttpClientConfig {
 
   /// Optional metadata to attach to discovered targets.
   /// If omitted, no additional metadata is attached.
-  attach_metadata: KubernetesSdConfigAttachMetadata(node?.implies(role is KubernetesSdConfigRoleWithNodeMetadata) || true)?
+  attach_metadata: KubernetesSdConfigAttachMetadata(
+    node?.implies(role is KubernetesSdConfigRoleWithNodeMetadata) || true
+  )?
 }
 
-typealias KubernetesSdConfigRole = *"pod"|"service"|"node"|"endpoints"|"endpointslice"|"ingress"
+typealias KubernetesSdConfigRole =
+  *"pod" | "service" | "node" | "endpoints" | "endpointslice" | "ingress"
 
 /// [KubernetesSdConfig.role] values that [KubernetesSdConfigAttachMetadata.node] may be enabled with
-typealias KubernetesSdConfigRoleWithNodeMetadata = "pod"|"endpoints"|"endpointslice"
+typealias KubernetesSdConfigRoleWithNodeMetadata = "pod" | "endpoints" | "endpointslice"
 
 class KubernetesSdConfigSelector {
   role: KubernetesSdConfigRole
 
   /// A `key=value` pair describing a Kubernetes resource label.
-  ///.
+  /// .
   /// See <https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/>.
   label: String?
 
@@ -298,7 +301,7 @@ class DnsSdConfig {
   /// The type of DNS query to perform. One of SRV, A, AAAA, MX or NS.
   ///
   /// Default if unspecified: `"SRV"`
-  type: ("SRV"|"A"|"AAAA"|"MX"|"NS")?
+  type: ("SRV" | "A" | "AAAA" | "MX" | "NS")?
 
   /// The port number used if the query type is not SRV.
   port: UInt16?((type != null && type != "SRV").implies(this != null))
@@ -406,7 +409,18 @@ class RelabelConfig {
 /// * `"labeldrop"`: Match `regex` against all label names.
 ///   Any label that matches will be removed from the set of labels.
 /// * `"labelkeep"`: Match `regex` against all label names.
-typealias RelabelAction = "replace"|"lowercase"|"uppercase"|"keep"|"drop"|"keepequal"|"dropequal"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
+typealias RelabelAction =
+  "replace"
+    | "lowercase"
+    | "uppercase"
+    | "keep"
+    | "drop"
+    | "keepequal"
+    | "dropequal"
+    | "hashmod"
+    | "labelmap"
+    | "labeldrop"
+    | "labelkeep"
 
 /// Allows specifying a list of targets and a common label set for them.
 ///
@@ -457,7 +471,7 @@ class RemoteWriteConfig extends HttpClientConfig {
 
   send_native_histograms: Boolean?
 
-  protobuf_message: ("prometheus.WriteRequest"|"io.prometheus.write.v2.Request")?
+  protobuf_message: ("prometheus.WriteRequest" | "io.prometheus.write.v2.Request")?
 
   /// Configures the queue used to write to remote storage.
   queue_config: QueueConfig?
@@ -667,7 +681,9 @@ abstract class ProxyConfig {
 abstract class HttpClientConfig extends ProxyConfig {
   /// Sets the `Authorization` header on every request
   /// with the configured username and password.
-  basic_auth: BasicAuth?(atMostOneSet(List(this, authorization, oauth2, bearer_token, bearer_token_file)))
+  basic_auth: BasicAuth?(
+    atMostOneSet(List(this, authorization, oauth2, bearer_token, bearer_token_file))
+  )
 
   /// Sets the `Authorization` header on every scrape request with the configured bearer token.
   ///
@@ -792,8 +808,7 @@ class TLSConfig {
   max_version: TLSVersion?
 }
 
-typealias TLSVersion = "TLS10"|"TLS11"|"TLS12"|"TLS13"
+typealias TLSVersion = "TLS10" | "TLS11" | "TLS12" | "TLS13"
 
 /// Tells if only one of the values is not null.
-local const function atMostOneSet(values: List<Any>): Boolean =
-  values.filterNonNull().length <= 1
+local const function atMostOneSet(values: List<Any>): Boolean = values.filterNonNull().length <= 1

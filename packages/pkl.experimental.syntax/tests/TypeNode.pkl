@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ module pkl.experimental.syntax.tests.TypeNode
 
 amends "pkl:test"
 
-import "../TypeNode.pkl"
 import "../ExpressionNode.pkl"
+import "../TypeNode.pkl"
 
 facts {
   ["declared type"] {
@@ -89,7 +89,8 @@ facts {
   ["string literal"] {
     new TypeNode.StringLiteralTypeNode {
       value = "my string type"
-    }.render("") == """
+    }.render("")
+      == """
       "my string type"
       """
   }
@@ -103,7 +104,8 @@ facts {
           value = "two"
         }
       }
-    }.render("") == """
+    }.render("")
+      == """
       "one"|"two"
       """
 
@@ -118,25 +120,28 @@ facts {
           value = "two"
         }
       }
-    }.render("") == """
+    }.render("")
+      == """
       *"one"|"two"
       """
 
-    module.catch(() ->
-      new TypeNode.UnionTypeNode {
-        members {
-          new TypeNode.UnionDefaultType {
-            typeNode = new TypeNode.StringLiteralTypeNode {
-              value = "one"
+    module
+      .catch(() ->
+        new TypeNode.UnionTypeNode {
+          members {
+            new TypeNode.UnionDefaultType {
+              typeNode = new TypeNode.StringLiteralTypeNode {
+                value = "one"
+              }
+            }
+            new TypeNode.UnionDefaultType {
+              typeNode = new TypeNode.StringLiteralTypeNode {
+                value = "two"
+              }
             }
           }
-          new TypeNode.UnionDefaultType {
-            typeNode = new TypeNode.StringLiteralTypeNode {
-              value = "two"
-            }
-          }
-        }
-      }.render("")
-    ).startsWith("Type constraint `atMostOneUnionDefaultType` violated.")
+        }.render("")
+      )
+      .startsWith("Type constraint `atMostOneUnionDefaultType` violated.")
   }
 }

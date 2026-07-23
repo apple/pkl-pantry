@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ module org.openapis.v3.Parameter
 
 extends "BaseParameter.pkl"
 
-import "Schema.pkl"
-import "Reference.pkl"
 import "MediaType.pkl"
+import "Reference.pkl"
+import "Schema.pkl"
 
 /// The name of the parameter.
 ///
@@ -33,7 +33,7 @@ import "MediaType.pkl"
 name: String
 
 /// The location of the parameter.
-`in`: "query"|"header"|"path"|"cookie"
+`in`: "query" | "header" | "path" | "cookie"
 
 /// Determines whether the parameter value SHOULD allow reserved characters, as defined by RFC3986 :/?#[]@!$&'()*+,;=
 /// to be included without percent-encoding.
@@ -48,7 +48,8 @@ allowReserved: Boolean(implies(`in` == "query"))?
 required: Boolean?((`in` == "path").implies(this == true))
 
 /// Allowed values for a parameter's style.
-typealias Style = "matrix"|"label"|"form"|"simple"|"spaceDelimited"|"pipeDelimited"|"deepObject"
+typealias Style =
+  "matrix" | "label" | "form" | "simple" | "spaceDelimited" | "pipeDelimited" | "deepObject"
 
 /// Describes how the parameter value will be serialized depending on the type of the parameter value.
 ///
@@ -60,11 +61,12 @@ style: Style(
     List("query", "cookie").contains(`in`)
   else if (this == "simple")
     List("header", "path").contains(`in`)
-  else `in` == "query"
+  else
+    `in` == "query"
 )?
 
 /// The schema defining the type used for the parameter.
-schema: (*Schema|Reference)?
+schema: (*Schema | Reference)?
 
 /// A map containing the representations for the parameter.
 ///

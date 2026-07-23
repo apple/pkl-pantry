@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ amends "../Config.pkl"
 /// execution environment (Docker/Linux, macOS, machine) that does not have
 /// it preinstalled.
 local class NodeInstall extends AbstractStep {
-  fixed hidden __name__ = "node/install"
+  hidden fixed __name__ = "node/install"
 
   /// Install Yarn?
   ///

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,57 +26,71 @@ local function wrapTextImpl(words: List<String>, width: Int) =
     let (currentLine: String = pair.second)
       if (currentLine.length + word.length > width)
         Pair(
-          if (result == "") currentLine
-          else result + "\n" + currentLine,
+          if (result == "")
+            currentLine
+          else
+            result + "\n" + currentLine,
           word
         )
       else
         Pair(
           result,
-          if (currentLine == "") word
-          else currentLine + " " + word
+          if (currentLine == "")
+            word
+          else
+            currentLine + " " + word
         )
   )
 
 /// Wrap [text] at the specified column [width].
 local function wrapParagraph(text: String, width: Int) =
   let (words = text.split(Regex("\\s+")))
-  let (result = words.fold(Pair("", ""), (pair, word) ->
-    let (aggregate: String = pair.first)
-    let (currentLine: String = pair.second)
-      if (currentLine.length + word.length > width)
-        Pair(
-          if (aggregate == "") currentLine
-          else aggregate + "\n" + currentLine,
-          word
-        )
-      else
-        Pair(
-          aggregate,
-          if (currentLine == "") word
-          else currentLine + " " + word
-        )
-    ))
-      List(result.first, result.second).filter((elem) -> !elem.isEmpty).join("\n")
+  let (
+    result =
+      words.fold(Pair("", ""), (pair, word) ->
+        let (aggregate: String = pair.first)
+        let (currentLine: String = pair.second)
+          if (currentLine.length + word.length > width)
+            Pair(
+              if (aggregate == "")
+                currentLine
+              else
+                aggregate + "\n" + currentLine,
+              word
+            )
+          else
+            Pair(
+              aggregate,
+              if (currentLine == "")
+                word
+              else
+                currentLine + " " + word
+            )
+      )
+  )
+    List(result.first, result.second).filter((elem) -> !elem.isEmpty).join("\n")
 
 local function wrapText(text: String, width: Int) =
   let (paragraphs = text.split("\n\n"))
-    paragraphs
-      .map((it) -> wrapParagraph(it, width))
-      .join("\n\n")
+    paragraphs.map((it) -> wrapParagraph(it, width)).join("\n\n")
 
 /// Configures this node to wrap lines when rendering.
 hidden autoWrap: Boolean = false
 
 function render(currentIndent: String) =
-  let (wrapped =
-    if (autoWrap) wrapText(value, maxColumnWidth - currentIndent.length)
-    else value
+  let (
+    wrapped =
+      if (autoWrap)
+        wrapText(value, maxColumnWidth - currentIndent.length)
+      else
+        value
   )
     wrapped
       .split("\n")
       .map((line) ->
-        if (line.isEmpty) "\(currentIndent)///"
-        else "\(currentIndent)/// \(line)"
+        if (line.isEmpty)
+          "\(currentIndent)///"
+        else
+          "\(currentIndent)/// \(line)"
       )
       .join("\n")

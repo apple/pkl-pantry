@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ module org.openapis.v3.Header
 
 extends "BaseParameter.pkl"
 
-import "Schema.pkl"
 import "Reference.pkl"
+import "Schema.pkl"
 
 /// Determines whether this parameter is mandatory.
 required: Boolean?
@@ -36,4 +36,4 @@ required: Boolean?
 style: "simple"?
 
 /// The schema defining the type used for the parameter.
-schema: (*Schema|Reference)?
+schema: (*Schema | Reference)?

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,22 +48,25 @@ local modules: Mapping<String, Module> = new {
 }
 
 output {
-  text = modules
-    .toMap()
-    .entries
-    .map((el) ->
-      shellFuncForPath(
-        el.first,
-        reflect.Module(el.second).uri
+  text =
+    modules
+      .toMap()
+      .entries
+      .map((el) ->
+        shellFuncForPath(
+          el.first,
+          reflect.Module(el.second).uri
+        )
       )
-    ).join("\n") + "\n"
+      .join("\n") + "\n"
 }
 
 /// [shellFuncForPath] renders a function definition which is compatible with
 /// both bash and zsh. If a single argument is passed to the function, it will
 /// be passed to a Pkl invocation with `--expression`; if no arguments are passed,
 /// the Pkl module will be invoked without any arguments.
-local function shellFuncForPath(functionName: String, modulePath: String): String = #"""
+local function shellFuncForPath(functionName: String, modulePath: String): String =
+  #"""
   function \#(functionName) {
       if [[ -n $1 && "$1" != -* ]]; then
         pkl eval \#(modulePath) --expression "$1" "${@:2}"

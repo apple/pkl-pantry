@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ module pkl.experimental.syntax.tests.ModuleNode
 
 amends "pkl:test"
 
-import "../ModuleNode.pkl"
-import "../TypeNode.pkl"
 import "../ExpressionNode.pkl"
+import "../ModuleNode.pkl"
 import "../ObjectBodyNode.pkl"
 import "../operators.pkl"
+import "../TypeNode.pkl"
 
 facts {
   ["new line at the end"] {
@@ -35,7 +35,10 @@ facts {
           }
         }
       }
-    }.output.text == """
+    }
+      .output
+      .text
+      == """
       module modulename
 
       """
@@ -62,7 +65,8 @@ examples {
           }
         }
         docComment {
-          value = """
+          value =
+            """
             This is a module doc comment!
             """
         }
@@ -83,7 +87,9 @@ examples {
           }
         }
       }
-    }.output.text
+    }
+      .output
+      .text
   }
   ["short methods are rendered inline"] {
     new ModuleNode {
@@ -107,7 +113,9 @@ examples {
           }
         }
       }
-    }.output.text
+    }
+      .output
+      .text
   }
   ["methods with long values are rendered indented"] {
     new ModuleNode {
@@ -125,19 +133,25 @@ examples {
             }
           }
           body = new ExpressionNode.BinaryOperatorExpressionNode {
-            lhs = new ExpressionNode.MemberAccessExpressionNode { identifier { value = "inputIntegerValue" } }
+            lhs = new ExpressionNode.MemberAccessExpressionNode {
+              identifier { value = "inputIntegerValue" }
+            }
             operator = operators.PLUS
             rhs = new ExpressionNode.LiteralValueExpressionNode { value = 5 }
           }
         }
       }
-    }.output.text
+    }
+      .output
+      .text
   }
   ["methods with long values but short first lines are rendered inline"] {
     new ModuleNode {
       methods {
         new {
-          docComment { value = "Adds five to its argument and returns a dynamic object containing the result." }
+          docComment {
+            value = "Adds five to its argument and returns a dynamic object containing the result."
+          }
           modifiers { "const"; "local" }
           name { value = "myLongMethodForReturningADynamicObject" }
           parameters {
@@ -155,7 +169,9 @@ examples {
                 new ObjectBodyNode.PropertyMemberNode {
                   propertyName { value = "value" }
                   assignment = new ExpressionNode.BinaryOperatorExpressionNode {
-                    lhs = new ExpressionNode.MemberAccessExpressionNode { identifier { value = "inputIntegerValue" } }
+                    lhs = new ExpressionNode.MemberAccessExpressionNode {
+                      identifier { value = "inputIntegerValue" }
+                    }
                     operator = operators.PLUS
                     rhs = new ExpressionNode.LiteralValueExpressionNode { value = 5 }
                   }
@@ -165,7 +181,9 @@ examples {
           }
         }
       }
-    }.output.text
+    }
+      .output
+      .text
   }
   ["typealiases"] {
     new ModuleNode {
@@ -191,11 +209,15 @@ examples {
               new TypeNode.StringLiteralTypeNode { value = "Fig" }
               new TypeNode.StringLiteralTypeNode { value = "Guava" }
               new TypeNode.StringLiteralTypeNode { value = "Huckleberry" }
-              new TypeNode.StringLiteralTypeNode { value = "I_can't_think_of_a_fruit_that_starts_with_I" }
+              new TypeNode.StringLiteralTypeNode {
+                value = "I_can't_think_of_a_fruit_that_starts_with_I"
+              }
             }
           }
         }
       }
-    }.output.text
+    }
+      .output
+      .text
   }
 }

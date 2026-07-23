@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ module pkl.experimental.syntax.ParameterNode
 
 extends "Node.pkl"
 
-import "TypeAnnotationNode.pkl"
 import "IdentifierNode.pkl"
+import "TypeAnnotationNode.pkl"
 
 /// The name of the parameter. May be `_` for an unbound parameter.
 name: IdentifierNode
@@ -28,6 +28,5 @@ name: IdentifierNode
 /// The type of the parameter.
 typeAnnotation: TypeAnnotationNode?
 
-function render(currentIndent: String) = List(name.render(currentIndent), typeAnnotation?.render(currentIndent))
-  .filterNonNull()
-  .join("")
+function render(currentIndent: String) =
+  List(name.render(currentIndent), typeAnnotation?.render(currentIndent)).filterNonNull().join("")

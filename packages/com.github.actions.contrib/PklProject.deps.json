@@ -8,12 +8,12 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.2.0",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.2.1",
       "path": "../pkl.experimental.syntax"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.9.0",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.9.1",
       "path": "../com.github.actions"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/io.github.typesafegithub@1": {

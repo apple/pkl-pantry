@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 @ModuleInfo { minPklVersion = "0.25.0" }
 module org.openapis.v3.contrib.SchemaGenerator
 
-import "pkl:reflect"
 import "pkl:math"
+import "pkl:reflect"
+
 import "@openapi/Schema.pkl"
 
 /// Given either a module, class, or typealias, generates the equivalent OpenAPI v3.0 [Schema].
@@ -59,13 +60,15 @@ import "@openapi/Schema.pkl"
 ///   * [Type Constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints)
 ///     do not get encoded into the [Schema]. The only exceptions are well-known type constraints for
 ///     numbers (for example, [Int8] and [UInt8]).
-function generate(value: Module|Class|TypeAlias): Schema =
-  let (ref = if (value is Module)
-    reflect.Module(value)
-  else if (value is TypeAlias)
-    reflect.TypeAlias(value)
-  else
-    reflect.Class(value)
+function generate(value: Module | Class | TypeAlias): Schema =
+  let (
+    ref =
+      if (value is Module)
+        reflect.Module(value)
+      else if (value is TypeAlias)
+        reflect.TypeAlias(value)
+      else
+        reflect.Class(value)
   )
     convertDeclaration(ref, Set())
 
@@ -102,7 +105,8 @@ local function convertDeclaration(declaration: reflect.Declaration, seenClasses:
   else if (declaration is reflect.Property)
     convertType(declaration.type, seenClasses) |> addBaseSchema(declaration)
   else
-    convertType((declaration as reflect.TypeAlias).referent, seenClasses) |> addBaseSchema(declaration)
+    convertType((declaration as reflect.TypeAlias).referent, seenClasses)
+      |> addBaseSchema(declaration)
 
 /// Adds common base values to a [Schema].
 local function addBaseSchema(declaration: reflect.Declaration): Mixin<Schema> = new {
@@ -208,40 +212,44 @@ local function convertDeclaredType(typ: reflect.DeclaredType, seenClasses: Set<C
         }
     else if (reflectee == Mapping || reflectee == Map)
       let (keyType = typ.typeArguments[0])
-        let (valueType = typ.typeArguments[1])
-          if (keyType != reflect.stringType)
-            throw("Invalid schema: Mappings can only be a string type when converting to JSON schema. Received: \(keyType)")
-          else
-            new {
-              type = "object"
-              additionalProperties = convertTypeForProperty(valueType, seenClasses)
-            }
+      let (valueType = typ.typeArguments[1])
+        if (keyType != reflect.stringType)
+          throw(
+            "Invalid schema: Mappings can only be a string type when converting to JSON schema. Received: \(keyType)"
+          )
+        else
+          new {
+            type = "object"
+            additionalProperties = convertTypeForProperty(valueType, seenClasses)
+          }
     else if (reflectee is Class)
       if (seenClasses.findOrNull((c) -> c == typ.referent.reflectee) != null)
-        throw("Invalid Schema: Unable to convert a schema that refers to itself. This is because OpenAPI v3.0 does not have a way to provide definitions. Recurring class: \(typ.referent.reflectee)")
+        throw(
+          "Invalid Schema: Unable to convert a schema that refers to itself. This is because OpenAPI v3.0 does not have a way to provide definitions. Recurring class: \(typ.referent.reflectee)"
+        )
       else
-        converters.getOrNull(typ.referent.reflectee) ??
-          let (reflectedClass = reflect.Class(reflectee))
-            let (_properties = getProperties(reflectedClass))
-              new Schema {
-                type = "object"
-                properties {
-                  for (_, property in _properties) {
-                    [property.name] =
-                      convertDeclarationForProperty(property, seenClasses.add(reflectee))
-                  }
+        converters.getOrNull(typ.referent.reflectee)
+          ?? let (reflectedClass = reflect.Class(reflectee))
+          let (_properties = getProperties(reflectedClass))
+            new Schema {
+              type = "object"
+              properties {
+                for (_, property in _properties) {
+                  [property.name] =
+                    convertDeclarationForProperty(property, seenClasses.add(reflectee))
                 }
-                additionalProperties = false
-                when (_properties.any((_, property) -> property.type.nullable != property.type)) {
-                  required {
-                    for (_, property in _properties) {
-                      when (property.type.nullable != property.type) {
-                        property.name
-                      }
+              }
+              additionalProperties = false
+              when (_properties.any((_, property) -> property.type.nullable != property.type)) {
+                required {
+                  for (_, property in _properties) {
+                    when (property.type.nullable != property.type) {
+                      property.name
                     }
                   }
                 }
-              } |> addBaseSchema(reflectedClass)
+              }
+            } |> addBaseSchema(reflectedClass)
     else
       convertDeclaration(reflect.TypeAlias(reflectee), seenClasses)
 
@@ -276,14 +284,20 @@ local function convertType(typ: reflect.Type, seenClasses: Set<Class>): Schema =
     }
   else if (typ is reflect.DeclaredType)
     convertDeclaredType(typ, seenClasses)
-  else throw("Unsure how to cast this type: \(typ)")
+  else
+    throw("Unsure how to cast this type: \(typ)")
 
 /// Same as [convertType], except casts results to [Schema.PropertySchema]
-local function convertTypeForProperty(typ: reflect.Type, seenClasses: Set<Class>): Schema.PropertySchema =
-  convertType(typ, seenClasses).toDynamic().toTyped(Schema.PropertySchema)
+local function convertTypeForProperty(
+  typ: reflect.Type,
+  seenClasses: Set<Class>
+): Schema.PropertySchema = convertType(typ, seenClasses).toDynamic().toTyped(Schema.PropertySchema)
 
 /// Same as [convertDeclaration], except casts results to [Schema.PropertySchema].
-local function convertDeclarationForProperty(declaration: reflect.Declaration, seenClasses: Set<Class>): Schema.PropertySchema =
+local function convertDeclarationForProperty(
+  declaration: reflect.Declaration,
+  seenClasses: Set<Class>
+): Schema.PropertySchema =
   convertDeclaration(declaration, seenClasses).toDynamic().toTyped(Schema.PropertySchema)
 
 local function isSameType(typeA: reflect.Type, typeB: reflect.Type) =
@@ -297,13 +311,14 @@ local function isSameType(typeA: reflect.Type, typeB: reflect.Type) =
     true
   else if (typeA is reflect.StringLiteralType && typeB is reflect.StringLiteralType)
     typeA.value == typeB.value
-  // union types turn into Go's `any`, so we can say that this is always fine.
+    // union types turn into Go's `any`, so we can say that this is always fine.
   else if (typeA is reflect.UnionType && typeB is reflect.UnionType)
     true
-  // remaining types: `FunctionType`, `TypeParameter`, `ModuleType`.
-  // we can actually check if `ModuleType` refers to the same type by checking if the enclosing declaration is the same,
-  // but we will pretend it is always false for now.
-  else false
+    // remaining types: `FunctionType`, `TypeParameter`, `ModuleType`.
+    // we can actually check if `ModuleType` refers to the same type by checking if the enclosing declaration is the same,
+    // but we will pretend it is always false for now.
+  else
+    false
 
 /// Given a class, return all of its properties, including properties of all inherited classes.
 ///
@@ -314,9 +329,10 @@ local function isSameType(typeA: reflect.Type, typeB: reflect.Type) =
 /// properties. However, this mechanism breaks if a child class overrides the property of a parent class.
 /// If an overridden property is mutually exclusive with the parent property, `allOf` would produce an
 /// invalid JSON schema because it is impossible for any object to match all of the specified constraints.
-local function getProperties(clazz: reflect.Class): Map<String, reflect.Property> = getAllProperties(clazz)
-  .filter((_, prop) -> !prop.modifiers.contains("hidden"))
-  .filter((_, prop) -> !(prop.type is reflect.FunctionType))
+local function getProperties(clazz: reflect.Class): Map<String, reflect.Property> =
+  getAllProperties(clazz)
+    .filter((_, prop) -> !prop.modifiers.contains("hidden"))
+    .filter((_, prop) -> !(prop.type is reflect.FunctionType))
 
 // noinspection TypeMismatch
 local function getAllProperties(clazz: reflect.Class): Map<String, reflect.Property> =
@@ -324,12 +340,19 @@ local function getAllProperties(clazz: reflect.Class): Map<String, reflect.Prope
     clazz.properties
   else
     let (superProperties = getAllProperties(clazz.superclass!!))
-      clazz.properties.fold(superProperties, (acc: Map<String, reflect.Property>, key: String, prop: reflect.Property) ->
+      clazz.properties.fold(superProperties, (
+        acc: Map<String, reflect.Property>,
+        key: String,
+        prop: reflect.Property
+      ) ->
         // if it's the same type declaration, keep the super property
-        if (acc.containsKey(key) && isSameType(acc[key].type, prop.type)) acc
-        // if the property's type is unknown, keep the super property.
-        // this might be a property declaration without a new type.
-        // e.g. `class Foo extends Bar { bar = "mybar" }`
-        else if (prop.type is reflect.UnknownType) acc
-        else acc.put(key, prop)
+        if (acc.containsKey(key) && isSameType(acc[key].type, prop.type))
+          acc
+          // if the property's type is unknown, keep the super property.
+          // this might be a property declaration without a new type.
+          // e.g. `class Foo extends Bar { bar = "mybar" }`
+        else if (prop.type is reflect.UnknownType)
+          acc
+        else
+          acc.put(key, prop)
       )

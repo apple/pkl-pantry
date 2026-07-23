@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ module pkl.table.table
 import "pkl:math"
 
 typealias ColumnKey = String
-typealias ListLike = List|Listing|Dynamic(toMap().isEmpty)
-const local listLikeDescription = "`List`s, `Listing`s, or `Dynamic`s with only elements"
+typealias ListLike = List | Listing | Dynamic(toMap().isEmpty)
+local const listLikeDescription = "`List`s, `Listing`s, or `Dynamic`s with only elements"
 
-typealias HorizontalPosition = "left"|"inner"|"right"
-typealias VerticalPosition = "top"|"inner"|"bottom"
-typealias Alignment = "left"|"right"
+typealias HorizontalPosition = "left" | "inner" | "right"
+typealias VerticalPosition = "top" | "inner" | "bottom"
+typealias Alignment = "left" | "right"
 
 const function Column(_key: String): Column = new { key = _key }
 class Column {
@@ -87,7 +87,10 @@ open class TableStyle {
   defaultCorner: String(!fixedWidth || length == 1) = "+"
 
   /// Characters to use for specific corners
-  corners: Mapping<HorizontalPosition, Mapping<VerticalPosition, String(!fixedWidth || length == 1)>> = new {
+  corners: Mapping<
+    HorizontalPosition,
+    Mapping<VerticalPosition, String(!fixedWidth || length == 1)>
+  > = new {
     ["left"] {
       ["top"] = defaultCorner
       ["inner"] = defaultCorner
@@ -120,7 +123,8 @@ open class TableStyleHTML extends TableStyle {
   fixedWidth = false
   defaultCorner = ""
   horizontals {
-    ["top"] = "\(baseIndent)<table>\n\(baseIndent)\(indent)<\(if (_style.includeHeader) "thead" else "tbody")>"
+    ["top"] =
+      "\(baseIndent)<table>\n\(baseIndent)\(indent)<\(if (_style.includeHeader) "thead" else "tbody")>"
     ["inner"] = "\(baseIndent)\(indent)</thead>\n\(baseIndent)\(indent)<tbody>"
     ["bottom"] = "\(baseIndent)\(indent)</tbody>\n\(baseIndent)</table>"
   }
@@ -137,20 +141,18 @@ open class TableStyleHTML extends TableStyle {
 }
 
 local class InterimTable {
-
   style: TableStyle
-  converters: Mapping<Class|String, (unknown) -> Any>
+  converters: Mapping<Class | String, (unknown) -> Any>
 
   columns: Listing<Column>
   rows: List
 
   columnWidths: Mapping<ColumnKey, UInt> = new {
     for (column in columns) {
-      [column.key] = math.max(
+      [column.key] =
+        math.max(
           column.title.length,
-          renderedCells.fold(0, (acc, it) ->
-            math.max(acc, it.getOrNull(column.key)?.length ?? 0)
-          )
+          renderedCells.fold(0, (acc, it) -> math.max(acc, it.getOrNull(column.key)?.length ?? 0))
         ) as UInt
     }
   }
@@ -169,7 +171,8 @@ local class InterimTable {
     }
   }
 
-  rendered = new Listing {
+  rendered =
+    new Listing {
       when (style.horizontals["top"] != null) {
         renderHorizontalRule("top")
       }
@@ -192,41 +195,44 @@ local class InterimTable {
     }.join("\n") + "\n"
 
   function renderCell(col: String, value: Any): String =
-    (converters.getOrNull(col)?.apply(value)?.toString()) ??
-      (converters.getOrNull(value.getClass())?.apply(value)?.toString()) ??
-        value?.toString() ??
-          style.nullPlaceholder
+    (converters.getOrNull(col)?.apply(value)?.toString())
+      ?? (converters.getOrNull(value.getClass())?.apply(value)?.toString())
+      ?? value?.toString()
+      ?? style.nullPlaceholder
 
-  function renderRow(renderedCells: Map<ColumnKey, String>, inHeader: Boolean) = new Listing {
-    local verticals = if (inHeader) style.headerVerticals else style.verticals
-    verticals["left"] ?? ""
-    for (i, col in columns) {
-      when (style.fixedWidth) {
-        " "
-        if (col.align == "left")
-          renderedCells[col.key].padEnd(columnWidths[col.key], " ")
-        else if (col.align == "right")
-          renderedCells[col.key].padStart(columnWidths[col.key], " ")
-        else ""
-        " "
-      } else {
-        renderedCells[col.key]
-      }
-      verticals[if (i == columns.length - 1) "right" else "inner"] ?? ""
-    }
-  }.join("")
-
-  function renderHorizontalRule(verticalPosition: VerticalPosition): String = new Listing {
-    style.corners["left"][verticalPosition]
-    when (style.fixedWidth) {
+  function renderRow(renderedCells: Map<ColumnKey, String>, inHeader: Boolean) =
+    new Listing {
+      local verticals = if (inHeader) style.headerVerticals else style.verticals
+      verticals["left"] ?? ""
       for (i, col in columns) {
-        style.horizontals[verticalPosition].repeat(columnWidths[col.key] + 2)
-        style.corners[if (i == columns.length - 1) "right" else "inner"][verticalPosition]
+        when (style.fixedWidth) {
+          " "
+          if (col.align == "left")
+            renderedCells[col.key].padEnd(columnWidths[col.key], " ")
+          else if (col.align == "right")
+            renderedCells[col.key].padStart(columnWidths[col.key], " ")
+          else
+            ""
+          " "
+        } else {
+          renderedCells[col.key]
+        }
+        verticals[if (i == columns.length - 1) "right" else "inner"] ?? ""
       }
-    } else {
-      style.horizontals[verticalPosition]
-    }
-  }.join("")
+    }.join("")
+
+  function renderHorizontalRule(verticalPosition: VerticalPosition): String =
+    new Listing {
+      style.corners["left"][verticalPosition]
+      when (style.fixedWidth) {
+        for (i, col in columns) {
+          style.horizontals[verticalPosition].repeat(columnWidths[col.key] + 2)
+          style.corners[if (i == columns.length - 1) "right" else "inner"][verticalPosition]
+        }
+      } else {
+        style.horizontals[verticalPosition]
+      }
+    }.join("")
 }
 
 /// [pkl.ValueRenderer] subclass used to render pretty-printed tables
@@ -235,23 +241,30 @@ class TableRenderer extends ValueRenderer {
   style: TableStyle
 
   /// Listing of properties that should be rendered as table columns
-  columns: Listing<Column|String>(!isEmpty || throw("TableRenderer must be configured to render at least one column"))
+  columns: Listing<Column | String>(
+    !isEmpty || throw("TableRenderer must be configured to render at least one column")
+  )
 
   local self = this
 
   /// Renders [value] as a pretty-printed table.
-  function renderDocument(value: Any): String = new InterimTable {
-    columns {
-      for (col in self.columns) {
-        if (col is Column) col else Column(col)
+  function renderDocument(value: Any): String =
+    new InterimTable {
+      columns {
+        for (col in self.columns) {
+          if (col is Column) col else Column(col)
+        }
       }
-    }
-    rows =
-      if (value is ListLike?) value.toList()
-      else throw("Only \(listLikeDescription) values can be rendered as a table. Instead, found a \(value.getClass()).\n\nValue:\n\(value)")
-    style = self.style
-    converters = self.converters
-  }.rendered
+      rows =
+        if (value is ListLike?)
+          value.toList()
+        else
+          throw(
+            "Only \(listLikeDescription) values can be rendered as a table. Instead, found a \(value.getClass()).\n\nValue:\n\(value)"
+          )
+      style = self.style
+      converters = self.converters
+    }.rendered
 
   /// Unsupported. [renderCell] is used instead as the column name must be known to look up the relevant converter
   function renderValue(_): String = throw("TableRenderer can only render documents, not values")

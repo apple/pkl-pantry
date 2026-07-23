@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,20 +17,26 @@ abstract module pkl.experimental.syntax.TypeNode
 
 extends "Node.pkl"
 
-import "QualifiedIdentifierNode.pkl"
 import "ExpressionNode.pkl"
-import "TypeNode.pkl"
 import "Node.pkl"
+import "QualifiedIdentifierNode.pkl"
+import "TypeNode.pkl"
 
 class NullableTypeNode extends TypeNode {
   typeNode: TypeNode
   function render(currentIndent: String) =
-    let (underlyingRendered = if (typeNode is UnionTypeNode) parenthesize(typeNode.render(currentIndent)) else typeNode.render(currentIndent))
+    let (
+      underlyingRendered =
+        if (typeNode is UnionTypeNode)
+          parenthesize(typeNode.render(currentIndent))
+        else
+          typeNode.render(currentIndent)
+    )
       underlyingRendered + "?"
 }
 
 class BuiltInTypeNode extends TypeNode {
-  type: "unknown"|"nothing"|"module"
+  type: "unknown" | "nothing" | "module"
   function render(_) = type
 }
 
@@ -46,10 +52,13 @@ class DeclaredTypeNode extends TypeNode {
   typeArguments: Listing<TypeNode>
 
   local function renderTypeArguments(currentIndent: String) =
-    if (typeArguments.isEmpty) ""
-    else "<" + typeArguments.toList().map((t) -> t.render(currentIndent)).join(", ") + ">"
+    if (typeArguments.isEmpty)
+      ""
+    else
+      "<" + typeArguments.toList().map((t) -> t.render(currentIndent)).join(", ") + ">"
 
-  function render(currentIndent: String) = name.render(currentIndent) + renderTypeArguments(currentIndent)
+  function render(currentIndent: String) =
+    name.render(currentIndent) + renderTypeArguments(currentIndent)
 }
 
 class ConstrainedTypeNode extends TypeNode {
@@ -62,7 +71,13 @@ class ConstrainedTypeNode extends TypeNode {
     "(" + constraints.toList().map((c) -> c.render(currentIndent)).join(", ") + ")"
 
   function render(currentIndent: String) =
-    let (renderedUnderlyingType = if (typeNode is UnionTypeNode) parenthesize(typeNode.render(currentIndent)) else typeNode.render(currentIndent))
+    let (
+      renderedUnderlyingType =
+        if (typeNode is UnionTypeNode)
+          parenthesize(typeNode.render(currentIndent))
+        else
+          typeNode.render(currentIndent)
+    )
       renderedUnderlyingType + renderConstraints(currentIndent)
 }
 
@@ -73,10 +88,10 @@ class UnionDefaultType extends Node {
 }
 
 class UnionTypeNode extends TypeNode {
-  members: Listing<TypeNode|UnionDefaultType>(atMostOneUnionDefaultType)
+  members: Listing<TypeNode | UnionDefaultType>(atMostOneUnionDefaultType)
 
-  const local atMostOneUnionDefaultType = (members: Listing<TypeNode|UnionDefaultType>) ->
-      members.fold(0, (acc, member) -> acc + if (member is UnionDefaultType) 1 else 0) <= 1
+  local const atMostOneUnionDefaultType = (members: Listing<TypeNode | UnionDefaultType>) ->
+    members.fold(0, (acc, member) -> acc + if (member is UnionDefaultType) 1 else 0) <= 1
 
   function render(currentIndent: String) =
     let (childrenRendered = members.toList().map((t) -> t.render(currentIndent)))
@@ -89,6 +104,4 @@ class UnionTypeNode extends TypeNode {
 }
 
 // TODO fill me in
-class FunctionTypeNode extends TypeNode {
-
-}
+class FunctionTypeNode extends TypeNode {}

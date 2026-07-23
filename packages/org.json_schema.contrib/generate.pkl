@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,22 +59,28 @@ module org.json_schema.contrib.generate
 
 import "pkl:platform"
 
-import "@jsonschema/Parser.pkl"
 import "@jsonschema/JsonSchema.pkl"
+import "@jsonschema/Parser.pkl"
 import "@uri/URI.pkl"
+
 import "internal/ModulesGenerator.pkl"
 
 local sourceProperty = read("prop:source")
 local sourceUri =
-  if (sourceProperty.startsWith(Regex(#"\w+:"#))) sourceProperty      // absolute URI
-  else if (sourceProperty.startsWith("/")) "file://\(sourceProperty)" // absolute file path
-  else                                                // relative file path
+  if (sourceProperty.startsWith(Regex(#"\w+:"#)))
+    sourceProperty // absolute URI
+  else if (sourceProperty.startsWith("/"))
+    "file://\(sourceProperty)" // absolute file path
+  else // relative file path
     let (pwd = read("env:PWD"))
-      let (path =
-        if (platform.current.operatingSystem.name == "Windows") "/\(pwd)/\(sourceProperty)".replaceAll("\\", "/")
-        else "\(pwd)/\(sourceProperty)"
-      )
-        "file://\(URI.encode(path))"
+    let (
+      path =
+        if (platform.current.operatingSystem.name == "Windows")
+          "/\(pwd)/\(sourceProperty)".replaceAll("\\", "/")
+        else
+          "\(pwd)/\(sourceProperty)"
+    )
+      "file://\(URI.encode(path))"
 
 local schema = read(URI.encode(sourceUri))
 
@@ -86,7 +92,10 @@ local modulesGenerator = new ModulesGenerator {
 }
 
 output {
-  text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
+  text =
+    throw(
+      "The JSON Schema generator only works with multiple-file output. Try running again with the -m option."
+    )
   files {
     for (mod in modulesGenerator.modules) {
       ["\(mod.moduleName).pkl"] = mod.moduleNode.output

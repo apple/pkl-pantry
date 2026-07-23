@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ module pkl.experimental.syntax.ModuleNode
 extends "ClassOrModuleNode.pkl"
 
 import "AnnotationNode.pkl"
+import "ClassNode.pkl"
 import "DocCommentNode.pkl"
 import "Node.pkl"
-import "ClassNode.pkl"
 import "QualifiedIdentifierNode.pkl"
 import "TypeAliasNode.pkl"
 
@@ -60,35 +60,42 @@ class ModuleDeclarationNode extends Node {
       docComment?.render(currentIndent),
       annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
       moduleHeader?.render(currentIndent)
-    ).filterNonNull().join("\n")
+    )
+      .filterNonNull()
+      .join("\n")
 }
 
 local const renderer = new PcfRenderer {}
 
 class ModuleHeaderNode extends Node {
-  modifiers: Listing<"abstract"|"open">(isDistinct, name != null)?
+  modifiers: Listing<"abstract" | "open">(isDistinct, name != null)?
 
   name: QualifiedIdentifierNode?
 
   moduleExtendsOrAmendsClause: ModuleExtendsOrAmendsClauseNode?
 
   function render(header) =
-    let (moduleHeader = new Listing {
-      when (modifiers != null) {
-        modifiers.join(" ") + " "
-      }
-      when (name != null) {
-        "module " + name.render(header)
-      }
-    }.join(""))
+    let (
+      moduleHeader =
+        new Listing {
+          when (modifiers != null) {
+            modifiers.join(" ") + " "
+          }
+          when (name != null) {
+            "module " + name.render(header)
+          }
+        }.join("")
+    )
       List(
         if (moduleHeader.isEmpty) null else moduleHeader,
         moduleExtendsOrAmendsClause?.render()
-      ).filterNonNull().join("\n\n")
+      )
+        .filterNonNull()
+        .join("\n\n")
 }
 
 class ModuleExtendsOrAmendsClauseNode extends Node {
-  type: "extends"|"amends"
+  type: "extends" | "amends"
   extendedModule: String
   function render() =
     """
@@ -99,27 +106,28 @@ class ModuleExtendsOrAmendsClauseNode extends Node {
 class ImportNode extends Node {
   value: String
   alias: String?
-  keyword: "import"|"import*" = "import"
-  function render() = new Listing {
-    keyword
-    " "
-    renderer.renderValue(value)
-    when (alias != null) {
-      " as "
-      alias
-    }
-  }.join("")
+  keyword: "import" | "import*" = "import"
+  function render() =
+    new Listing {
+      keyword
+      " "
+      renderer.renderValue(value)
+      when (alias != null) {
+        " as "
+        alias
+      }
+    }.join("")
 }
 
-function renderImports() =
-  (imports?.toList() ?? List()).map((it) -> it.render()).join("\n")
+function renderImports() = (imports?.toList() ?? List()).map((it) -> it.render()).join("\n")
 
-function render(currentIndent: String) = List(
-  declaration?.render(currentIndent),
-  renderImports(),
-  super.render(currentIndent),
-  classes?.toList()?.map((c) -> c.render(currentIndent))?.join("\n\n"),
-  typealiases?.toList()?.map((t) -> t.render(currentIndent))?.join("\n\n")
-)
-  .filter((line) -> line != null && !line.isEmpty)
-  .join("\n\n") + "\n"
+function render(currentIndent: String) =
+  List(
+    declaration?.render(currentIndent),
+    renderImports(),
+    super.render(currentIndent),
+    classes?.toList()?.map((c) -> c.render(currentIndent))?.join("\n\n"),
+    typealiases?.toList()?.map((t) -> t.render(currentIndent))?.join("\n\n")
+  )
+    .filter((line) -> line != null && !line.isEmpty)
+    .join("\n\n") + "\n"
