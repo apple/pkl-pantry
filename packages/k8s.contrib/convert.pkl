@@ -58,8 +58,13 @@ command {
 options: Options
 
 class Options {
+  /// Input path or URI containing Kubernetes YAML to convert.
   @Flag { completionCandidates = "paths"; metavar = "path-or-uri" }
   input: String
+
+  /// File path where the output file is placed.
+  @Flag { completionCandidates = "paths"; metavar = "path"; shortName = "o" }
+  `output-path`: String?
 }
 
 local inputUri =
@@ -78,6 +83,16 @@ local inputUri =
     )
       "file://\(URI.encode(path))"
 
+local converted = new Converter { input = read(inputUri) }.result
+
 output {
-  text = new Converter { input = read(inputUri) }.result
+  when (options.`output-path` != null) {
+    files {
+      [options.`output-path`!!] {
+        text = converted
+      }
+    }
+  } else {
+    text = converted
+  }
 }
