@@ -52,7 +52,7 @@ import "@uri/URI.pkl"
 import "Converter.pkl"
 
 command {
-  name = "k8s-contrib-convert"
+  name = "pkl-convert-k8s"
 }
 
 options: Options
