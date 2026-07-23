@@ -196,8 +196,8 @@ pkl.project {
   }
 }
 
-val moduleNamesTest by
-  pkl.tests.registering {
+val moduleNamesTest =
+  pkl.tests.register("moduleNamesTest") {
     sourceModules.add(file("packages/moduleNameTest.pkl"))
     junitReportsDir = outputDir.dir("test-results")
     transitiveModules.from(fileTree("packages/") { include("*.pkl") })
@@ -234,92 +234,94 @@ fun gatherDependentPackages(packageDirName: String): List<String> {
   }
 }
 
-val decorateFailureWithDependentPackageInformation by tasks.registering {
-  onlyIf {
-    @Suppress("SENSELESS_COMPARISON")
-    createPackages.get().state.failure != null
-  }
-  doLast {
-    val createPackagesTask = createPackages.get()
+val decorateFailureWithDependentPackageInformation =
+  tasks.register("decorateFailureWithDependentPackageInformation") {
+    onlyIf {
+      @Suppress("SENSELESS_COMPARISON")
+      createPackages.get().state.failure != null
+    }
+    doLast {
+      val createPackagesTask = createPackages.get()
 
-    @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
-    val failureMessage = createPackagesTask.state.failure!!.cause?.message ?: return@doLast
-    if (!failureMessage.contains("was already published with different contents")) {
-      return@doLast
-    }
-    val packageName = Regex("`(.+)`").find(failureMessage)?.groups?.get(1)?.value ?: return@doLast
-    val dirName =
-      packageName
-        .drop("package://pkg.pkl-lang.org/pkl-pantry/".length)
-        .dropLastWhile { it != '@' }
-        .dropLast(1)
-    val dependentPackages = gatherDependentPackages(dirName)
-    if (dependentPackages.isEmpty()) {
-      return@doLast
-    }
-    val msg = buildString {
-      appendLine(
-        "The following packages depend on this package, and also need to have their version updated:"
-      )
-      for (pkgName in dependentPackages) {
-        appendLine("* $pkgName")
+      @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
+      val failureMessage = createPackagesTask.state.failure!!.cause?.message ?: return@doLast
+      if (!failureMessage.contains("was already published with different contents")) {
+        return@doLast
       }
+      val packageName = Regex("`(.+)`").find(failureMessage)?.groups?.get(1)?.value ?: return@doLast
+      val dirName =
+        packageName
+          .drop("package://pkg.pkl-lang.org/pkl-pantry/".length)
+          .dropLastWhile { it != '@' }
+          .dropLast(1)
+      val dependentPackages = gatherDependentPackages(dirName)
+      if (dependentPackages.isEmpty()) {
+        return@doLast
+      }
+      val msg = buildString {
+        appendLine(
+          "The following packages depend on this package, and also need to have their version updated:"
+        )
+        for (pkgName in dependentPackages) {
+          appendLine("* $pkgName")
+        }
+      }
+      createPackagesTask.state.addFailure(
+        TaskExecutionException(createPackagesTask, RuntimeException(msg))
+      )
     }
-    createPackagesTask.state.addFailure(
-      TaskExecutionException(createPackagesTask, RuntimeException(msg))
-    )
   }
-}
 
 createPackages.get().finalizedBy(decorateFailureWithDependentPackageInformation)
 
 repositories { mavenCentral() }
 
-val prepareReleases by tasks.registering {
-  group = "build"
-  dependsOn(createPackages)
-  inputs.files(projectDirs)
+val prepareReleases =
+  tasks.register("prepareReleases") {
+    group = "build"
+    dependsOn(createPackages)
+    inputs.files(projectDirs)
 
-  doLast {
-    val releaseDir = file(outputDir.dir("releases"))
-    releaseDir.deleteRecursively()
-    val count = projectDirs.count()
-    val fmt = "%${ceil(log10(count.toDouble())).toInt()}d"
-    for (i in projectDirs.indices) {
-      val dir = projectDirs[i]
-      print(" [${fmt.format(i + 1)}/$count] $dir: ")
-      val allVersions = file(outputDir.dir("generated/packages/${dir.name}")).list()
-      if (allVersions == null) {
-        println("∅")
-        continue
+    doLast {
+      val releaseDir = file(outputDir.dir("releases"))
+      releaseDir.deleteRecursively()
+      val count = projectDirs.count()
+      val fmt = "%${ceil(log10(count.toDouble())).toInt()}d"
+      for (i in projectDirs.indices) {
+        val dir = projectDirs[i]
+        print(" [${fmt.format(i + 1)}/$count] $dir: ")
+        val allVersions = file(outputDir.dir("generated/packages/${dir.name}")).list()
+        if (allVersions == null) {
+          println("∅")
+          continue
+        }
+        val latestVersion = allVersions.map(Version::parse).sortedWith(Version.comparator()).last()
+        val pkg = "${dir.name}@$latestVersion"
+        print("$pkg: ")
+        val conn =
+          URI("${repositoryUrl}/releases/tag/${dir.name}@$latestVersion").toURL().openConnection()
+            as HttpsURLConnection
+        if (conn.responseCode == 200) {
+          println("⏩")
+          continue
+        }
+        val execProvider = providers.exec { commandLine("git", "tag", "-l", pkg) }
+        execProvider.result.get()
+        if (execProvider.standardOutput.asText.get().contains(pkg)) {
+          println("☑️")
+          continue
+        }
+        for (artifact in
+          file(outputDir.dir("generated/packages/${dir.name}/$latestVersion")).listFiles()!!) {
+          artifact.copyTo(releaseDir.resolve("$pkg/${artifact.name}"), true)
+        }
+        println("✅")
       }
-      val latestVersion = allVersions.map(Version::parse).sortedWith(Version.comparator()).last()
-      val pkg = "${dir.name}@$latestVersion"
-      print("$pkg: ")
-      val conn =
-        URI("${repositoryUrl}/releases/tag/${dir.name}@$latestVersion").toURL().openConnection()
-          as HttpsURLConnection
-      if (conn.responseCode == 200) {
-        println("⏩")
-        continue
-      }
-      val execProvider = providers.exec { commandLine("git", "tag", "-l", pkg) }
-      execProvider.result.get()
-      if (execProvider.standardOutput.asText.get().contains(pkg)) {
-        println("☑️")
-        continue
-      }
-      for (artifact in
-        file(outputDir.dir("generated/packages/${dir.name}/$latestVersion")).listFiles()!!) {
-        artifact.copyTo(releaseDir.resolve("$pkg/${artifact.name}"), true)
-      }
-      println("✅")
     }
   }
-}
 
-val testTarExamples by
-  tasks.registering(Exec::class) {
+val testTarExamples =
+  tasks.register<Exec>("testTarExamples") {
     executable = file("packages/pkl.tar/examples/test_examples.sh").absolutePath
 
     inputs.files(fileTree("packages/pkl.tar/"))
