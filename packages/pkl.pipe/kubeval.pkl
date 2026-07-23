@@ -28,7 +28,7 @@ module pkl.pipe.kubeval
 
 amends "yaml.pkl"
 
-import "@k8s.contrib/convert.pkl"
+import "@k8s.contrib/Converter.pkl"
 
 parser {
   useMapping = true
@@ -36,8 +36,9 @@ parser {
 
 input = (read?("prop:input").ifNonNull((it) -> read(it as String)) as Resource?) ?? super.input
 
+// noinspection TypeMismatch
 output =
-  (convert) {
+  new Converter {
     resourcesToConvert =
       let (pipe = module.pipe)
         if (pipe is List)

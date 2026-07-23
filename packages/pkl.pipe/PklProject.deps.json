@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "resolvedDependencies": {
-    "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@1": {
+    "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@2": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@1.0.4",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@2.0.0",
       "path": "../k8s.contrib"
     },
     "package://pkg.pkl-lang.org/pkl-k8s/k8s@1": {

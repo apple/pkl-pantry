@@ -13,30 +13,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-module k8s.contrib.tests.convert
+module k8s.contrib.tests.Converter
 
 amends "pkl:test"
 
 import "pkl:reflect"
 import "pkl:yaml"
 
-import "../convert.pkl"
+import "../Converter.pkl"
 
 local absolutePathToPklPantry =
-  reflect.Module(module).uri.replaceFirst("packages/k8s.contrib/tests/convert.pkl", "")
+  reflect.Module(module).uri.replaceFirst("packages/k8s.contrib/tests/Converter.pkl", "")
 
 /// Run conversion, replacing full file import paths with paths stemming from "$pklPantryBaseDir".
 ///
 /// Before:
 ///
-/// `import "file:///User/me/work/pkl-pantry/packages/k8s/K8sObject.pkl"`
+/// ```
+/// import "file:///User/me/work/pkl-pantry/packages/k8s/K8sObject.pkl"
+/// ```
 ///
 /// After:
 ///
-/// `import "$pklPantryBaseDir/packages/k8s/K8sObject.pkl"`
+/// ```
+/// import "$pklPantryBaseDir/packages/k8s/K8sObject.pkl"
+/// ```
 local function doConvert(uri: String) =
   let (
-    converter = (convert) {
+    converter = new Converter {
       resourcesToConvert =
         new yaml.Parser { useMapping = true }.parseAll(read(uri)).filterNonNull() as List<Mapping>
 
@@ -47,7 +51,7 @@ local function doConvert(uri: String) =
       }
     }
   )
-    converter.output.text.replaceAll(absolutePathToPklPantry, "$pklPantryBaseDir/")
+    converter.result.replaceAll(absolutePathToPklPantry, "$pklPantryBaseDir/")
 
 examples = new {
   for (file, _ in read*("fixtures/*.yml")) {
