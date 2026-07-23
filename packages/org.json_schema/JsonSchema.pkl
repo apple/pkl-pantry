@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,28 +22,31 @@
 open module org.json_schema.JsonSchema
 
 import "pkl:reflect"
-import "JsonSchema.pkl"
+
 import "@uri/URI.pkl"
 
-typealias JsonSchemaTypeName = "string"|"number"|"integer"|"boolean"|"object"|"array"|"null"
+import "JsonSchema.pkl"
+
+typealias JsonSchemaTypeName =
+  "string" | "number" | "integer" | "boolean" | "object" | "array" | "null"
 
 typealias JsonSchemaVersion =
   "http://json-schema.org/draft-06/schema#"
-  |"http://json-schema.org/draft-06/schema"
-  |"http://json-schema.org/draft-07/schema#"
-  |"http://json-schema.org/draft-07/schema"
-  |"https://json-schema.org/draft/2019-09/schema"
-  |"https://json-schema.org/draft/2020-12/schema"
-  |String
+    | "http://json-schema.org/draft-06/schema"
+    | "http://json-schema.org/draft-07/schema#"
+    | "http://json-schema.org/draft-07/schema"
+    | "https://json-schema.org/draft/2019-09/schema"
+    | "https://json-schema.org/draft/2020-12/schema"
+    | String
 
-typealias JsonSchemaValue = Boolean|Number|Null|String|Dynamic|Typed|Listing|Mapping
+typealias JsonSchemaValue = Boolean | Number | Null | String | Dynamic | Typed | Listing | Mapping
 
 /// A JSON Schema can either be a [JsonSchema] object or a simple boolean.
 ///
 /// A boolean schema is shorthand for:
 ///  - true: Any value is valid
 ///  - false: No value is valid
-typealias Schema = *JsonSchema|Boolean
+typealias Schema = *JsonSchema | Boolean
 
 /// The known versions of JSON Schema.
 ///
@@ -73,10 +76,10 @@ local parseUri = (it) -> URI.parse(it)
 hidden $$baseSchema: JsonSchema?
 
 /// The ID as an instance of [URI].
-hidden /** final */ $$idUri: URI? = $id?.ifNonNull(parseUri)
+/** final */ hidden $$idUri: URI? = $id?.ifNonNull(parseUri)
 
 /// The reference as an instance of [URI].
-hidden /** final */ $$refUri: URI? = $ref?.ifNonNull(parseUri)
+/** final */ hidden $$refUri: URI? = $ref?.ifNonNull(parseUri)
 
 // region Core
 /// URI-reference for the schema.
@@ -219,7 +222,7 @@ writeOnly: Boolean(availableAfter("http://json-schema.org/draft-07/schema#"))?
 ///     given types.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/type.html#type>
-type: (JsonSchemaTypeName|Listing<JsonSchemaTypeName>)?
+type: (JsonSchemaTypeName | Listing<JsonSchemaTypeName>)?
 
 /// Restricts the instance value to a fixed set of values.
 ///
@@ -228,7 +231,7 @@ type: (JsonSchemaTypeName|Listing<JsonSchemaTypeName>)?
 ///
 /// Elements in the array might be of any value, including null.
 /// <https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values>
-enum: (*JsonSchemaValue|Listing<JsonSchemaValue>)?
+enum: (*JsonSchemaValue | Listing<JsonSchemaValue>)?
 
 /// Restricts the instance value to a single value.
 ///
@@ -294,22 +297,23 @@ maxLength: UInt?
 /// <https://json-schema.org/understanding-json-schema/reference/string.html#format>
 format: (
   "date-time"
-  |"time"
-  |"date"
-  |"email"
-  |"idn-email"
-  |"hostname"
-  |"ipv4"
-  |"ipv6"
-  |"uri"
-  |"uri-reference"
-  |"iri"
-  |"iri-reference"
-  |"uri-template"
-  |"json-pointer"
-  |"relative-json-pointer"
-  |"regex"
-  |String)?
+    | "time"
+    | "date"
+    | "email"
+    | "idn-email"
+    | "hostname"
+    | "ipv4"
+    | "ipv6"
+    | "uri"
+    | "uri-reference"
+    | "iri"
+    | "iri-reference"
+    | "uri-template"
+    | "json-pointer"
+    | "relative-json-pointer"
+    | "regex"
+    | String
+)?
 
 //endregion
 // region Object validators
@@ -392,7 +396,7 @@ maxProperties: UInt?
 ///   languages, such as Python's `tuple`).
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/array.html#items>
-items: (*Schema|Listing<Schema>)?
+items: (*Schema | Listing<Schema>)?
 
 /// Controls whether it’s valid to have additional items in a tuple beyond what is
 /// defined in items.
@@ -488,7 +492,8 @@ _inline_: Mapping<String, Schema>?
 output {
   renderer = new JsonRenderer {
     converters {
-      [module.getClass()] = (s: JsonSchema) -> s.toMap().remove("_inline_") + (s._inline_?.toMap() ?? Map())
+      [module.getClass()] = (s: JsonSchema) ->
+        s.toMap().remove("_inline_") + (s._inline_?.toMap() ?? Map())
     }
   }
 }

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ module pkl.experimental.syntax.TypeAliasNode
 
 extends "Node.pkl"
 
+import "AnnotationNode.pkl"
+import "DocCommentNode.pkl"
 import "IdentifierNode.pkl"
 import "TypeNode.pkl"
-import "DocCommentNode.pkl"
-import "AnnotationNode.pkl"
 
 docComment: DocCommentNode?
 
@@ -30,7 +30,7 @@ type: TypeNode
 
 annotations: Listing<AnnotationNode>?
 
-modifiers: Listing<"external"|"local">(isDistinct)?
+modifiers: Listing<"external" | "local">(isDistinct)?
 
 local function renderAlias(currentIndent: String) =
   let (typeRendered = type.render(currentIndent))
@@ -42,15 +42,19 @@ local function renderAlias(currentIndent: String) =
       typeRendered
     }.join("")
 
-function renderHeader(currentIndent: String) = new Listing {
-  ...?modifiers
-  "typealias"
-  name.render(currentIndent)
-  "="
-}.join(" ")
+function renderHeader(currentIndent: String) =
+  new Listing {
+    ...?modifiers
+    "typealias"
+    name.render(currentIndent)
+    "="
+  }.join(" ")
 
-function render(currentIndent: String) = List(
-  docComment?.render(currentIndent),
-  annotations?.toList()?.map((an) -> an.render(currentIndent))?.join("\n"),
-  currentIndent + renderAlias(currentIndent)
-).filterNonNull().join("\n")
+function render(currentIndent: String) =
+  List(
+    docComment?.render(currentIndent),
+    annotations?.toList()?.map((an) -> an.render(currentIndent))?.join("\n"),
+    currentIndent + renderAlias(currentIndent)
+  )
+    .filterNonNull()
+    .join("\n")

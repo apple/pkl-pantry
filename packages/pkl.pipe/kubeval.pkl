@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 /// ```
 @ModuleInfo { minPklVersion = "0.24.0" }
 module pkl.pipe.kubeval
+
 amends "yaml.pkl"
 
 import "@k8s.contrib/convert.pkl"
@@ -35,11 +36,12 @@ parser {
 
 input = (read?("prop:input").ifNonNull((it) -> read(it as String)) as Resource?) ?? super.input
 
-output = (convert) {
-  resourcesToConvert =
-    let (pipe = module.pipe)
-      if (pipe is List)
-        pipe
-      else
-        List(pipe)
-}.output
+output =
+  (convert) {
+    resourcesToConvert =
+      let (pipe = module.pipe)
+        if (pipe is List)
+          pipe
+        else
+          List(pipe)
+  }.output

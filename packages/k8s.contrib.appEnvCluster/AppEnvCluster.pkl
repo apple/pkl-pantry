@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -96,8 +96,7 @@
 open module k8s.contrib.appEnvCluster.AppEnvCluster
 
 import "pkl:reflect"
-import "@k8s/K8sObject.pkl"
-import "@k8s/K8sResource.pkl"
+
 import "@k8s/api/apps/v1/Deployment.pkl"
 import "@k8s/api/apps/v1/StatefulSet.pkl"
 import "@k8s/api/core/v1/ConfigMap.pkl"
@@ -107,6 +106,8 @@ import "@k8s/api/core/v1/Secret.pkl"
 import "@k8s/api/core/v1/Service.pkl"
 import "@k8s/api/networking/v1/Ingress.pkl"
 import "@k8s/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+import "@k8s/K8sObject.pkl"
+import "@k8s/K8sResource.pkl"
 
 /// Kubernetes resources of type [ConfigMap], keyed by name.
 ///
@@ -126,7 +127,8 @@ ingresses: Mapping<String, Ingress> = resourceMapping(Ingress)
 /// Kubernetes resources of type [PersistentVolumeClaim], keyed by name.
 ///
 /// The resources' `metadata.name` property is automatically set to their key.
-persistentVolumeClaims: Mapping<String, PersistentVolumeClaim> = resourceMapping(PersistentVolumeClaim)
+persistentVolumeClaims: Mapping<String, PersistentVolumeClaim> =
+  resourceMapping(PersistentVolumeClaim)
 
 /// Kubernetes resources of type [Pod], keyed by name.
 ///
@@ -177,8 +179,9 @@ hidden path: List<String> = findRootModule(reflect.Module(module)).relativePathT
 function toYamlString(obj: Object): String = output.renderer.renderValue(obj)
 
 /// Creates an empty mapping from resource name to resource [type] that defaults `metadata.name` to the resource name.
-function resourceMapping(type): Mapping<String, unknown> =
-  new Mapping { default = (key) -> (type) { metadata { name = key } } }
+function resourceMapping(type): Mapping<String, unknown> = new Mapping {
+  default = (key) -> (type) { metadata { name = key } }
+}
 
 /// Tells if the current module ([this]) is a leaf module. Only leaf modules generate output.
 ///
@@ -200,8 +203,10 @@ output {
 
 local function findRootModule(mod: reflect.Module): Module =
   let (supermodule = mod.supermodule)
-    if (supermodule == null || !supermodule.isAmend) mod.reflectee
-    else findRootModule(supermodule)
+    if (supermodule == null || !supermodule.isAmend)
+      mod.reflectee
+    else
+      findRootModule(supermodule)
 
 local class GroupVersion {
   group: String?
@@ -217,15 +222,18 @@ local function parseGroupVersion(apiVersionString: String): GroupVersion =
 
 local function determineFileName(resource: K8sResource) =
   let (metadata = resource.getPropertyOrNull("metadata") as ObjectMeta?)
-    let (groupVersion = parseGroupVersion(resource.apiVersion))
-      let (dir = path.join("/"))
-        let (baseName =
-          List(
-            metadata?.namespace,
-            metadata?.name,
-            groupVersion.group,
-            resource.kind
-          ).filterNonNull().join("-")
-        )
-          let (filePath = "\(dir)/\(baseName)")
-            resource.output.renderer.extension.ifNonNull((it) -> "\(filePath).\(it)") ?? filePath
+  let (groupVersion = parseGroupVersion(resource.apiVersion))
+  let (dir = path.join("/"))
+  let (
+    baseName =
+      List(
+        metadata?.namespace,
+        metadata?.name,
+        groupVersion.group,
+        resource.kind
+      )
+        .filterNonNull()
+        .join("-")
+  )
+  let (filePath = "\(dir)/\(baseName)")
+    resource.output.renderer.extension.ifNonNull((it) -> "\(filePath).\(it)") ?? filePath

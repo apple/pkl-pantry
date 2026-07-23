@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,16 +24,18 @@
 ///     curl https://api.github.com/orgs/apple/repos | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/json.pkl -x 'pipe.toList().map((r) -> "\(r.name): \(r.stargazers_count)").join("\n")'
 @ModuleInfo { minPklVersion = "0.24.0" }
 module pkl.pipe.json
+
 extends "./text.pkl"
 
 import "pkl:json"
 
-local parsed = new json.Parser {
-  useMapping = read?("prop:useMapping")?.toBoolean() ?? false
-}.parse(input)
+local parsed =
+  new json.Parser {
+    useMapping = read?("prop:useMapping")?.toBoolean() ?? false
+  }.parse(input)
 
-pipe: (List<json.Value>|json.Value)? = if (parsed is Listing) parsed.toList() else parsed
-stdin: (List<json.Value>|json.Value)? = pipe
+pipe: (List<json.Value> | json.Value)? = if (parsed is Listing) parsed.toList() else parsed
+stdin: (List<json.Value> | json.Value)? = pipe
 
 output {
   value = pipe

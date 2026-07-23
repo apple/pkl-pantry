@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,28 +65,28 @@ typealias NonNullAssertion = "!!"
 
 typealias BinaryOperator =
   Multiply
-  |Divide
-  |Plus
-  |BinaryMinus
-  |Modulo
-  |GreaterThan
-  |GreaterThanOrEquals
-  |LessThan
-  |LessThanOrEquals
-  |IntegerDivide
-  |Equals
-  |NotEquals
-  |NullishCoalesce
-  |Pipe
-  |BitwiseAnd
-  |BitwiseOr
-  |Exponent
-  |Is
-  |As
-  |And
-  |Or
+    | Divide
+    | Plus
+    | BinaryMinus
+    | Modulo
+    | GreaterThan
+    | GreaterThanOrEquals
+    | LessThan
+    | LessThanOrEquals
+    | IntegerDivide
+    | Equals
+    | NotEquals
+    | NullishCoalesce
+    | Pipe
+    | BitwiseAnd
+    | BitwiseOr
+    | Exponent
+    | Is
+    | As
+    | And
+    | Or
 
-typealias PrefixOperator = Not|UnaryMinus
+typealias PrefixOperator = Not | UnaryMinus
 
 typealias PostfixOperator = NonNullAssertion
 

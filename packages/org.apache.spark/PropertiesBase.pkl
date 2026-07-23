@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,21 @@
 abstract module org.apache.spark.PropertiesBase
 
 import "pkl:semver"
+
 import "utils.pkl"
 
 /// The Spark version to use these properties with.
 hidden targetSparkVersion: String?
 
 function since(sparkVersion: String): Boolean =
-  if (targetSparkVersion == null) true
+  if (targetSparkVersion == null)
+    true
   else
     let (parsedVersion = semver.Version(sparkVersion))
       if (!parsedVersion.isGreaterThan(semver.Version(targetSparkVersion)))
-        throw("This property exists since Spark version \(parsedVersion), but target Spark version is \(targetSparkVersion).")
+        throw(
+          "This property exists since Spark version \(parsedVersion), but target Spark version is \(targetSparkVersion)."
+        )
       else
         true
 

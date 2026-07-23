@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 ///
 @ModuleInfo { minPklVersion = "0.24.0" }
 module pkl.pipe.yaml
+
 extends "./text.pkl"
 
 import "pkl:yaml"
@@ -33,12 +34,14 @@ hidden parser: yaml.Parser = new {
 
 local yamlDocs: List<yaml.Value> = parser.parseAll(input)
 
-pipe: (List<yaml.Value>|yaml.Value)? =
-  if (yamlDocs.isEmpty) null
-  // If there is a single document, set pipe to the value of the single doc,
-  // rather than force the user to always use `pipe[0]`
-  else yamlDocs.singleOrNull ?? yamlDocs
-stdin: (List<yaml.Value>|yaml.Value)? = pipe
+pipe: (List<yaml.Value> | yaml.Value)? =
+  if (yamlDocs.isEmpty)
+    null
+    // If there is a single document, set pipe to the value of the single doc,
+    // rather than force the user to always use `pipe[0]`
+  else
+    yamlDocs.singleOrNull ?? yamlDocs
+stdin: (List<yaml.Value> | yaml.Value)? = pipe
 
 output {
   value = pipe

@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,25 +21,25 @@ module icalendar.type.Recur
 import "Date.pkl"
 import "DateTime.pkl"
 
-typealias Frequency = "SECONDLY"|"MINUTELY"|"HOURLY"|"DAILY"|"WEEKLY"|"MONTHLY"|"YEARLY"
+typealias Frequency = "SECONDLY" | "MINUTELY" | "HOURLY" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
 
-typealias WeekdayString = "SU"|"MO"|"TU"|"WE"|"TH"|"FR"|"SA"
+typealias WeekdayString = "SU" | "MO" | "TU" | "WE" | "TH" | "FR" | "SA"
 
 class Weekday {
   weekday: WeekdayString
   weeknum: Int(this != 0)?
 
-  function toString(): String = List(
-    weeknum?.ifNonNull((n) -> if (n as Int > 0) "+" else ""),
-    weeknum?.toString(),
-    weekday
-  ).filterNonNull().join("")
+  function toString(): String =
+    List(
+      weeknum?.ifNonNull((n) -> if (n as Int > 0) "+" else ""),
+      weeknum?.toString(),
+      weekday
+    )
+      .filterNonNull()
+      .join("")
 }
 
-dtstart: (
-  * DateTime(utc.implies(tzid == null))
-  |Date(tzid == null)
-  )?
+dtstart: (*DateTime(utc.implies(tzid == null)) | Date(tzid == null))?
 
 tzid: String?
 
@@ -58,43 +58,34 @@ interval: Int(this > 0)?
 /// If the "DTSTART" property is specified as a date with UTC time or a date with local time and time zone reference, then the UNTIL rule part MUST be specified as a date with UTC time.
 /// If not present, and the COUNT rule part is also not present, the "RRULE" is considered to repeat forever.
 until: (
-  * DateTime(
-      // if dtstart is defined and a datetime, until must also be a datetime if defined
-      dtstart?.ifNonNull((it) -> it is DateTime) ?? true,
-      dtstart?.ifNonNull((it) -> utc == (it as DateTime).utc) ?? true,
-      utc.implies(tzid == null)
-    )
-  |Date(
-    // if dtstart is defined and a date, until must also be a date if defined
-    dtstart?.ifNonNull((it) -> it is Date) ?? true,
-    tzid == null
+  *DateTime(
+    // if dtstart is defined and a datetime, until must also be a datetime if defined
+    dtstart?.ifNonNull((it) -> it is DateTime) ?? true,
+    dtstart?.ifNonNull((it) -> utc == (it as DateTime).utc) ?? true,
+    utc.implies(tzid == null)
   )
-  )?
+    | Date(
+      // if dtstart is defined and a date, until must also be a date if defined
+      dtstart?.ifNonNull((it) -> it is Date) ?? true,
+      tzid == null
+    )
+)?
 
 /// The COUNT rule part defines the number of occurrences at which to range-bound the recurrence.
 ///
 /// The "DTSTART" property value always counts as the first occurrence.
 count: Int(this > 0)?(
-    !(this != null && until != null) || throw("count and until may not both be set")
-  )
+  !(this != null && until != null) || throw("count and until may not both be set")
+)
 
 /// The BYSECOND rule part specifies one or more seconds within a minute.
-bysecond: Listing<UInt(isBetween(0, 60))>(
-    !isEmpty,
-    !(dtstart is Date)
-  )?
+bysecond: Listing<UInt(isBetween(0, 60))>(!isEmpty, !(dtstart is Date))?
 
 /// The BYMINUTE rule part specifies one or more minutes within an hour.
-byminute: Listing<UInt(isBetween(0, 59))>(
-    !isEmpty,
-    !(dtstart is Date)
-  )?
+byminute: Listing<UInt(isBetween(0, 59))>(!isEmpty, !(dtstart is Date))?
 
 /// The BYHOUR rule part specifies one or more hours of the day.
-byhour: Listing<UInt(isBetween(0, 23))>(
-    !isEmpty,
-    !(dtstart is Date)
-  )?
+byhour: Listing<UInt(isBetween(0, 23))>(!isEmpty, !(dtstart is Date))?
 
 /// The BYDAY rule part specifies one or more days of the week.
 ///
@@ -106,34 +97,31 @@ byhour: Listing<UInt(isBetween(0, 23))>(
 /// If an integer modifier is not present, it means all days of this type within the specified frequency.
 /// For example, within a MONTHLY rule, MO represents all Mondays within the month.
 byday: Listing<
-    WeekdayString
-    |* Weekday(
-        // The BYDAY rule part MUST NOT be specified with a numeric value when the FREQ rule part is not set to MONTHLY or YEARLY.
-        (weeknum != null).implies(freq == "MONTHLY" || freq == "YEARLY"),
-        // Furthermore, the BYDAY rule part MUST NOT be specified with a numeric value with the FREQ rule part set to YEARLY when the BYWEEKNO rule part is specified.
-        (weeknum != null && freq == "YEARLY").implies(byweekno == null)
-      )
-  >(!isEmpty)?
+  WeekdayString
+    | *Weekday(
+      // The BYDAY rule part MUST NOT be specified with a numeric value when the FREQ rule part is not set to MONTHLY or YEARLY.
+      (weeknum != null).implies(freq == "MONTHLY" || freq == "YEARLY"),
+      // Furthermore, the BYDAY rule part MUST NOT be specified with a numeric value with the FREQ rule part set to YEARLY when the BYWEEKNO rule part is specified.
+      (weeknum != null && freq == "YEARLY").implies(byweekno == null)
+    )
+>(!isEmpty)?
 
 /// The BYMONTHDAY rule part specifies one or more days of the month.
 ///
 /// Negative values represent days counting back from the end of a month.
 /// For example, -10 represents the tenth to the last day of the month.
-bymonthday: Listing<Int(isBetween(-31, 31), this != 0)>(
-    !isEmpty,
-    freq != "MONTHLY"
-  )?
+bymonthday: Listing<Int(isBetween(-31, 31), this != 0)>(!isEmpty, freq != "MONTHLY")?
 
 /// The BYYEARDAY rule part specifies one or more days of the year.
 ///
 /// Negative values represent days counting back from the end of a year.
 /// For example, -1 represents the last day of the year (December 31st) and -306 represents the 306th to the last day of the year (March 1st).
 byyearday: Listing<Int(isBetween(-366, 366), this != 0)>(
-    !isEmpty,
-    freq != "DAILY",
-    freq != "WEEKLY",
-    freq != "MONTHLY"
-  )?
+  !isEmpty,
+  freq != "DAILY",
+  freq != "WEEKLY",
+  freq != "MONTHLY"
+)?
 
 /// The BYWEEKNO rule part specifies one or more ordinals specifying weeks of the year.
 ///
@@ -142,10 +130,7 @@ byyearday: Listing<Int(isBetween(-366, 366), this != 0)>(
 /// Week number one of the calendar year is the first week that contains at least four (4) days in that calendar year.
 ///
 /// Note: Assuming a Monday week start, week 53 can only occur when Thursday is January 1 or if it is a leap year and Wednesday is January 1.
-byweekno: Listing<Int(isBetween(-53, 53), this != 0)>(
-    !isEmpty,
-    freq == "YEARLY"
-  )?
+byweekno: Listing<Int(isBetween(-53, 53), this != 0)>(!isEmpty, freq == "YEARLY")?
 
 /// The BYMONTH rule part specifies one or more months of the year.
 bymonth: Listing<UInt(isBetween(1, 12))>(!isEmpty)?
@@ -162,10 +147,11 @@ wkst: WeekdayString?
 /// BYSETPOS operates on a set of recurrence instances in one interval of the recurrence rule.
 /// For example, in a WEEKLY rule, the interval would be one week A set of recurrence instances starts at the beginning of the interval defined by the FREQ rule part.
 bysetpos: Listing<Int(isBetween(-366, 366), this != 0)>(
-    !isEmpty,
-    List(bysecond, byminute, byhour, byday, bymonthday, byyearday, byweekno, bymonth)
-      .filterNonNull().length > 0 // RFC is a little ambiguous on this one, should it be >0 or ==1?
-  )?
+  !isEmpty,
+  List(bysecond, byminute, byhour, byday, bymonthday, byyearday, byweekno, bymonth)
+    .filterNonNull()
+    .length > 0 // RFC is a little ambiguous on this one, should it be >0 or ==1?
+)?
 
 /// Serialize the recurrence rule.
 ///
@@ -173,24 +159,40 @@ bysetpos: Listing<Int(isBetween(-366, 366), this != 0)>(
 /// The 75-character line limit and folding behavior are not enforced.
 /// Lines are separated by "\n" (LF) and not "\r\n" (CRLF).
 /// Ref: https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
-function toString(): String = List(
-  dtstart?.ifNonNull((start) -> List(
-    "DTSTART",
-    if (dtstart is Date) ";VALUE=DATE" else null,
-    tzid?.ifNonNull((tz) -> ";TZID=\(tz)"),
-    ":\(start)"
-  ).filterNonNull().join("")),
-  let (parts = module.toMap()
-    .remove("tzid").remove("dtstart")
-    .filter((_, v) -> v != null)
-    .entries.map((entry) ->
-    let (value = if (entry.value is Listing)
-      // https://github.com/apple/pkl/issues/923 :(
-      // entry.value.join(",")
-      entry.value.toList().map((it) -> it.toString()).join(",")
-    else entry.value.toString())
-      "\(entry.key.toUpperCase())=\(value)"
+function toString(): String =
+  List(
+    dtstart?.ifNonNull((start) ->
+      List(
+        "DTSTART",
+        if (dtstart is Date) ";VALUE=DATE" else null,
+        tzid?.ifNonNull((tz) -> ";TZID=\(tz)"),
+        ":\(start)"
+      )
+        .filterNonNull()
+        .join("")
+    ),
+    let (
+      parts =
+        module
+          .toMap()
+          .remove("tzid")
+          .remove("dtstart")
+          .filter((_, v) -> v != null)
+          .entries
+          .map((entry) ->
+            let (
+              value =
+                if (entry.value is Listing)
+                  // https://github.com/apple/pkl/issues/923 :(
+                  // entry.value.join(",")
+                  entry.value.toList().map((it) -> it.toString()).join(",")
+                else
+                  entry.value.toString()
+            )
+              "\(entry.key.toUpperCase())=\(value)"
+          )
+    )
+      if (!parts.isEmpty) "RRULE:\(parts.join(";"))" else null
   )
-  )
-    if (!parts.isEmpty) "RRULE:\(parts.join(";"))" else null
-).filterNonNull().join("\n")
+    .filterNonNull()
+    .join("\n")

@@ -3,7 +3,7 @@
   "resolvedDependencies": {
     "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@1.0.3",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@1.0.4",
       "path": "../k8s.contrib"
     },
     "package://pkg.pkl-lang.org/pkl-k8s/k8s@1": {
@@ -15,7 +15,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri@1.0.3",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri@1.0.4",
       "path": "../pkl.experimental.uri"
     }
   }

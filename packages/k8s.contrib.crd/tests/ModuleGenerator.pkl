@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ module k8s.contrib.crd.tests.ModuleGenerator
 
 amends "pkl:test"
 
-import "@k8s/api/core/v1/ResourceRequirements.pkl"
 import "@k8s/api/core/v1/EnvVar.pkl"
+import "@k8s/api/core/v1/ResourceRequirements.pkl"
 import "@k8s/api/networking/v1/NetworkPolicy.pkl"
 
 import "../generate.pkl"
@@ -66,22 +66,35 @@ examples {
   }
 
   ["conflicting schemas"] {
-    for (_, value in (generate) {
-      sourceContents = read("fixtures/crds_conflict.yaml")
-      baseApiGroup = "bar.com"
-      source = "dummy://test_uri"
-    }.output.files!!) {
+    for (
+      _, value in
+        (generate) {
+          sourceContents = read("fixtures/crds_conflict.yaml")
+          baseApiGroup = "bar.com"
+          source = "dummy://test_uri"
+        }
+          .output
+          .files!!
+    ) {
       value.text
     }
   }
 
   ["apiGroup subdomains"] {
-    for (path, value in (generate) {
-      sourceContents = read("fixtures/crds_subdomain.yaml")
-      source = "dummy://test_uri"
-      baseApiGroup = "bar"
-    }.output.files!!) {
-      Pair(path, value.value.declaration.moduleHeader.name.parts.toList().map((it) -> it.value).join("."))
+    for (
+      path, value in
+        (generate) {
+          sourceContents = read("fixtures/crds_subdomain.yaml")
+          source = "dummy://test_uri"
+          baseApiGroup = "bar"
+        }
+          .output
+          .files!!
+    ) {
+      Pair(
+        path,
+        value.value.declaration.moduleHeader.name.parts.toList().map((it) -> it.value).join(".")
+      )
     }
   }
 }

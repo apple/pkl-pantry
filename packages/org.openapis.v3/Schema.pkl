@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import "Schema.pkl"
 /// The basic type of the value represented by this schema.
 ///
 /// If this property is not defined, the value may be of any type.
-type: ("string"|"number"|"integer"|"boolean"|"object"|"array")?
+type: ("string" | "number" | "integer" | "boolean" | "object" | "array")?
 
 /// An additional descriptor for the value represented by this schema.
 ///
@@ -66,7 +66,18 @@ type: ("string"|"number"|"integer"|"boolean"|"object"|"array")?
 /// password | `string` | `password` | A hint to UIs to obscure input.
 ///
 /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#dataTypeFormat>
-format: ("int32"|"int64"|"float"|"double"|"byte"|"binary"|"date"|"date-time"|"password"|String)?
+format: (
+  "int32"
+    | "int64"
+    | "float"
+    | "double"
+    | "byte"
+    | "binary"
+    | "date"
+    | "date-time"
+    | "password"
+    | String
+)?
 
 /// A short descriptor of this schema.
 ///
@@ -109,27 +120,27 @@ enum: Listing<Any>(!isEmpty && isDistinct)?
 /// It may be set to any positive number.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples>
-multipleOf: Number(type is ("number"|"integer") && isPositive)?
+multipleOf: Number(type is ("number" | "integer") && isPositive)?
 
 /// Represent a number that is greater or equal to this value.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
-minimum: Number(type is ("number"|"integer"))?
+minimum: Number(type is ("number" | "integer"))?
 
 /// Represent a number that is greater than this value.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
-exclusiveMinimum: Number(type is ("number"|"integer"))?
+exclusiveMinimum: Number(type is ("number" | "integer"))?
 
 /// Represent a number that is less than or equal to this value.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
-maximum: Number(type is ("number"|"integer"))?
+maximum: Number(type is ("number" | "integer"))?
 
 /// Represent a number that is less than this value.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
-exclusiveMaximum: Number(type is ("number"|"integer"))?
+exclusiveMaximum: Number(type is ("number" | "integer"))?
 
 // === String validators ===
 
@@ -155,7 +166,7 @@ maxLength: UInt(type == "string")?
 /// Represent that each item in an array must conform to the specified schema.
 ///
 /// If the type is array, [items] must be specified.
-items: (Schema|Reference)(type == "array")?
+items: (Schema | Reference)(type == "array")?
 
 /// Represent an array that has a minumum length.
 ///
@@ -186,7 +197,7 @@ maxProperties: UInt(type == "object")?
 /// certain schema.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/object.html#properties>
-properties: Mapping<String, *PropertySchema|Reference>(type == "object")?
+properties: Mapping<String, *PropertySchema | Reference>(type == "object")?
 
 /// Represent an object that has additional properties.
 ///
@@ -197,7 +208,7 @@ properties: Mapping<String, *PropertySchema|Reference>(type == "object")?
 /// properties will be allowed.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/object.html#additional-properties>
-additionalProperties: (*PropertySchema|Boolean|Reference)(type == "object")?
+additionalProperties: (*PropertySchema | Boolean | Reference)(type == "object")?
 
 /// Represent an object that has certain properties defined on it.
 ///
@@ -211,22 +222,22 @@ required: Listing<String>(type == "object", isDistinct)?
 /// Represent a value that must match against **exactly** one of the subschemas.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/combining.html#oneof>
-oneOf: Listing<Schema|Reference>(length > 0)?
+oneOf: Listing<Schema | Reference>(length > 0)?
 
 /// Represent a value that must match **at least one** of the subschemas.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/combining.html#anyof>
-anyOf: Listing<Schema|Reference>(length > 0)?
+anyOf: Listing<Schema | Reference>(length > 0)?
 
 /// Represent a value that must match **all** of the subschemas.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/combining.html#allof>
-allOf: Listing<Schema|Reference>(length > 0)?
+allOf: Listing<Schema | Reference>(length > 0)?
 
 /// Represent a value that must not match the given schema.
 ///
 /// <https://json-schema.org/understanding-json-schema/reference/combining.html#not>
-not: (Schema|Reference)?
+not: (Schema | Reference)?
 
 // == OpenAPI v3.0 specific fields ==
 
@@ -380,7 +391,7 @@ class PropertySchema extends Schema {
 output {
   // It's pretty common to have OpenAPI written in YAML. Therefore, we support the YAML format too.
   // noinspection TypeMismatch
-  local const format: "json"|"yaml"|"pcf" = read?("prop:pkl.outputFormat") ?? "json"
+  local const format: "json" | "yaml" | "pcf" = read?("prop:pkl.outputFormat") ?? "json"
 
   local const renderers: Mapping<String, ValueRenderer> = new {
     ["json"] = new JsonRenderer {}

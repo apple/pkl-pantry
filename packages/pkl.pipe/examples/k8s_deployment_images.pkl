@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 /// pkl eval yaml.pkl -x 'pipe.spec.template.spec.containers.toList().map((c) -> c.image).join("\n")' < examples/k8s_deployment.yaml
 /// ```
 module pkl.pipe.examples.k8s_deployment_images
+
 amends "../yaml.pkl"
 
 input = read("./k8s_deployment.yaml")

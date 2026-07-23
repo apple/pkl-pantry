@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ setup: Boolean?
 ///
 /// Orb definitions must be the orb-relevant subset of 2.1 config.
 /// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
-orbs: Mapping<String, Orb|String>?
+orbs: Mapping<String, Orb | String>?
 
 /// Executors define the execution environment in which the steps of a job will be run,
 /// allowing you to reuse a single executor definition across multiple jobs.
@@ -76,7 +76,7 @@ class Orb {
   ///
   /// Orb definitions must be the orb-relevant subset of 2.1 config.
   /// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
-  orbs: Mapping<String, Orb|String>?
+  orbs: Mapping<String, Orb | String>?
 
   /// A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
   /// a single command definition across multiple jobs.
@@ -193,35 +193,34 @@ class Job {
 
 typealias ResourceClass =
   "small"
-  |"medium"
-  |"medium+"
-  |"large"
-  |"xlarge"
-  |"2xlarge"
-  |"2xlarge+"
-  |"arm.medium"
-  |"arm.large"
-  |"arm.xlarge"
-  |"arm.2xlarge"
-  |"macos.m1.medium.gen1"
-  |"macos.m1.large.gen1"
-  |"m2pro.medium"
-  |"m2pro.large"
-  |"m4pro.medium"
-  |"m4pro.large"
-  |"windows.medium"
-  |"windows.large"
-  |"windows.xlarge"
-  |"windows.2xlarge"
-  |"gpu.nvidia.small"
-  |"gpu.nvidia.small.gen2"
-  |"gpu.nvidia.small.multi"
-  |"gpu.nvidia.medium.multi"
-  |"gpu.nvidia.medium"
-  |"gpu.nvidia.large"
-  |"windows.gpu.nvidia.medium"
-  |String
-
+    | "medium"
+    | "medium+"
+    | "large"
+    | "xlarge"
+    | "2xlarge"
+    | "2xlarge+"
+    | "arm.medium"
+    | "arm.large"
+    | "arm.xlarge"
+    | "arm.2xlarge"
+    | "macos.m1.medium.gen1"
+    | "macos.m1.large.gen1"
+    | "m2pro.medium"
+    | "m2pro.large"
+    | "m4pro.medium"
+    | "m4pro.large"
+    | "windows.medium"
+    | "windows.large"
+    | "windows.xlarge"
+    | "windows.2xlarge"
+    | "gpu.nvidia.small"
+    | "gpu.nvidia.small.gen2"
+    | "gpu.nvidia.small.multi"
+    | "gpu.nvidia.medium.multi"
+    | "gpu.nvidia.medium"
+    | "gpu.nvidia.large"
+    | "windows.gpu.nvidia.medium"
+    | String
 
 class MacOSExecutor {
   /// The version of Xcode that is installed on the virtual machine, see the
@@ -262,14 +261,14 @@ class DockerImage {
   /// The command used as executable when launching the container.
   ///
   /// [entrypoint] overrides the image’s `ENTRYPOINT`
-  entrypoint: (*Listing<String>|String)?
+  entrypoint: (*Listing<String> | String)?
 
   /// The command used as pid 1 (or args for entrypoint) when launching the container.
   ///
   /// [command] overrides the image’s `COMMAND`.
   /// It will be used as arguments to the image `ENTRYPOINT` if it has one, or as the executable
   /// if the image has no `ENTRYPOINT`.
-  command: (*Listing<String>|String)?
+  command: (*Listing<String> | String)?
 
   /// Which user to run commands as within the Docker container
   user: String?
@@ -317,24 +316,24 @@ class ScheduleTriggerFilter {
 
 class ScheduleTriggerFilterBranches {
   /// Either a single branch specifier, or a list of branch specifiers
-  only: *Listing<String>|String
+  only: *Listing<String> | String
 
   /// Either a single branch specifier, or a list of branch specifiers
-  ignore: (*Listing<String>|String)?
+  ignore: (*Listing<String> | String)?
 }
 
 class Workflow {
   /// A job can have the keys `requires`, `name`, `context`, `type`, and `filters`.
-  jobs: Listing<*Mapping<String, WorkflowJob>(length == 1)|String>(!isEmpty)
+  jobs: Listing<*Mapping<String, WorkflowJob>(length == 1) | String>(!isEmpty)
 
   /// Specifies which triggers will cause this workflow to be executed.
   ///
   /// Default behavior is to trigger the workflow when pushing to a branch
   triggers: Listing<ScheduleTrigger>?
 
-  `when`: (*LogicStatement|Boolean|String)?
+  `when`: (*LogicStatement | Boolean | String)?
 
-  `unless`: (*LogicStatement|Boolean|String)?
+  `unless`: (*LogicStatement | Boolean | String)?
 }
 
 class WorkflowJob {
@@ -364,7 +363,7 @@ class WorkflowJob {
   /// Each context name must be unique.
   /// If using CircleCI Server, only a single Context per workflow is supported.
   /// Note: A maximum of 100 unique contexts across all workflows is allowed
-  context: (*Listing<String>|String)?
+  context: (*Listing<String> | String)?
 
   /// A job may have a type of `approval` indicating it must be manually approved before downstream
   /// jobs may proceed.
@@ -387,8 +386,8 @@ class WorkflowJob {
   ///
   /// There are several reserved parameter names that cannot be used from CircleCI users.
   hidden parameters: Mapping<
-    String(!(this is "name"|"context"|"filters"|"matrix"|"requires"|"type")),
-    *Listing<Step>|String|Number|Boolean
+    String(!(this is "name" | "context" | "filters" | "matrix" | "requires" | "type")),
+    *Listing<Step> | String | Number | Boolean
   >?
 }
 
@@ -423,15 +422,15 @@ class JobFilters {
 
 class FilterSpec {
   /// Either a single branch specifier, or a list of branch specifiers
-  only: (String|Listing<String>)?(this != null || ignore != null)
+  only: (String | Listing<String>)?(this != null || ignore != null)
 
   /// Either a single branch specifier, or a list of branch specifiers
-  ignore: (String|Listing<String>)?
+  ignore: (String | Listing<String>)?
 }
 
 class JobMatrix {
   /// A map of parameter names to every value the job should be called with
-  parameters: Mapping<String, Listing<String|Number|Boolean>>
+  parameters: Mapping<String, Listing<String | Number | Boolean>>
 
   /// Argument maps that should be excluded from the matrix
   exclude: Listing<Mapping<String, String>>?
@@ -442,12 +441,12 @@ class JobMatrix {
   alias: String?
 }
 
-typealias Step = AbstractStep|SimpleStepName|OrbStep
+typealias Step = AbstractStep | SimpleStepName | OrbStep
 
-typealias SimpleStepName = "checkout"|"setup_remote_docker"|"add_ssh_keyes"|String
+typealias SimpleStepName = "checkout" | "setup_remote_docker" | "add_ssh_keyes" | String
 
 abstract class AbstractStep {
-  fixed hidden __name__: String
+  hidden fixed __name__: String
 }
 
 typealias OrbStep = Dynamic(hasProperty("__name__"))
@@ -465,7 +464,7 @@ function run(_command: String): RunStep = new {
 /// Run commands are executed using non-login shells by default, so you must explicitly source any
 /// dotfiles as part of the command.
 class RunStep extends AbstractStep {
-  fixed hidden __name__ = "run"
+  hidden fixed __name__ = "run"
 
   /// Command to run via the shell
   command: String(!isEmpty)
@@ -496,7 +495,7 @@ class RunStep extends AbstractStep {
   /// Specify when to enable or disable the step.
   ///
   /// Takes the following values: `always`, `on_success`, `on_fail` (default: on_success)
-  `when`: ("always"|"on_success"|"on_fail")?
+  `when`: ("always" | "on_success" | "on_fail")?
 }
 
 /// Generates and stores a cache of a file or directory of files such as dependencies or source
@@ -508,7 +507,7 @@ class RunStep extends AbstractStep {
 /// Cache retention can be customized on the [CircleCI web app](https://app.circleci.com/) by
 /// navigating to Plan > Usage Controls.
 class SaveCacheStep extends AbstractStep {
-  fixed hidden __name__ = "save_cache"
+  hidden fixed __name__ = "save_cache"
 
   /// List of directories which should be added to the cache
   paths: Listing<String>
@@ -522,7 +521,7 @@ class SaveCacheStep extends AbstractStep {
   /// [Specify when to enable or disable the step](https://circleci.com/docs/configuration-reference/#the-when-attribute).
   ///
   /// Takes the following values: always, on_success, on_fail (default: on_success)
-  `when`: ("always"|"on_success"|"on_fail")?
+  `when`: ("always" | "on_success" | "on_fail")?
 }
 
 /// Restores a previously saved cache based on a key.
@@ -531,7 +530,7 @@ class SaveCacheStep extends AbstractStep {
 ///
 /// Learn more in [the caching documentation](https://circleci.com/docs/caching/).
 class RestoreCacheStep extends AbstractStep {
-  fixed hidden __name__ = "restore_cache"
+  hidden fixed __name__ = "restore_cache"
 
   /// Single cache key to restore
   key: String?(this != null || keys != null)
@@ -549,7 +548,7 @@ class RestoreCacheStep extends AbstractStep {
 ///
 /// See [Running Docker Commands](https://circleci.com/docs/building-docker-images/) for details.
 class SetupRemoteDockerStep extends AbstractStep {
-  fixed hidden __name__ = "setup_remote_docker"
+  hidden fixed __name__ = "setup_remote_docker"
 
   /// Version string of Docker you would like to use (default: 24.0.9).
   ///
@@ -572,7 +571,7 @@ class SetupRemoteDockerStep extends AbstractStep {
 ///
 /// Workspace storage retention can be customized on the CircleCI web app by navigating to Plan > Usage Controls.
 class PersistToWorkspaceStep extends AbstractStep {
-  fixed hidden __name__ = "persist_to_workspace"
+  hidden fixed __name__ = "persist_to_workspace"
 
   /// Either an absolute path or a path relative to `working_directory`
   root: String
@@ -591,7 +590,7 @@ class PersistToWorkspaceStep extends AbstractStep {
 /// For more information on using workspaces, see the
 /// [Using Workspaces to Share Data Between Jobs](https://circleci.com/docs/workspaces/) page.
 class AttachWorkspaceStep extends AbstractStep {
-  fixed hidden __name__ = "attach_workspace"
+  hidden fixed __name__ = "attach_workspace"
 
   /// Directory to attach the workspace to.
   at: String
@@ -605,13 +604,13 @@ class AttachWorkspaceStep extends AbstractStep {
 /// See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
 /// document for more details.
 class WhenStep {
-  fixed hidden __name__ = "when"
+  hidden fixed __name__ = "when"
 
   /// The logic statement that determines whether to execute.
-  condition: (*LogicStatement|Boolean|String)?
+  condition: (*LogicStatement | Boolean | String)?
 
   /// A list of steps to execute when the condition is true
-  steps: Listing<AbstractStep|SimpleStepName>?
+  steps: Listing<AbstractStep | SimpleStepName>?
 }
 
 /// A conditional step consists of a step with the key `unless`.
@@ -622,13 +621,13 @@ class WhenStep {
 /// See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
 /// document for more details.
 class UnlessStep {
-  fixed hidden __name__ = "unless"
+  hidden fixed __name__ = "unless"
 
   /// The logic statement that determines whether to execute.
-  condition: (*LogicStatement|Boolean|String)?
+  condition: (*LogicStatement | Boolean | String)?
 
   /// A list of steps to execute when the condition is true
-  steps: Listing<AbstractStep|SimpleStepName>?
+  steps: Listing<AbstractStep | SimpleStepName>?
 }
 
 class Command {
@@ -650,11 +649,11 @@ class Parameter {
   description: String?
 
   /// The default value for the parameter. If not present, the parameter is implied to be required.
-  default: (String|Number|Boolean)?
+  default: (String | Number | Boolean)?
 
   /// Required. See [Parameter Types](https://circleci.com/docs/reusing-config/#parameter-types)
   /// for details.
-  type: "string"|"boolean"|"integer"|"enum"|"executor"|"steps"|"env_var_name"
+  type: "string" | "boolean" | "integer" | "enum" | "executor" | "steps" | "env_var_name"
 }
 
 /// Special step used to upload and store test results for a build.
@@ -668,7 +667,7 @@ class Parameter {
 /// It is also possible to store test results as a build artifact; to do so, please refer to the
 /// [store_artifacts] step.
 class StoreTestResults extends AbstractStep {
-  fixed hidden __name__ = "store_test_results"
+  hidden fixed __name__ = "store_test_results"
 
   /// Path (absolute, or relative to your `working_directory`) to directory containing JUnit XML
   /// test metadata files, or to a single test file.
@@ -680,7 +679,7 @@ class StoreTestResults extends AbstractStep {
 ///
 /// See the [Uploading Artifacts](https://circleci.com/docs/artifacts/) document for more information.
 class StoreArtifacts extends AbstractStep {
-  fixed hidden __name__ = "store_artifacts"
+  hidden fixed __name__ = "store_artifacts"
 
   /// Directory in the primary container to save as job artifacts
   path: String
@@ -696,16 +695,16 @@ class StoreArtifacts extends AbstractStep {
 /// before the workflow is run.
 class LogicStatement {
   /// True if all arguments are truthy.
-  and: Listing<*LogicStatement|Boolean|String>?(onlyOneSet(List(this, or, not, equal, matches)))
+  and: Listing<*LogicStatement | Boolean | String>?(onlyOneSet(List(this, or, not, equal, matches)))
 
   /// True if any arguments are truthy.
-  or: Listing<*LogicStatement|Boolean|String>?
+  or: Listing<*LogicStatement | Boolean | String>?
 
   /// True if the argument is not truthy.
-  not: (*LogicStatement|Boolean|String)?
+  not: (*LogicStatement | Boolean | String)?
 
   /// True if all arguments evaluate to equal values.
-  equal: Listing<Boolean|String|Number>?
+  equal: Listing<Boolean | String | Number>?
 
   /// True if [value][Match.value] matches the [pattern][Match.pattern].
   matches: Match?
@@ -730,7 +729,7 @@ class Match {
 
 typealias CalledCommand = Mapping<String, CommandCall>(length == 1)
 
-typealias CommandCall = Mapping<String, String|Number|Boolean>
+typealias CommandCall = Mapping<String, String | Number | Boolean>
 
 class PipelineValues {
   /// A globally unique id representing for the pipeline.
@@ -820,19 +819,23 @@ output {
     converters {
       [AbstractStep] = (it) -> Map(it.__name__, it.toMap())
       [Duration] = (it) ->
-        let (dur =
-          if (it.unit is "d") it.toUnit("min")
-          else if (it.unit is "us"|"ms"|"ns") it.toUnit("s")
-          else it
+        let (
+          dur =
+            if (it.unit is "d")
+              it.toUnit("min")
+            else if (it.unit is "us" | "ms" | "ns")
+              it.toUnit("s")
+            else
+              it
         )
         let (unit = if (dur.unit == "min") "m" else dur.unit)
           "\(dur.value)\(unit)"
       [Dynamic] = (it) ->
         if (it.hasProperty("__name__"))
           Map(it.__name__, it.toMap().remove("__name__"))
-        else it
-      [WorkflowJob] = (it) ->
-        it.toMap() + (it.parameters ?? Map()).toMap()
+        else
+          it
+      [WorkflowJob] = (it) -> it.toMap() + (it.parameters ?? Map()).toMap()
     }
   }
 }

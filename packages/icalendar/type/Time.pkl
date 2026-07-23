@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ module icalendar.type.Time
 import "Time.pkl"
 
 // language=Regexp
-const hidden timeRegex = "([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]|60)Z?"
+hidden const timeRegex = "([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]|60)Z?"
 typealias TimeString = String(matches(Regex(timeRegex)))
 
 /// Hour value.
@@ -38,12 +38,13 @@ s: Int(isBetween(0, 60))
 /// Indicates that the time is UTC, not local.
 utc: Boolean
 
-function toString(): String = List(
-  h.toString().padStart(2, "0"),
-  m.toString().padStart(2, "0"),
-  s.toString().padStart(2, "0"),
-  if (utc) "Z" else ""
-).join("")
+function toString(): String =
+  List(
+    h.toString().padStart(2, "0"),
+    m.toString().padStart(2, "0"),
+    s.toString().padStart(2, "0"),
+    if (utc) "Z" else ""
+  ).join("")
 
 /// Parse a [TimeString] into a [Time].
 const function Time(input: TimeString): Time = new {

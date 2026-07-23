@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@ module org.openapis.v3.contrib.tests.SchemaGenerator
 
 amends "pkl:test"
 
-import "fixtures/SelfReference.pkl"
+import "@openapi/Schema.pkl"
+
+import "../examples/Finch.pkl"
 import "../examples/SwallowSchema.pkl"
 import "../SchemaGenerator.pkl"
-import "../examples/Finch.pkl"
-
-import "@openapi/Schema.pkl"
+import "fixtures/SelfReference.pkl"
 
 local schema = SchemaGenerator.generate(SwallowSchema.Swallow)
 
 facts {
   ["recursive references throw an error"] {
-    module.catch(() -> SchemaGenerator.generate(SelfReference).output.text)
+    module
+      .catch(() -> SchemaGenerator.generate(SelfReference).output.text)
       .startsWith("Invalid Schema: Unable to convert a schema that refers to itself.")
   }
   ["nullable values show up as nullable"] {

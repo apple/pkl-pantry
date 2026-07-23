@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
 //===----------------------------------------------------------------------===//
 module org.json_schema.contrib.internal.utils
 
-import "@syntax/TypeNode.pkl"
+import "@jsonschema/JsonSchema.pkl"
+import "@syntax/AnnotationNode.pkl"
 import "@syntax/ExpressionNode.pkl"
 import "@syntax/operators.pkl"
-import "@syntax/AnnotationNode.pkl"
+import "@syntax/TypeNode.pkl"
+
 import "Type.pkl"
-import "@jsonschema/JsonSchema.pkl"
 
 /// Renders the string in pascal case.
 ///
@@ -100,7 +101,6 @@ function mergeSchemas(baseSchema: JsonSchema, rest: List<JsonSchema.Schema>) =
     )
     .toTyped(JsonSchema.getClass())
 
-
 local function findMatchingSchemasInMapping(
   m: Mapping<String, JsonSchema.Schema>?,
   path: List<String>,
@@ -112,7 +112,9 @@ local function findMatchingSchemasInMapping(
     m
       .toMap()
       .filter((_, value) -> value is JsonSchema)
-      .flatMap((propertyName, schema) -> _findMatchingSubSchemas(schema as JsonSchema, path.add(propertyName), predicate))
+      .flatMap((propertyName, schema) ->
+        _findMatchingSubSchemas(schema as JsonSchema, path.add(propertyName), predicate)
+      )
 
 local function findMatchingSchemasInListing(
   l: Listing<JsonSchema.Schema>?,
@@ -123,53 +125,63 @@ local function findMatchingSchemasInListing(
   if (l == null)
     Map()
   else
-    l.toList()
+    l
+      .toList()
       .filterIsInstance(JsonSchema.getClass())
       .mapIndexed((idx, schema) -> Pair(idx, schema))
       .toMap((p) -> p.first, (p) -> p.second)
       .flatMap((idx, schema) ->
-      _findMatchingSubSchemas(
-        schema,
-        path.add((path.lastOrNull ?? "") + namePart + idx.toString()),
-        predicate
+        _findMatchingSubSchemas(
+          schema,
+          path.add((path.lastOrNull ?? "") + namePart + idx.toString()),
+          predicate
+        )
       )
-    )
 
 function _findMatchingSubSchemas(
   schema: JsonSchema,
   path: List<String>,
   predicate: (JsonSchema) -> Boolean
 ): Map<List<String>, JsonSchema> =
-  (if (predicate.apply(schema))
-    Map(path, schema)
-  else
-    Map())
-  + findMatchingSchemasInMapping(schema.properties, path, predicate)
-  + (
-    let (map = schema.patternProperties?.toMap() ?? Map())
-      if (map.length == 1 && map.values.first is JsonSchema)
-        _findMatchingSubSchemas(map.values.first as JsonSchema, path, predicate)
+  (
+    if (predicate.apply(schema))
+      Map(path, schema)
+    else
+      Map()
+  )
+    + findMatchingSchemasInMapping(schema.properties, path, predicate)
+    + (
+      let (map = schema.patternProperties?.toMap() ?? Map())
+        if (map.length == 1 && map.values.first is JsonSchema)
+          _findMatchingSubSchemas(map.values.first as JsonSchema, path, predicate)
+        else
+          Map()
+    )
+    + findMatchingSchemasInMapping(schema.definitions, path, predicate)
+    + findMatchingSchemasInMapping(schema.$defs, path, predicate)
+    + (
+      if (schema.additionalProperties is JsonSchema)
+        _findMatchingSubSchemas(schema.additionalProperties as JsonSchema, path, predicate)
       else
         Map()
     )
-  + findMatchingSchemasInMapping(schema.definitions, path, predicate)
-  + findMatchingSchemasInMapping(schema.$defs, path, predicate)
-  + (if (schema.additionalProperties is JsonSchema)
-      _findMatchingSubSchemas(schema.additionalProperties as JsonSchema, path, predicate)
-    else
-      Map())
-  + (if (schema.items is JsonSchema)
-      _findMatchingSubSchemas(schema.items as JsonSchema, path.add("[]"), predicate)
-    else if (schema.items is Listing)
-      findMatchingSchemasInListing(schema.items as Listing, path, "Item", predicate)
-    else Map())
-  + findMatchingSchemasInListing(schema.oneOf, path, "Alternate", predicate)
-  + findMatchingSchemasInListing(schema.anyOf, path, "Alternate", predicate)
-  + findMatchingSchemasInMapping(schema._inline_, path, predicate)
+    + (
+      if (schema.items is JsonSchema)
+        _findMatchingSubSchemas(schema.items as JsonSchema, path.add("[]"), predicate)
+      else if (schema.items is Listing)
+        findMatchingSchemasInListing(schema.items as Listing, path, "Item", predicate)
+      else
+        Map()
+    )
+    + findMatchingSchemasInListing(schema.oneOf, path, "Alternate", predicate)
+    + findMatchingSchemasInListing(schema.anyOf, path, "Alternate", predicate)
+    + findMatchingSchemasInMapping(schema._inline_, path, predicate)
 
 /// Traverse the [schema], returning all schemas that match [predicate].
 ///
 /// Returns a map whose key is the path to that schema, and value is the schema itself.
 // TODO: additionalItems, allOf
-function findMatchingSubschemas(schema: JsonSchema, predicate: (JsonSchema) -> Boolean): Map<List<String>, JsonSchema> =
-  _findMatchingSubSchemas(schema, List(), predicate)
+function findMatchingSubschemas(
+  schema: JsonSchema,
+  predicate: (JsonSchema) -> Boolean
+): Map<List<String>, JsonSchema> = _findMatchingSubSchemas(schema, List(), predicate)

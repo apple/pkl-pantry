@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@ abstract module pkl.experimental.syntax.ExpressionNode
 extends "Node.pkl"
 
 import "ExpressionNode.pkl"
-import "ObjectBodyNode.pkl"
 import "IdentifierNode.pkl"
-import "TypeNode.pkl"
+import "ObjectBodyNode.pkl"
 import "operators.pkl"
+import "TypeNode.pkl"
 
-typealias CompoundExpressionNode = BinaryOperatorExpressionNode|PrefixOperatorExpressionNode|IfElseExpressionNode
+typealias CompoundExpressionNode =
+  BinaryOperatorExpressionNode | PrefixOperatorExpressionNode | IfElseExpressionNode
 
 class BinaryOperatorExpressionNode extends ExpressionNode {
   local precedences: Mapping<operators.BinaryOperator, Int> = new {
@@ -60,7 +61,7 @@ class BinaryOperatorExpressionNode extends ExpressionNode {
     let (rendered = child.render(currentIndent))
       if (
         !(child is CompoundExpressionNode)
-        || child is BinaryOperatorExpressionNode && hasHigherPrecedence(operator, child.operator)
+          || child is BinaryOperatorExpressionNode && hasHigherPrecedence(operator, child.operator)
       )
         rendered
       else
@@ -71,7 +72,7 @@ class BinaryOperatorExpressionNode extends ExpressionNode {
 }
 
 class BuiltInKeywordExpressionNode extends ExpressionNode {
-  keyword: "this"|"outer"|"module"
+  keyword: "this" | "outer" | "module"
 
   function render(_) = keyword
 }
@@ -84,8 +85,10 @@ class PrefixOperatorExpressionNode extends ExpressionNode {
 
   function render(currentIndent: String) =
     let (body = expression.render(currentIndent))
-      if (expression is CompoundExpressionNode) operator + parenthesize(body)
-      else operator + body
+      if (expression is CompoundExpressionNode)
+        operator + parenthesize(body)
+      else
+        operator + body
 }
 
 /// Unary operators in the postfix position: "!!"
@@ -96,8 +99,10 @@ class PostfixOperatorExpressionNode extends ExpressionNode {
 
   function render(currentIndent: String) =
     let (body = expression.render(currentIndent))
-      if (expression is CompoundExpressionNode) parenthesize(body) + operator
-      else body + operator
+      if (expression is CompoundExpressionNode)
+        parenthesize(body) + operator
+      else
+        body + operator
 }
 
 class MemberAccessExpressionNode extends ExpressionNode {
@@ -106,12 +111,14 @@ class MemberAccessExpressionNode extends ExpressionNode {
   arguments: Listing<ExpressionNode>?
 
   function renderArguments(currentIndent: String) =
-    if (arguments == null) ""
+    if (arguments == null)
+      ""
     else
       let (args = arguments.toList().map((arg) -> arg.render(currentIndent)))
         parenthesize(args.join(", "))
 
-  function render(currentIndent: String) = "\(identifier.render(currentIndent))\(renderArguments(currentIndent))"
+  function render(currentIndent: String) =
+    "\(identifier.render(currentIndent))\(renderArguments(currentIndent))"
 }
 
 /// Can either be an identifer or a function call.
@@ -123,16 +130,18 @@ class MemberAccessExpressionNode extends ExpressionNode {
 class QualifiedMemberAccessExpressionNode extends ExpressionNode {
   lhs: ExpressionNode
 
-  symbol: "."|"?." = "."
+  symbol: "." | "?." = "."
 
   rhs: MemberAccessExpressionNode
 
   local function renderLhs(currentIndent: String) =
     if (lhs is CompoundExpressionNode)
       parenthesize(lhs.render(currentIndent))
-    else lhs.render(currentIndent)
+    else
+      lhs.render(currentIndent)
 
-  function render(currentIndent: String) = "\(renderLhs(currentIndent))\(symbol)\(rhs.render(currentIndent))"
+  function render(currentIndent: String) =
+    "\(renderLhs(currentIndent))\(symbol)\(rhs.render(currentIndent))"
 }
 
 class SuperAccessExpressionNode extends ExpressionNode {
@@ -155,14 +164,16 @@ class SubscriptExpressionNode extends ExpressionNode {
   local function renderLhs(currentIndent: String) =
     if (lhs is CompoundExpressionNode)
       parenthesize(lhs.render(currentIndent))
-    else lhs.render(currentIndent)
+    else
+      lhs.render(currentIndent)
 
-  function render(currentIndent: String): String = "\(renderLhs(currentIndent))[\(subscript.render(currentIndent))]"
+  function render(currentIndent: String): String =
+    "\(renderLhs(currentIndent))[\(subscript.render(currentIndent))]"
 }
 
 /// Node representing a literal value; e.g. `true` and `"hello"`.
 class LiteralValueExpressionNode extends ExpressionNode {
-  value: String|Boolean|Number|Null
+  value: String | Boolean | Number | Null
 
   function render(_) = pcfRenderer.renderValue(value)
 }
@@ -173,11 +184,14 @@ class ObjectExpressionNode extends ExpressionNode {
 
   type: TypeNode?
 
-  function render(currentIndent: String) = List(
-    "new",
-    type?.render(currentIndent),
-    body.render(currentIndent)
-  ).filterNonNull().join(" ")
+  function render(currentIndent: String) =
+    List(
+      "new",
+      type?.render(currentIndent),
+      body.render(currentIndent)
+    )
+      .filterNonNull()
+      .join(" ")
 }
 
 /// `if (...) ... else ...`
@@ -199,7 +213,8 @@ class IfElseExpressionNode extends ExpressionNode {
       \(currentIndent + indent)\(elseBranch.render(currentIndent + indent))
       """
 
-  function render(currentIndent: String) = """
+  function render(currentIndent: String) =
+    """
     if \(parenthesize(condition.render(currentIndent)))
     \(currentIndent + indent)\(ifBranch.render(currentIndent))
     \(renderElseBranch(currentIndent))
@@ -209,7 +224,7 @@ class IfElseExpressionNode extends ExpressionNode {
 class ImportExpressionNode extends ExpressionNode {
   value: String
 
-  keyword: "import"|"import*" = "import"
+  keyword: "import" | "import*" = "import"
 
   fixed stringLiteralNode: LiteralValueExpressionNode = new { value = outer.value }
 
@@ -219,7 +234,7 @@ class ImportExpressionNode extends ExpressionNode {
 class ReadExpressionNode extends ExpressionNode {
   value: ExpressionNode
 
-  keyword: "read"|"read*"|"read?" = "read"
+  keyword: "read" | "read*" | "read?" = "read"
 
   function render(currentIndent: String) = "\(keyword)(\(value.render(currentIndent)))"
 }
@@ -234,23 +249,27 @@ class TraceExpressionNode extends ExpressionNode {
 class StringExpressionNode extends ExpressionNode {
   isMultiLine: Boolean = false
 
-  stringParts: Listing<String|ExpressionNode>
+  stringParts: Listing<String | ExpressionNode>
 
-  function renderStringContents(currentIndent: String) = new Listing {
-    for (part in stringParts) {
-      when (part is ExpressionNode) {
-        #"\("#
-        part.render(currentIndent)
-        ")"
-      } else {
-        if (isMultiLine) part.replaceAll("\n", "\n\(currentIndent)")
-        else part.replaceAll("\n", "\\n")
+  function renderStringContents(currentIndent: String) =
+    new Listing {
+      for (part in stringParts) {
+        when (part is ExpressionNode) {
+          #"\("#
+          part.render(currentIndent)
+          ")"
+        } else {
+          if (isMultiLine)
+            part.replaceAll("\n", "\n\(currentIndent)")
+          else
+            part.replaceAll("\n", "\\n")
+        }
       }
-    }
-  }.join("")
+    }.join("")
 
   function render(currentIndent: String) =
-    if (!isMultiLine) #""\#(renderStringContents(currentIndent))""#
+    if (!isMultiLine)
+      #""\#(renderStringContents(currentIndent))""#
     else
       let (newIndent = currentIndent + indent)
         new Listing {

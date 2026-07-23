@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,14 +19,17 @@
 module k8s.contrib.crd.internal.ModuleGenerator
 
 import "pkl:reflect"
+
+import "@jsonschema.contrib/internal/singularize.pkl"
 import "@jsonschema.contrib/internal/Type.pkl"
 import "@jsonschema.contrib/internal/TypesGenerator.pkl"
 import "@jsonschema.contrib/internal/utils.pkl"
-import "@jsonschema.contrib/internal/singularize.pkl"
 import "@jsonschema/JsonSchema.pkl"
 import "@jsonschema/Parser.pkl"
 import "@k8s/apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl"
-import "@k8s/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl" as BetaCRD
+import
+  "@k8s/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl"
+  as BetaCRD
 import "@syntax/ClassNode.pkl"
 import "@syntax/ClassOrModuleNode.pkl"
 import "@syntax/DocCommentNode.pkl"
@@ -38,24 +41,26 @@ local pcfRenderer = new PcfRenderer { useCustomStringDelimiters = true }
 local jsonRenderer = new JsonRenderer {}
 
 // noinspection Deprecated
-typealias CRD = CustomResourceDefinition|BetaCRD
+typealias CRD = CustomResourceDefinition | BetaCRD
 
 /// The CRD
 crd: CRD
 
 /// The CRD version to generate
-version: CustomResourceDefinition.CustomResourceDefinitionVersion|BetaCRD.CustomResourceDefinitionVersion
+version: CustomResourceDefinition.CustomResourceDefinitionVersion
+  | BetaCRD.CustomResourceDefinitionVersion
 
 logPaths: Boolean = false
 
 k8sImportPath: String
 
 // noinspection Deprecated
-local schema: CustomResourceDefinition.CustomResourceValidation|BetaCRD.CustomResourceValidation =
+local schema: CustomResourceDefinition.CustomResourceValidation | BetaCRD.CustomResourceValidation =
   (if (crd is BetaCRD) version.schema ?? crd.spec.validation else version.schema)!!
 
 /// The Schema
-rootSchema: JsonSchema(validCRDSchema(this)) = Parser.parse(new JsonRenderer {}.renderDocument(schema.openAPIV3Schema)) as JsonSchema
+rootSchema: JsonSchema(validCRDSchema(this)) =
+  Parser.parse(new JsonRenderer {}.renderDocument(schema.openAPIV3Schema)) as JsonSchema
 
 local ignoreProperties = Set("apiVersion", "kind", "metadata")
 local filteredRootSchema = (rootSchema) {
@@ -71,7 +76,7 @@ local filteredRootSchema = (rootSchema) {
 }
 
 // https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#validation
-local function validCRDSchema(schema: (JsonSchema.Schema|Listing<JsonSchema.Schema>)?) =
+local function validCRDSchema(schema: (JsonSchema.Schema | Listing<JsonSchema.Schema>)?) =
   if (schema == null)
     true
   else if (schema is JsonSchema)
@@ -104,23 +109,20 @@ local function validCRDJsonSchema(schema: JsonSchema) =
     && validCRDSchema(schema.allOf)
     && validCRDSchema(schema.not)
 
-
-
-converters: Mapping<List<String>, Module|Class|TypeAlias>
+converters: Mapping<List<String>, Module | Class | TypeAlias>
 
 /// The URI representing the root schema, used for the doc comment.
 baseUri: URI
 
 /// The name of this module
-moduleName: String = crd.spec.group.split(".").reverse()
-  .add(version.name)
-  .add(crd.spec.names.kind)
-  .join(".")
+moduleName: String =
+  crd.spec.group.split(".").reverse().add(version.name).add(crd.spec.names.kind).join(".")
 
 local typesGenerator: TypesGenerator = new { baseUri = new {}; enclosingModuleName = moduleName }
 
 /// The types described in this JSON Schema document, included those replaced via converters
-moduleTypes: Type.TypeNames = convertedSchemas.map((schema, importAndType) -> Pair(schema, importAndType.type)) + classSchemas
+moduleTypes: Type.TypeNames =
+  convertedSchemas.map((schema, importAndType) -> Pair(schema, importAndType.type)) + classSchemas
 
 /// Generate a Pkl [ModuleNode] from a given schema.
 moduleNode: ModuleNode =
@@ -179,7 +181,8 @@ moduleNode: ModuleNode =
         new {
           name { value = "metadata" }
           docComment {
-            value = """
+            value =
+              """
               Standard object's metadata.
 
               More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
@@ -209,27 +212,40 @@ moduleNode: ModuleNode =
 ///
 /// This combines a schema's title, description and "default" descriptions into one doc comment.
 /// Wraps the comments at 100 columns.
-local function getDocComment(schema: JsonSchema|Boolean, type: "class"|"module"|Null): DocCommentNode? =
+local function getDocComment(
+  schema: JsonSchema | Boolean,
+  type: "class" | "module" | Null
+): DocCommentNode? =
   if (schema is Boolean)
     null
   else
-    let (docCommentText: String =
-      new Listing {
-        schema.description
-        when (type is "module") { "This module was generated from the CustomResourceDefinition at <\(baseUri)>." }
-        when (type is "class"|"module") { getWarnings(schema, type) }
-        when (schema.default != null) { "Default if undefined: `\(pcfRenderer.renderValue(schema.default))`" }
-      }.toList().filterNonNull().join("\n\n")
+    let (
+      docCommentText: String =
+        new Listing {
+          schema.description
+          when (type is "module") {
+            "This module was generated from the CustomResourceDefinition at <\(baseUri)>."
+          }
+          when (type is "class" | "module") { getWarnings(schema, type) }
+          when (schema.default != null) {
+            "Default if undefined: `\(pcfRenderer.renderValue(schema.default))`"
+          }
+        }
+          .toList()
+          .filterNonNull()
+          .join("\n\n")
     )
-      if (docCommentText.isEmpty) null
+      if (docCommentText.isEmpty)
+        null
       else
         new DocCommentNode {
           value = docCommentText
           autoWrap = true
         }
 
-local function getWarnings(schema: JsonSchema, type: "class"|"module"): String? =
-  if (type == "class") null
+local function getWarnings(schema: JsonSchema, type: "class" | "module"): String? =
+  if (type == "class")
+    null
   else if (schema.type != null && schema.type != "object")
     "WARN: The root schema's type is `\(jsonRenderer.renderValue(schema.type))`, and cannot be correctly mapped to a Pkl module."
   else
@@ -238,69 +254,78 @@ local function getWarnings(schema: JsonSchema, type: "class"|"module"): String? 
 local function generateClassBody(
   schema: JsonSchema(this.properties != null),
   typeNames: Type.TypeNames
-): Listing<ClassOrModuleNode.PropertyDefinitionNode> =
-  new {
-    for (propName, propSchema in schema.properties!!) {
-      new {
-        name {
-          value = propName
-        }
-        when (propSchema is JsonSchema && propSchema.deprecated == true) {
-          annotations { utils.DEPRECATED }
-        }
-        docComment = getDocComment(propSchema, null)
-        typeAnnotation {
-          // If this property doesn't appear in the `required` array, mark it as nullable.
-          // We can't do this within [TypesGenerator] because it doesn't have enough information available.
-          type = let (underlyingType = typesGenerator.generateTypeNode(propSchema, typeNames))
-              if (schema.required?.toSet()?.contains(propName) ?? false) underlyingType
+): Listing<ClassOrModuleNode.PropertyDefinitionNode> = new {
+  for (propName, propSchema in schema.properties!!) {
+    new {
+      name {
+        value = propName
+      }
+      when (propSchema is JsonSchema && propSchema.deprecated == true) {
+        annotations { utils.DEPRECATED }
+      }
+      docComment = getDocComment(propSchema, null)
+      typeAnnotation {
+        // If this property doesn't appear in the `required` array, mark it as nullable.
+        // We can't do this within [TypesGenerator] because it doesn't have enough information available.
+        type =
+          let (underlyingType = typesGenerator.generateTypeNode(propSchema, typeNames))
+            if (schema.required?.toSet()?.contains(propName) ?? false)
+              underlyingType
               // If the type is already nullable, no need to make it *more* nullable.
-              else if (underlyingType is TypeNode.NullableTypeNode) underlyingType
-              else new TypeNode.NullableTypeNode { typeNode = underlyingType }
-        }
+            else if (underlyingType is TypeNode.NullableTypeNode)
+              underlyingType
+            else
+              new TypeNode.NullableTypeNode { typeNode = underlyingType }
       }
     }
   }
+}
 
 /// Generates a [ClassNode] from a [CRDJsonSchema].
-local function generatePklClass(schema: JsonSchema, className: Type, typeNames: Type.TypeNames): ClassNode =
-  new {
-    docComment = getDocComment(schema, "class")
-    classHeader {
-      name {
-        value = className.name
-      }
+local function generatePklClass(
+  schema: JsonSchema,
+  className: Type,
+  typeNames: Type.TypeNames
+): ClassNode = new {
+  docComment = getDocComment(schema, "class")
+  classHeader {
+    name {
+      value = className.name
     }
-    properties = generateClassBody(schema, typeNames)
   }
+  properties = generateClassBody(schema, typeNames)
+}
 
 function isClassLike(schema: JsonSchema.Schema): Boolean =
   !(schema is Boolean) && schema.properties != null
 
 // only need to include stdlib names that would be used by the code generator
-const local builtInNames = Set(
-  "Mapping",
-  "Listing",
-  "Dynamic",
-  "String",
-  "Boolean",
-  "Int",
-  "Int16",
-  "Int32",
-  "UInt",
-  "UInt8",
-  "UInt16",
-  "UInt32",
-  "Float",
-  "Null",
-  "Number",
-  "Deprecated"
-)
+local const builtInNames =
+  Set(
+    "Mapping",
+    "Listing",
+    "Dynamic",
+    "String",
+    "Boolean",
+    "Int",
+    "Int16",
+    "Int32",
+    "UInt",
+    "UInt8",
+    "UInt16",
+    "UInt32",
+    "Float",
+    "Null",
+    "Number",
+    "Deprecated"
+  )
 
 local function normalizeTypeName(name: String) =
   let (capitalized = utils.pascalCase(name))
-    if (builtInNames.contains(capitalized)) "\(capitalized)1"
-    else capitalized
+    if (builtInNames.contains(capitalized))
+      "\(capitalized)1"
+    else
+      capitalized
 
 /// Determines the name of a type.
 ///
@@ -337,7 +362,8 @@ local function getCandidateName(path: List<String>) =
   if (path.isEmpty)
     "Item"
   else if (path.last == "[]")
-    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it))) ?? "Item"
+    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it)))
+      ?? "Item"
   else
     utils.pascalCase(path.last)
 
@@ -351,23 +377,29 @@ local function dropLast(path: List<String>) =
 ///
 /// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not show up in converters
 local classSchemas: Type.TypeNames =
-  utils._findMatchingSubSchemas(filteredRootSchema, List(), (elem) -> elem != filteredRootSchema && isClassLike(elem))
+  utils
+    ._findMatchingSubSchemas(filteredRootSchema, List(), (elem) ->
+      elem != filteredRootSchema && isClassLike(elem)
+    )
     // path or prefix are not explicitly in converters
     .filter((path, _) -> !pathPrefixes(path).any((prefix) -> converters.containsKey(prefix)))
     .entries
     .fold(Map(), (accumulator: Type.TypeNames, pair) ->
       let (path = pair.first)
       let (schema = pair.second)
-      let (typeName = determineTypeName(path, getCandidateName(path), accumulator.values.toSet(), 0))
+      let (
+        typeName = determineTypeName(path, getCandidateName(path), accumulator.values.toSet(), 0)
+      )
         accumulator.put(schema, typeName)
     )
 
 // Return all possible path prefixes of this path, starting with its first entry and ending with the full path
-local function pathPrefixes(path: List<String>): List<List<String>> = new Listing {
-  for (i, _ in path) {
-    path.take(i + 1)
-  }
-}.toList()
+local function pathPrefixes(path: List<String>): List<List<String>> =
+  new Listing {
+    for (i, _ in path) {
+      path.take(i + 1)
+    }
+  }.toList()
 
 /// mapSchema deeply transforms a CRD schema. CRD schemas are significantly simplified, as many fields must not be set.
 /// Nested types are *always* represented in properties, items or additionalProperties, even if they are also set in oneOf etc
@@ -386,7 +418,8 @@ function mapSchema(
         }
       }
       when (applied.additionalProperties != null) {
-        additionalProperties =  mapSchema(applied.additionalProperties!!, (path) { "additionalProperties" }, f)
+        additionalProperties =
+          mapSchema(applied.additionalProperties!!, (path) { "additionalProperties" }, f)
       }
       when (applied.items != null) {
         when (applied.items is Listing<JsonSchema>) {
@@ -402,24 +435,30 @@ function mapSchema(
     }
 
 local convertedSchemas: Map<JsonSchema, ImportAndType> =
-  utils.findMatchingSubschemas(filteredRootSchema, (elem) -> elem != filteredRootSchema)
+  utils
+    .findMatchingSubschemas(filteredRootSchema, (elem) -> elem != filteredRootSchema)
     .filter((path, _) -> converters.containsKey(if (logPaths) trace(path) else path))
     .entries
     .fold(Map(), (accumulator: Map<JsonSchema, ImportAndType>, pair) ->
       let (path = pair.first)
       let (schema = pair.second)
       let (converted = converters[path])
-      let (reflected =
-        if (converted is Module)
-          reflect.Module(converted)
-        else if (converted is TypeAlias)
-          reflect.TypeAlias(converted)
-        else
-          reflect.Class(converted)
+      let (
+        reflected =
+          if (converted is Module)
+            reflect.Module(converted)
+          else if (converted is TypeAlias)
+            reflect.TypeAlias(converted)
+          else
+            reflect.Class(converted)
       )
         accumulator.put(schema, new ImportAndType {
           type {
-            moduleName = if (reflected is reflect.Module) module.moduleName else reflected.enclosingDeclaration.name
+            moduleName =
+              if (reflected is reflect.Module)
+                module.moduleName
+              else
+                reflected.enclosingDeclaration.name
             name = reflected.name.split(".").last
           }
           local uri =
@@ -429,16 +468,17 @@ local convertedSchemas: Map<JsonSchema, ImportAndType> =
               reflected.enclosingDeclaration.uri
           _import = determineImportPath(uri)
         })
-  )
+    )
 
 /// If any conversions are from the core k8s library, replace the import path with [k8sImportPath]
 local function determineImportPath(uri: String): String =
   if (
     uri.startsWith("package://pkg.pkl-lang.org/pkl-k8s/k8s")
-    || uri.startsWith("projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s")
+      || uri.startsWith("projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s")
   )
     k8sImportPath + uri.dropWhile((it) -> it != "#").drop(1)
-  else uri
+  else
+    uri
 
 class ImportAndType {
   _import: String

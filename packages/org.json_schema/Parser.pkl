@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ local jsonParser = new json.Parser { useMapping = true }
 local knownSchemaKeys: Set<String> = reflect.Module(JsonSchema).moduleClass.properties.keys
 
 local function toJsonSchema(
-  raw: Mapping|Boolean,
+  raw: Mapping | Boolean,
   baseSchema: JsonSchema?,
-  path: List<String|Int>
+  path: List<String | Int>
 ): JsonSchema.Schema =
   if (raw is Boolean)
     raw
@@ -40,14 +40,20 @@ local function toJsonSchema(
       $ref = raw.getOrNull("$ref")
       $schema = raw.getOrNull("$schema")
       $comment = raw.getOrNull("$comment")
-      $defs = (raw.getOrNull("$defs") as Mapping?)
-        ?.toMap()
-        ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("definitions").add(key))))
-        ?.toMapping()
-      definitions = (raw.getOrNull("definitions") as Mapping?)
-        ?.toMap()
-        ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("$defs").add(key))))
-        ?.toMapping()
+      $defs =
+        (raw.getOrNull("$defs") as Mapping?)
+          ?.toMap()
+          ?.map((key, value) ->
+            Pair(key, toJsonSchema(value, $$baseSchema, path.add("definitions").add(key)))
+          )
+          ?.toMapping()
+      definitions =
+        (raw.getOrNull("definitions") as Mapping?)
+          ?.toMap()
+          ?.map((key, value) ->
+            Pair(key, toJsonSchema(value, $$baseSchema, path.add("$defs").add(key)))
+          )
+          ?.toMapping()
       type = raw.getOrNull("type")
       format = raw.getOrNull("format")
       pattern = raw.getOrNull("pattern")
@@ -61,40 +67,58 @@ local function toJsonSchema(
       exclusiveMinimum = raw.getOrNull("exclusiveMinimum")
       exclusiveMaximum = raw.getOrNull("exclusiveMaximum")
       examples = raw.getOrNull("examples")
-      allOf = (raw.getOrNull("allOf") as Listing?)
-        ?.toList()
-        ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("allOf").add(idx)))
-        ?.toListing()
-      anyOf = (raw.getOrNull("anyOf") as Listing?)
-        ?.toList()
-        ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("anyOf").add(idx)))
-        ?.toListing()
-      oneOf = (raw.getOrNull("oneOf") as Listing?)
-        ?.toList()
-        ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("oneOf").add(idx)))
-        ?.toListing()
-      not = if (raw.containsKey("not")) toJsonSchema(raw["not"], $$baseSchema, path.add("not")) else null
-      properties = (raw.getOrNull("properties") as Mapping?)
-        ?.toMap()
-        ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("properties").add(key))))
-        ?.toMapping()
+      allOf =
+        (raw.getOrNull("allOf") as Listing?)
+          ?.toList()
+          ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("allOf").add(idx)))
+          ?.toListing()
+      anyOf =
+        (raw.getOrNull("anyOf") as Listing?)
+          ?.toList()
+          ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("anyOf").add(idx)))
+          ?.toListing()
+      oneOf =
+        (raw.getOrNull("oneOf") as Listing?)
+          ?.toList()
+          ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("oneOf").add(idx)))
+          ?.toListing()
+      not =
+        if (raw.containsKey("not"))
+          toJsonSchema(raw["not"], $$baseSchema, path.add("not"))
+        else
+          null
+      properties =
+        (raw.getOrNull("properties") as Mapping?)
+          ?.toMap()
+          ?.map((key, value) ->
+            Pair(key, toJsonSchema(value, $$baseSchema, path.add("properties").add(key)))
+          )
+          ?.toMapping()
       items =
         let (rawItems = raw.getOrNull("items"))
-          if (rawItems == null) null
+          if (rawItems == null)
+            null
           else if (rawItems is Listing)
             rawItems
               .toList()
-              .mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("items").add(idx)))
+              .mapIndexed((idx, elem) ->
+                toJsonSchema(elem, $$baseSchema, path.add("items").add(idx))
+              )
               .toListing()
-          else toJsonSchema(rawItems, $$baseSchema, path.add("items"))
+          else
+            toJsonSchema(rawItems, $$baseSchema, path.add("items"))
       additionalItems =
         let (rawAdditionalItems = raw.getOrNull("additionalItems"))
-          if (rawAdditionalItems == null) null
-          else toJsonSchema(rawAdditionalItems, $$baseSchema, path.add("additionalItems"))
+          if (rawAdditionalItems == null)
+            null
+          else
+            toJsonSchema(rawAdditionalItems, $$baseSchema, path.add("additionalItems"))
       contains =
         let (rawContains = raw.getOrNull("contains"))
-          if (rawContains == null) null
-          else toJsonSchema(rawContains, $$baseSchema, path.add("contains"))
+          if (rawContains == null)
+            null
+          else
+            toJsonSchema(rawContains, $$baseSchema, path.add("contains"))
       minItems = raw.getOrNull("minItems")
       maxItems = raw.getOrNull("maxItems")
       uniqueItems = raw.getOrNull("uniqueItems")
@@ -105,26 +129,36 @@ local function toJsonSchema(
       enum = raw.getOrNull("enum")
       required = raw.getOrNull("required")
       `const` = raw.getOrNull("const")
-      propertyNames = let (_raw = raw.getOrNull("propertyNames"))
-          if (_raw == null) null
-          else toJsonSchema(_raw, $$baseSchema, path.add("propertyNames"))
+      propertyNames =
+        let (_raw = raw.getOrNull("propertyNames"))
+          if (_raw == null)
+            null
+          else
+            toJsonSchema(_raw, $$baseSchema, path.add("propertyNames"))
       maxProperties = raw.getOrNull("maxProperties")
       minProperties = raw.getOrNull("minProperties")
       additionalProperties =
         let (rawAdditionalProperties = raw.getOrNull("additionalProperties"))
-          if (rawAdditionalProperties == null) null
-          else toJsonSchema(rawAdditionalProperties, $$baseSchema, path.add("additionalProperties"))
-      patternProperties = (raw.getOrNull("patternProperties") as Mapping?)
-        ?.toMap()
-        ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("patternProperties").add(key))))
-        ?.toMapping()
-      _inline_ = raw.toMap()
-        .filter((key, value) -> !knownSchemaKeys.contains(key) && value is Boolean|Mapping)
-        .map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add(key))))
-        .toMapping()
+          if (rawAdditionalProperties == null)
+            null
+          else
+            toJsonSchema(rawAdditionalProperties, $$baseSchema, path.add("additionalProperties"))
+      patternProperties =
+        (raw.getOrNull("patternProperties") as Mapping?)
+          ?.toMap()
+          ?.map((key, value) ->
+            Pair(key, toJsonSchema(value, $$baseSchema, path.add("patternProperties").add(key)))
+          )
+          ?.toMapping()
+      _inline_ =
+        raw
+          .toMap()
+          .filter((key, value) -> !knownSchemaKeys.contains(key) && value is Boolean | Mapping)
+          .map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add(key))))
+          .toMapping()
     }
 
 /// Given a JSON string or [Resource], parse it into a [JsonSchema.Schema] instance.
-function parse(src: Resource|String): JsonSchema.Schema =
-  let (jsonParsed: Mapping|Boolean = jsonParser.parse(src) as Mapping|Boolean)
+function parse(src: Resource | String): JsonSchema.Schema =
+  let (jsonParsed: Mapping | Boolean = jsonParser.parse(src) as Mapping | Boolean)
     toJsonSchema(jsonParsed, null, List())

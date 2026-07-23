@@ -9,11 +9,9 @@
       }
     },
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1": {
-      "type": "remote",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.9.0",
-      "checksums": {
-        "sha256": "5947924cf94fae9d8cdca42ade3f86db2675842cab7254214e7c0e281ddb6908"
-      }
+      "type": "local",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.9.1",
+      "path": "../packages/com.github.actions"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {
       "type": "remote",

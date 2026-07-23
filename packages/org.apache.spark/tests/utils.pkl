@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,20 +36,25 @@ examples {
     })
   }
   ["flattenMapKeys"] {
-    utils.flattenMapKeys(new Mapping {
-      ["1"] = new Mapping {
-        ["11"] = "eleven"
-        ["12"] = "twelve"
-      }
-      ["2"] = new Mapping {
-        ["22"] = "two"
-      }
-    }, List())
+    utils.flattenMapKeys(
+      new Mapping {
+        ["1"] = new Mapping {
+          ["11"] = "eleven"
+          ["12"] = "twelve"
+        }
+        ["2"] = new Mapping {
+          ["22"] = "two"
+        }
+      },
+      List()
+    )
   }
   ["convertProperty"] {
     utils.convertProperty("foo.bar.baz", 1)
     utils.convertProperty("foo.env.[baz]", new Mapping { ["FOO"] = "foo"; ["BAR"] = "bar" })
-    utils.convertProperty("foo.env.[baz].buz.{baz}", new Mapping { ["FOO"] = new Mapping { ["BAR"] = "bar" } })
+    utils.convertProperty("foo.env.[baz].buz.{baz}", new Mapping {
+      ["FOO"] = new Mapping { ["BAR"] = "bar" }
+    })
     utils.convertProperty("spark.kubernetes.baz", 5.gib)
     utils.convertProperty("spark.memory", 5.gib)
   }

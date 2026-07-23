@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,7 +71,8 @@ jobs {
       new AttachWorkspaceStep { at = "." }
       new RunStep {
         name = "Production build"
-        command = """
+        command =
+          """
           export __BUILD_VERSION="$(cat version.txt)"
           yarn build
           """
@@ -91,7 +92,8 @@ jobs {
       new AttachWorkspaceStep { at = "." }
       new RunStep {
         name = "Setup __BUILD_VERSION envvar"
-        command = """
+        command =
+          """
           echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
           """
       }
@@ -119,7 +121,8 @@ jobs {
       new AttachWorkspaceStep { at = "." }
       new RunStep {
         name = "Run tests"
-        command = #"""
+        command =
+          #"""
           circleci tests glob '**/*.test.ts' | circleci tests split --split-by timings | xargs yarn test:ci
           """#
       }
@@ -135,7 +138,8 @@ jobs {
       new AttachWorkspaceStep { at = "." }
       new RunStep {
         name = "Setup __BUILD_VERSION envvar"
-        command = """
+        command =
+          """
           echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
           """
       }
@@ -147,7 +151,8 @@ jobs {
       }
       new RunStep {
         name = "Tag the image as latest"
-        command = """
+        command =
+          """
           docker tag $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$__BUILD_VERSION $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:latest
           """
       }

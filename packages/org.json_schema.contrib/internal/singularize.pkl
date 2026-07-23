@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 /// Logic for singularizing a word.
 @Unlisted
 module org.json_schema.contrib.internal.singularize
-
 
 // Adapted from <https://github.com/plurals/pluralize/blob/master/pluralize.js>
 //
@@ -41,115 +40,117 @@ module org.json_schema.contrib.internal.singularize
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-local ALWAYS_SINGLE_WORDS: Set<String|Regex> = Set(
-  "adulthood",
-  "advice",
-  "agenda",
-  "aid",
-  "aircraft",
-  "alcohol",
-  "ammo",
-  "analytics",
-  "anime",
-  "athletics",
-  "audio",
-  "bison",
-  "blood",
-  "bream",
-  "buffalo",
-  "butter",
-  "carp",
-  "cash",
-  "chassis",
-  "chess",
-  "clothing",
-  "cod",
-  "commerce",
-  "cooperation",
-  "corps",
-  "debris",
-  "diabetes",
-  "digestion",
-  "elk",
-  "energy",
-  "equipment",
-  "excretion",
-  "expertise",
-  "firmware",
-  "flounder",
-  "fun",
-  "gallows",
-  "garbage",
-  "graffiti",
-  "hardware",
-  "headquarters",
-  "health",
-  "herpes",
-  "highjinks",
-  "homework",
-  "housework",
-  "information",
-  "jeans",
-  "justice",
-  "kudos",
-  "labour",
-  "literature",
-  "machinery",
-  "mackerel",
-  "mail",
-  "media",
-  "mews",
-  "moose",
-  "music",
-  "mud",
-  "manga",
-  "news",
-  "only",
-  "pants",
-  "personnel",
-  "pike",
-  "plankton",
-  "pliers",
-  "police",
-  "pollution",
-  "premises",
-  "rain",
-  "research",
-  "rice",
-  "salmon",
-  "scissors",
-  "series",
-  "sewage",
-  "shambles",
-  "sheep",
-  "shrimp",
-  "software",
-  "staff",
-  "swine",
-  "tennis",
-  "traffic",
-  "transportation",
-  "trousers",
-  "trout",
-  "tuna",
-  "wealth",
-  "welfare",
-  "whiting",
-  "wildebeest",
-  "wildlife",
-  "you"
-)
+local ALWAYS_SINGLE_WORDS: Set<String | Regex> =
+  Set(
+    "adulthood",
+    "advice",
+    "agenda",
+    "aid",
+    "aircraft",
+    "alcohol",
+    "ammo",
+    "analytics",
+    "anime",
+    "athletics",
+    "audio",
+    "bison",
+    "blood",
+    "bream",
+    "buffalo",
+    "butter",
+    "carp",
+    "cash",
+    "chassis",
+    "chess",
+    "clothing",
+    "cod",
+    "commerce",
+    "cooperation",
+    "corps",
+    "debris",
+    "diabetes",
+    "digestion",
+    "elk",
+    "energy",
+    "equipment",
+    "excretion",
+    "expertise",
+    "firmware",
+    "flounder",
+    "fun",
+    "gallows",
+    "garbage",
+    "graffiti",
+    "hardware",
+    "headquarters",
+    "health",
+    "herpes",
+    "highjinks",
+    "homework",
+    "housework",
+    "information",
+    "jeans",
+    "justice",
+    "kudos",
+    "labour",
+    "literature",
+    "machinery",
+    "mackerel",
+    "mail",
+    "media",
+    "mews",
+    "moose",
+    "music",
+    "mud",
+    "manga",
+    "news",
+    "only",
+    "pants",
+    "personnel",
+    "pike",
+    "plankton",
+    "pliers",
+    "police",
+    "pollution",
+    "premises",
+    "rain",
+    "research",
+    "rice",
+    "salmon",
+    "scissors",
+    "series",
+    "sewage",
+    "shambles",
+    "sheep",
+    "shrimp",
+    "software",
+    "staff",
+    "swine",
+    "tennis",
+    "traffic",
+    "transportation",
+    "trousers",
+    "trout",
+    "tuna",
+    "wealth",
+    "welfare",
+    "whiting",
+    "wildebeest",
+    "wildlife",
+    "you"
+  )
 
-local ALWAYS_SINGLE_WORDS_REG: Set<Regex> = Set(
-  Regex(#"pok[eé]mon$"#),
-  Regex(#"[^aeiou]ese$"#), // "chinese", "japanese"
-  Regex(#"deer$"#), // "deer", "reindeer"
-  Regex(#"fish$"#), // "fish", "blowfish", "angelfish"
-  Regex(#"measles$"#),
-  Regex(#"o[iu]s$"#), // "carnivorous"
-  Regex(#"pox$"#), // "chickpox", "smallpox"
-  Regex(#"sheep$"#)
-)
+local ALWAYS_SINGLE_WORDS_REG: Set<Regex> =
+  Set(
+    Regex(#"pok[eé]mon$"#),
+    Regex(#"[^aeiou]ese$"#), // "chinese", "japanese"
+    Regex(#"deer$"#), // "deer", "reindeer"
+    Regex(#"fish$"#), // "fish", "blowfish", "angelfish"
+    Regex(#"measles$"#),
+    Regex(#"o[iu]s$"#), // "carnivorous"
+    Regex(#"pox$"#), // "chickpox", "smallpox"
+    Regex(#"sheep$"#)
+  )
 
 local SINGULARIZATION_RULES: Mapping<Regex, String> = new {
   [Regex(#"men$"#)] = "man"
@@ -159,17 +160,27 @@ local SINGULARIZATION_RULES: Mapping<Regex, String> = new {
   [Regex(#"(matr|append)ices$"#)] = "$1ix"
   [Regex(#"(cod|mur|sil|vert|ind)ices$"#)] = "$1ex"
   [Regex(#"(alumn|alg|vertebr)ae$"#)] = "$1a"
-  [Regex(#"(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr|automat)a$"#)] = "$1on"
-  [Regex(#"(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi|curricul|quor)a$"#)] = "$1um"
-  [Regex(#"(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)(?:us|i)$"#)] = "$1us"
+  [Regex(
+    #"(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr|automat)a$"#
+  )] = "$1on"
+  [Regex(
+    #"(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi|curricul|quor)a$"#
+  )] = "$1um"
+  [Regex(
+    #"(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)(?:us|i)$"#
+  )] = "$1us"
   [Regex(#"(test)(?:is|es)$"#)] = "$1is"
   [Regex(#"(movie|twelve|abuse|e[mn]u)s$"#)] = "$1"
   [Regex(#"(analy|diagno|parenthe|progno|synop|the|empha|cri|ne)(?:sis|ses)$"#)] = "$1sis"
-  [Regex(#"(x|ch|ss|sh|zz|tto|go|cho|alias|[^aou]us|t[lm]as|gas|(?:her|at|gr)o|[aeiou]ris)(?:es)?$"#)] = "$1"
+  [Regex(
+    #"(x|ch|ss|sh|zz|tto|go|cho|alias|[^aou]us|t[lm]as|gas|(?:her|at|gr)o|[aeiou]ris)(?:es)?$"#
+  )] = "$1"
   [Regex(#"(seraph|cherub)im$"#)] = "$1"
   [Regex(#"\b((?:tit)?m|l)ice$"#)] = "$1ouse"
   [Regex(#"\b(mon|smil)ies$"#)] = "$1ey"
-  [Regex(#"\b(l|(?:neck|cross|hog|aun)?t|coll|faer|food|gen|goon|group|hipp|junk|vegg|(?:pork)?p|charl|calor|cut)ies$"#)] = "$1ie"
+  [Regex(
+    #"\b(l|(?:neck|cross|hog|aun)?t|coll|faer|food|gen|goon|group|hipp|junk|vegg|(?:pork)?p|charl|calor|cut)ies$"#
+  )] = "$1ie"
   [Regex(#"(dg|ss|ois|lk|ok|wn|mb|th|ch|ec|oal|is|ck|ix|sser|ts|wb)ies$"#)] = "$1ie"
   [Regex(#"ies$"#)] = "y"
   [Regex(#"(ar|(?:wo|[ae])l|[eo][ao])ves$"#)] = "$1f"
@@ -204,8 +215,10 @@ local SINGULARIZATION_RULES: Mapping<Regex, String> = new {
 // THE SOFTWARE.
 /// Singularize (unpluralize) a word.
 function singularize(word: String) =
-  if (ALWAYS_SINGLE_WORDS.contains(word)) word
-  else if (ALWAYS_SINGLE_WORDS_REG.any((r) -> word.matches(r))) word
+  if (ALWAYS_SINGLE_WORDS.contains(word))
+    word
+  else if (ALWAYS_SINGLE_WORDS_REG.any((r) -> word.matches(r)))
+    word
   else
     SINGULARIZATION_RULES
       .toMap()

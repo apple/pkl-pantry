@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ module org.json_schema.contrib.internal.ModulesGenerator
 import "@jsonschema/JsonSchema.pkl"
 import "@jsonschema/Parser.pkl"
 import "@uri/URI.pkl"
-import "utils.pkl"
+
 import "ModuleGenerator.pkl"
+import "utils.pkl"
 
 /// The root schema, used to resolve [JsonSchema.$ref] values.
 rootSchema: JsonSchema
@@ -28,34 +29,43 @@ rootSchema: JsonSchema
 baseUri: URI
 
 local isExternalSchema = (baseUri: URI) -> (schema: JsonSchema) ->
-  if (schema.$$refUri == null) false
+  if (schema.$$refUri == null)
+    false
   else
     let (resolvedUri = baseUri.resolveUri(schema.$$refUri!!))
       baseUri.scheme != resolvedUri.scheme
-      || baseUri.authority() != resolvedUri.authority()
-      || baseUri.path != resolvedUri.path
+        || baseUri.authority() != resolvedUri.authority()
+        || baseUri.path != resolvedUri.path
 
 function gatherAllSchemas(schema: JsonSchema, baseUri: URI): List<Pair<JsonSchema, URI>> =
   let (externalSchemas = utils.findMatchingSubschemas(schema, isExternalSchema.apply(baseUri)))
-    externalSchemas.values.flatMap((it) ->
-      let (resolvedUri = baseUri.resolveUri(it.$$refUri!!).basePath)
-      let (jsonSchemaBlob = read?(resolvedUri.toString()))
-        if (jsonSchemaBlob == null)
-          let (_ = trace("WARN: Failed to read external URI \(resolvedUri)"))
-            List()
-        else
-          let (parsedJsonSchema = (Parser.parse(jsonSchemaBlob)) {
-            $$baseSchema = this
-          })
-            gatherAllSchemas(parsedJsonSchema, resolvedUri)
-    ).add(Pair(schema, baseUri))
+    externalSchemas.values
+      .flatMap((it) ->
+        let (resolvedUri = baseUri.resolveUri(it.$$refUri!!).basePath)
+        let (jsonSchemaBlob = read?(resolvedUri.toString()))
+          if (jsonSchemaBlob == null)
+            let (_ = trace("WARN: Failed to read external URI \(resolvedUri)"))
+              List()
+          else
+            let (
+              parsedJsonSchema = (Parser.parse(jsonSchemaBlob)) {
+                $$baseSchema = this
+              }
+            )
+              gatherAllSchemas(parsedJsonSchema, resolvedUri)
+      )
+      .add(Pair(schema, baseUri))
 
 local schemas = gatherAllSchemas(rootSchema, baseUri)
 
-modules: List<ModuleGenerator> = schemas.fold(List(), (acc: List<ModuleGenerator>, schema) ->
-  acc.add(new ModuleGenerator {
-    rootSchema = schema.first
-    baseUri = schema.second
-    existingTypes = acc.flatMap((it) -> it.moduleTypes.entries).toMap((it) -> it.first, (it) -> it.second)
-  })
-)
+modules: List<ModuleGenerator> =
+  schemas.fold(List(), (acc: List<ModuleGenerator>, schema) ->
+    acc.add(new ModuleGenerator {
+      rootSchema = schema.first
+      baseUri = schema.second
+      existingTypes =
+        acc
+          .flatMap((it) -> it.moduleTypes.entries)
+          .toMap((it) -> it.first, (it) -> it.second)
+    })
+  )

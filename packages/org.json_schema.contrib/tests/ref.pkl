@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ amends "pkl:test"
 
 import "@jsonschema/JsonSchema.pkl"
 import "@uri/URI.pkl"
+
 import "../ref.pkl"
 
 local function stripRefOrig(schema: JsonSchema.Schema?): JsonSchema.Schema? =
@@ -51,11 +52,41 @@ facts {
         }
       }
     }
-    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar"; $$baseSchema = schema })) == schema.definitions!!["bar"]
-    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/properties/baz"; $$baseSchema = schema })) == schema.definitions!!["bar"].properties!!["baz"]
-    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/properties/foo"; $$baseSchema = schema })) == schema.properties!!["foo"]
-    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema })) == schema.definitions!!["bar"]._inline_!!["bizzy"]
-    stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { description = "This is a bizzy"; $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema })) == new JsonSchema {
+    stripRefOrig(
+      ref.resolveRef(
+        new URI {},
+        new JsonSchema { $ref = "#/definitions/bar"; $$baseSchema = schema }
+      )
+    ) == schema.definitions!!["bar"]
+    stripRefOrig(
+      ref.resolveRef(
+        new URI {},
+        new JsonSchema { $ref = "#/definitions/bar/properties/baz"; $$baseSchema = schema }
+      )
+    ) == schema.definitions!!["bar"].properties!!["baz"]
+    stripRefOrig(
+      ref.resolveRef(
+        new URI {},
+        new JsonSchema { $ref = "#/properties/foo"; $$baseSchema = schema }
+      )
+    ) == schema.properties!!["foo"]
+    stripRefOrig(
+      ref.resolveRef(
+        new URI {},
+        new JsonSchema { $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema }
+      )
+    ) == schema.definitions!!["bar"]._inline_!!["bizzy"]
+    stripRefOrig(
+      ref.resolveRef(
+        new URI {},
+        new JsonSchema {
+          description = "This is a bizzy"
+          $ref = "#/definitions/bar/bizzy"
+          $$baseSchema = schema
+        }
+      )
+    )
+      == new JsonSchema {
         description = "This is a bizzy"
         type = "array"
       }

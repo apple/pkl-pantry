@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ examples {
       sourceContents = read("fixtures/crds_subdomain.yaml")
       source = "dummy://test_uri"
       baseApiGroup = "bar.com"
-    }.output.files["k8sSchema.pkl"].text
+    }
+      .output
+      .files["k8sSchema.pkl"].text
   }
 }

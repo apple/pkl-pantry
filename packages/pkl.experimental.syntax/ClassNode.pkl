@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ module pkl.experimental.syntax.ClassNode
 
 extends "ClassOrModuleNode.pkl"
 
-import "Node.pkl"
-import "IdentifierNode.pkl"
 import "AnnotationNode.pkl"
 import "DocCommentNode.pkl"
+import "IdentifierNode.pkl"
+import "Node.pkl"
 import "TypeNode.pkl"
 
 docComment: DocCommentNode?
@@ -30,16 +30,21 @@ annotations: Listing<AnnotationNode>?
 classHeader: ClassHeader
 
 class ClassHeader extends Node {
-  modifiers: Listing<"abstract"|"external"|"local"|"open">(isDistinct)?
+  modifiers: Listing<"abstract" | "external" | "local" | "open">(isDistinct)?
   name: IdentifierNode
   extendsClause: ClassExtendsClause?
 
-  function render(currentIndent: String) = currentIndent + new Listing {
-    modifiers?.join(" ")
-    "class \(name.render(currentIndent))"
-    extendsClause?.render(currentIndent)
-    "{"
-  }.toList().filterNonNull().join(" ")
+  function render(currentIndent: String) =
+    currentIndent
+      + new Listing {
+        modifiers?.join(" ")
+        "class \(name.render(currentIndent))"
+        extendsClause?.render(currentIndent)
+        "{"
+      }
+        .toList()
+        .filterNonNull()
+        .join(" ")
 }
 
 class ClassExtendsClause extends Node {
@@ -48,12 +53,13 @@ class ClassExtendsClause extends Node {
   function render(currentIndent: String) = "extends " + type.render(currentIndent)
 }
 
-function render(currentIndent: String) = List(
-  docComment?.render(currentIndent),
-  annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
-  classHeader.render(currentIndent),
-  super.render(currentIndent + indent),
-  "\(currentIndent)}"
-)
-  .filterNonNull()
-  .join("\n")
+function render(currentIndent: String) =
+  List(
+    docComment?.render(currentIndent),
+    annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
+    classHeader.render(currentIndent),
+    super.render(currentIndent + indent),
+    "\(currentIndent)}"
+  )
+    .filterNonNull()
+    .join("\n")

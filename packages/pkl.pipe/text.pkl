@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,12 +59,15 @@ hidden toJSON: RenderFunc = asJson
 hidden formatted = (value) -> output.renderer.renderValue(value)
 
 output {
-  value = throw("""
-    Error: no expression passed to pkl.pipe.text. Use `--expression` or `-x` to pass a Pkl expression.
+  value =
+    throw(
+      """
+        Error: no expression passed to pkl.pipe.text. Use `--expression` or `-x` to pass a Pkl expression.
 
-    Usage: pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x <pkl expression>
+        Usage: pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x <pkl expression>
 
-    Example:
-    echo 'fourteen chars' | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.length'
-  """)
+        Example:
+        echo 'fourteen chars' | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.length'
+      """
+    )
 }

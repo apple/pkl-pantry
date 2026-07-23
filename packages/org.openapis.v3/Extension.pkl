@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@
 module org.openapis.v3.Extension
 
 import "Info.pkl"
-import "SecurityScheme.pkl"
 import "Schema.pkl"
+import "SecurityScheme.pkl"
 
 /// A string representing the key of an extension.
 typealias Key = String(startsWith("x-"), length > 2)
 
-hidden converters: Mapping<Class|String, (unknown) -> Any> = new {
-  local extractExtensions = (it: Module) -> it.toMap() + (it.getProperty("extensions") ?? Map()).toMap()
+hidden converters: Mapping<Class | String, (unknown) -> Any> = new {
+  local extractExtensions = (it: Module) ->
+    it.toMap() + (it.getProperty("extensions") ?? Map()).toMap()
   [Schema.getClass()] = extractExtensions
   [SecurityScheme.getClass()] = extractExtensions
   [Info.getClass()] = extractExtensions

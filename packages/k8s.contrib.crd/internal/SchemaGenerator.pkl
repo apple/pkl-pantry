@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
 //===----------------------------------------------------------------------===//
 module k8s.contrib.crd.internal.SchemaGenerator
 
-import "@syntax/ModuleNode.pkl"
-import "@syntax/TypeNode.pkl"
 import "@syntax/ExpressionNode.pkl"
+import "@syntax/ModuleNode.pkl"
 import "@syntax/ObjectBodyNode.pkl"
+import "@syntax/TypeNode.pkl"
+
 import "ModuleGenerator.pkl"
 
 baseApiGroup: String
@@ -68,7 +69,8 @@ fixed moduleNode: ModuleNode = new {
         }
       }
       docComment {
-        value = """
+        value =
+          """
           Resource modules keyed by `kind` and `apiVersion`.
           """
       }
@@ -88,9 +90,15 @@ fixed moduleNode: ModuleNode = new {
                           stringParts { "\(crd.spec.group)/\(version.name)" }
                         }
                         propertyValue = new ExpressionNode.ImportExpressionNode {
-                          value = let (groupComponent = crd.spec.group.replaceFirst(Regex(#"(^|\.)\#(baseApiGroup)$"#), ""))
-                              if (groupComponent.isEmpty) "\(version.name)/\(crd.spec.names.kind)"
-                              else "\(groupComponent.split(".").reverse().join("/"))/\(version.name)/\(crd.spec.names.kind)"
+                          value =
+                            let (
+                              groupComponent =
+                                crd.spec.group.replaceFirst(Regex(#"(^|\.)\#(baseApiGroup)$"#), "")
+                            )
+                              if (groupComponent.isEmpty)
+                                "\(version.name)/\(crd.spec.names.kind)"
+                              else
+                                "\(groupComponent.split(".").reverse().join("/"))/\(version.name)/\(crd.spec.names.kind)"
                         }
                       }
                     }

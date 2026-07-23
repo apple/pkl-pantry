@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,12 +56,20 @@ examples {
       style = table.htmlStyle
       columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma") }
     }.renderDocument((data) {
-      new table.RowDirective { content = "\(table.htmlStyle.indent.repeat(2))<tr><th colspan=\"3\">this is a colspan</th></tr>" }
+      new table.RowDirective {
+        content =
+          "\(table.htmlStyle.indent.repeat(2))<tr><th colspan=\"3\">this is a colspan</th></tr>"
+      }
     })
   }
   ["coverter"] {
     new table.TableRenderer {
-      columns { table.Column("alpha"); table.Column("beta"); table.Column("gamma"); table.Column("delta") }
+      columns {
+        table.Column("alpha")
+        table.Column("beta")
+        table.Column("gamma")
+        table.Column("delta")
+      }
       converters {
         [Duration] = (it) -> it.toUnit("s")
         ["delta"] = (it) -> it.join(",")

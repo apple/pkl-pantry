@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 module org.openapis.v3.Encoding
 
 import "Header.pkl"
-import "Reference.pkl"
 import "MediaType.pkl"
+import "Reference.pkl"
 
 /// The Content-Type for encoding a specific property.
 ///
@@ -32,7 +32,7 @@ contentType: MediaType.MediaTypeName?
 ///
 /// Content-Type is described separately and SHALL be ignored in this section. This property SHALL be ignored if the
 /// request body media type is not a multipart.
-headers: Mapping<String, *Header|Reference>?
+headers: Mapping<String, *Header | Reference>?
 
 /// Describes how a specific property value will be serialized depending on its type.
 ///
@@ -54,4 +54,4 @@ explode: Boolean?
 ///
 /// The default value is false. This property SHALL be ignored if the request body media type is not
 /// application/x-www-form-urlencoded.
-allowReserved: Boolean? 
+allowReserved: Boolean?
