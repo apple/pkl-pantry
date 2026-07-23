@@ -58,7 +58,7 @@ command {
 options: Options
 
 class Options {
-  @Flag { completionCandidates = "paths"; metavar = "pathOrUri" }
+  @Flag { completionCandidates = "paths"; metavar = "path-or-uri" }
   input: String
 }
 
