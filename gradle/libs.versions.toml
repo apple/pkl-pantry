@@ -1,6 +1,6 @@
 [versions]
-pkl = "0.32.0"
-ktfmt = "0.62"
+pkl = "0.32.1"
+ktfmt = "0.64"
 kotlin = "2.4.0"
 spotless = "8.8.0"
 

@@ -14,11 +14,11 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 /// Tests that all modules have a declared module header that matches the expected path.
-///
-/// This test is implicitly added to every package.
 module moduleNameTest
 
 amends "pkl:test"
+
+import "pkl.experimental.syntax/IdentifierNode.pkl"
 
 import* "*/**.pkl" as allPklModules
 
@@ -28,8 +28,7 @@ local function actualModuleName(path: String) =
   let (moduleText = read(path).text)
     moduleClause.findMatchesIn(moduleText).firstOrNull?.groups?.getOrNull(1)?.value
 
-local maybeQuoteIdentifier = (part: String) ->
-  if (part.matches(Regex(#"[a-zA-Z$_][a-zA-Z0-9$_]*"#))) part else "`\(part)`"
+local maybeQuoteIdentifier = (part: String) -> new IdentifierNode { value = part }.render("")
 
 local function expectedModuleName(packageName: String, modulePath: String) =
   let (packageNameParts = packageName.split("."))
