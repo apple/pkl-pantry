@@ -24,10 +24,11 @@ dependencies {
   ["deepToTyped"] = import("../pkl.experimental.deepToTyped/PklProject")
   ["uri"] = import("../pkl.experimental.uri/PklProject")
   ["syntax"] = import("../pkl.experimental.syntax/PklProject")
+  ["inflect"] = import("../inflect/PklProject")
 
   ["k8s"] { uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.2.0" }
 }
 
 package {
-  version = "4.2.4"
+  version = "4.2.5"
 }

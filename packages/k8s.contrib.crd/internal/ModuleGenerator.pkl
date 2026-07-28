@@ -20,7 +20,7 @@ module k8s.contrib.crd.internal.ModuleGenerator
 
 import "pkl:reflect"
 
-import "@jsonschema.contrib/internal/singularize.pkl"
+import "@inflect/inflect.pkl"
 import "@jsonschema.contrib/internal/Type.pkl"
 import "@jsonschema.contrib/internal/TypesGenerator.pkl"
 import "@jsonschema.contrib/internal/utils.pkl"
@@ -362,7 +362,7 @@ local function getCandidateName(path: List<String>) =
   if (path.isEmpty)
     "Item"
   else if (path.last == "[]")
-    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it)))
+    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(inflect.singularize(it)))
       ?? "Item"
   else
     utils.pascalCase(path.last)

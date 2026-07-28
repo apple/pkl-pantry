@@ -18,6 +18,7 @@
 @Unlisted
 module org.json_schema.contrib.internal.ModuleGenerator
 
+import "@inflect/inflect.pkl"
 import "@jsonschema/JsonSchema.pkl"
 import "@syntax/ClassNode.pkl"
 import "@syntax/ClassOrModuleNode.pkl"
@@ -28,7 +29,6 @@ import "@syntax/TypeNode.pkl"
 import "@uri/URI.pkl"
 
 import "../ref.pkl"
-import "singularize.pkl"
 import "Type.pkl"
 import "TypesGenerator.pkl"
 import "utils.pkl"
@@ -303,7 +303,7 @@ local function getCandidateName(path: List<String>) =
   if (path.isEmpty)
     "Item"
   else if (path.last == "[]")
-    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it)))
+    path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(inflect.singularize(it)))
       ?? "Item"
   else
     utils.pascalCase(path.last)

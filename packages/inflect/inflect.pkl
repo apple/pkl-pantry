@@ -1,0 +1,325 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module inflect.inflect
+
+// Adapted from <https://github.com/plurals/pluralize/blob/master/pluralize.js>
+//
+// Original license:
+// The MIT License (MIT)
+// Copyright (c) 2013 Blake Embrey (hello@blakeembrey.com)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+/// Singularize (unpluralize) a word.
+function singularize(word: String): String =
+  inflect(word, irregularSingularizationRules, _singularizationRules)
+
+/// Pluralize a word.
+function pluralize(word: String): String =
+  inflect(word, irregularPluralizationRules, _pluralizationRules)
+
+/// Words that do not change when pluralized/singularized.
+hidden uninflected: Listing<String> = new {
+  "adulthood"
+  "advice"
+  "agenda"
+  "aid"
+  "aircraft"
+  "alcohol"
+  "ammo"
+  "analytics"
+  "anime"
+  "athletics"
+  "audio"
+  "bison"
+  "blood"
+  "bream"
+  "buffalo"
+  "butter"
+  "carp"
+  "cash"
+  "chassis"
+  "chess"
+  "clothing"
+  "cod"
+  "commerce"
+  "cooperation"
+  "corps"
+  "debris"
+  "diabetes"
+  "digestion"
+  "elk"
+  "energy"
+  "equipment"
+  "excretion"
+  "expertise"
+  "firmware"
+  "flounder"
+  "fun"
+  "gallows"
+  "garbage"
+  "graffiti"
+  "hardware"
+  "headquarters"
+  "health"
+  "herpes"
+  "highjinks"
+  "homework"
+  "housework"
+  "information"
+  "jeans"
+  "justice"
+  "kudos"
+  "labour"
+  "literature"
+  "machinery"
+  "mackerel"
+  "mail"
+  "media"
+  "mews"
+  "moose"
+  "music"
+  "mud"
+  "manga"
+  "news"
+  "only"
+  "pants"
+  "personnel"
+  "pike"
+  "plankton"
+  "pliers"
+  "police"
+  "pollution"
+  "premises"
+  "rain"
+  "research"
+  "rice"
+  "salmon"
+  "scissors"
+  "series"
+  "sewage"
+  "shambles"
+  "sheep"
+  "shrimp"
+  "software"
+  "staff"
+  "swine"
+  "tennis"
+  "traffic"
+  "transportation"
+  "trousers"
+  "trout"
+  "tuna"
+  "wealth"
+  "welfare"
+  "whiting"
+  "wildebeest"
+  "wildlife"
+  "you"
+}
+
+/// Patterns matching words that do not change when pluralized/singularized.
+//language=regexp
+hidden uninflectedRegex: Listing<String(isRegex)> = new {
+  #"pok[eé]mon$"#
+  #"[^aeiou]ese$"# // "chinese", "japanese"
+  #"deer$"# // "deer", "reindeer"
+  #"fish$"# // "fish", "blowfish", "angelfish"
+  #"measles$"#
+  #"o[iu]s$"# // "carnivorous"
+  #"pox$"# // "chickpox", "smallpox"
+  #"sheep$"#
+}
+
+local _uninflectedRegex: List<Regex> = uninflectedRegex.toList().map((it) -> Regex("(?i)\(it)"))
+
+/// Pairs of irregular singular and plural words.
+hidden irregularRules: Listing<Pair<String, String>> = new {
+  Pair("i", "we")
+  Pair("me", "us")
+  Pair("he", "they")
+  Pair("she", "they")
+  Pair("them", "them")
+  Pair("myself", "ourselves")
+  Pair("yourself", "yourselves")
+  Pair("itself", "themselves")
+  Pair("herself", "themselves")
+  Pair("himself", "themselves")
+  Pair("themself", "themselves")
+  Pair("is", "are")
+  Pair("was", "were")
+  Pair("has", "have")
+  Pair("this", "these")
+  Pair("that", "those")
+  Pair("my", "our")
+  Pair("its", "their")
+  Pair("his", "their")
+  Pair("her", "their")
+  Pair("echo", "echoes")
+  Pair("dingo", "dingoes")
+  Pair("volcano", "volcanoes")
+  Pair("tornado", "tornadoes")
+  Pair("torpedo", "torpedoes")
+  Pair("genus", "genera")
+  Pair("viscus", "viscera")
+  Pair("stigma", "stigmata")
+  Pair("stoma", "stomata")
+  Pair("dogma", "dogmata")
+  Pair("lemma", "lemmata")
+  Pair("schema", "schemata")
+  Pair("anathema", "anathemata")
+  Pair("ox", "oxen")
+  Pair("axe", "axes")
+  Pair("die", "dice")
+  Pair("yes", "yeses")
+  Pair("foot", "feet")
+  Pair("eave", "eaves")
+  Pair("goose", "geese")
+  Pair("tooth", "teeth")
+  Pair("quiz", "quizzes")
+  Pair("human", "humans")
+  Pair("proof", "proofs")
+  Pair("carve", "carves")
+  Pair("valve", "valves")
+  Pair("looey", "looies")
+  Pair("thief", "thieves")
+  Pair("groove", "grooves")
+  Pair("pickaxe", "pickaxes")
+  Pair("passerby", "passersby")
+  Pair("canvas", "canvases")
+}
+
+local irregularSingularizationRules: Map<String, String> =
+  irregularRules.toList().toMap((it) -> it.second, (it) -> it.first)
+
+local irregularPluralizationRules: Map<String, String> =
+  irregularRules.toList().toMap((it) -> it.first, (it) -> it.second)
+
+/// Rules for singularizing a word.
+// language=regexp
+hidden singularizationRules: Mapping<String(isRegex), String> = new {
+  [#"s$"#] = ""
+  [#"(ss)$"#] = "$1"
+  [#"(wi|kni|(?:after|half|high|low|mid|non|night|[^\w]|^)li)ves$"#] = "$1fe"
+  [#"(ar|(?:wo|[ae])l|[eo][ao])ves$"#] = "$1f"
+  [#"ies$"#] = "y"
+  [#"(dg|ss|ois|lk|ok|wn|mb|th|ch|ec|oal|is|ck|ix|sser|ts|wb)ies$"#] = "$1ie"
+  [#"\b(l|(?:neck|cross|hog|aun)?t|coll|faer|food|gen|goon|group|hipp|junk|vegg|(?:pork)?p|charl|calor|cut)ies$"#] =
+    "$1ie"
+  [#"\b(mon|smil)ies$"#] = "$1ey"
+  [#"\b((?:tit)?m|l)ice$"#] = "$1ouse"
+  [#"(seraph|cherub)im$"#] = "$1"
+  [#"(x|ch|ss|sh|zz|tto|go|cho|alias|[^aou]us|t[lm]as|gas|(?:her|at|gr)o|[aeiou]ris)(?:es)?$"#] =
+    "$1"
+  [#"(analy|diagno|parenthe|progno|synop|the|empha|cri|ne)(?:sis|ses)$"#] = "$1sis"
+  [#"(movie|twelve|abuse|e[mn]u)s$"#] = "$1"
+  [#"(test)(?:is|es)$"#] = "$1is"
+  [#"(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)(?:us|i)$"#] =
+    "$1us"
+  [#"(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi|curricul|quor)a$"#] =
+    "$1um"
+  [#"(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr|automat)a$"#] =
+    "$1on"
+  [#"(alumn|alg|vertebr)ae$"#] = "$1a"
+  [#"(cod|mur|sil|vert|ind)ices$"#] = "$1ex"
+  [#"(matr|append)ices$"#] = "$1ix"
+  [#"(pe)(rson|ople)$"#] = "$1rson"
+  [#"(child)ren$"#] = "$1"
+  [#"(eau)x?$"#] = "$1"
+  [#"men$"#] = "man"
+}
+
+local _singularizationRules: Map<Regex, String> =
+  singularizationRules
+    .toMap()
+    .entries
+    .reverse()
+    .toMap((it) -> Regex("(?i)\(it.key)"), (it) -> it.value)
+
+/// Rules for pluralizing a word.
+// language=regexp
+hidden pluralizationRules: Mapping<String(isRegex), String> = new {
+  [#"s?$"#] = "s"
+  [#"[^\u0000-\u007F]$"#] = "$0"
+  [#"([^aeiou]ese)$"#] = "$1"
+  [#"(ax|test)is$"#] = "$1es"
+  [#"(alias|[^aou]us|t[lm]as|gas|ris)$"#] = "$1es"
+  [#"(e[mn]u)s?$"#] = "$1s"
+  [#"([^l]ias|[aeiou]las|[ejzr]as|[iu]am)$"#] = "$1"
+  [#"(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)(?:us|i)$"#] =
+    "$1i"
+  [#"(alumn|alg|vertebr)(?:a|ae)$"#] = "$1ae"
+  [#"(seraph|cherub)(?:im)?$"#] = "$1im"
+  [#"(her|at|gr)o$"#] = "$1oes"
+  [#"(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi|curricul|automat|quor)(?:a|um)$"#] =
+    "$1a"
+  [#"(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr|automat)(?:a|on)$"#] =
+    "$1a"
+  [#"sis$"#] = "ses"
+  [#"(?:(kni|wi|li)fe|(ar|l|ea|eo|oa|hoo)f)$"#] = "$1$2ves"
+  [#"([^aeiouy]|qu)y$"#] = "$1ies"
+  [#"([^ch][ieo][ln])ey$"#] = "$1ies"
+  [#"(x|ch|ss|sh|zz)$"#] = "$1es"
+  [#"(matr|cod|mur|sil|vert|ind|append)(?:ix|ex)$"#] = "$1ices"
+  [#"\b((?:tit)?m|l)(?:ice|ouse)$"#] = "$1ice"
+  [#"(pe)(?:rson|ople)$"#] = "$1ople"
+  [#"(child)(?:ren)?$"#] = "$1ren"
+  [#"eaux$"#] = "$0"
+  [#"m[ae]n$"#] = "men"
+  [#"^thou$"#] = "you"
+}
+
+local _pluralizationRules: Map<Regex, String> =
+  pluralizationRules
+    .toMap()
+    .entries
+    .reverse()
+    .toMap((it) -> Regex("(?i)\(it.key)"), (it) -> it.value)
+
+local function inflect(
+  word: String,
+  irregularRules: Map<String, String>,
+  rules: Map<Regex, String>
+): String =
+  irregularRules.getOrNull(word.toLowerCase())
+    ?? if (
+      uninflected.contains(word.toLowerCase())
+        || _uninflectedRegex.any((r) -> r.findMatchesIn(word).isNotEmpty)
+    )
+      word
+    else
+      rules.entries
+        .findOrNull((rule) -> rule.first.findMatchesIn(word).isNotEmpty)
+        ?.ifNonNull((r) ->
+          let (rule = r as Pair<Regex, String>)
+            word.replaceLast(rule.first, rule.second)
+        ) ?? word

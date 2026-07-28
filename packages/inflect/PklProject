@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //===----------------------------------------------------------------------===//
-/// Utilities for [JSON Schema](https://json-schema.org).
+/// Utilities for pluralizing and singularizing words in English.
 ///
-/// This package includes utilities for generating Pkl from a given JSON Schema document.
+/// Based on code from https://github.com/plurals/pluralize.
 amends "../basePklProject.pkl"
 
-dependencies {
-  ["jsonschema"] = import("../org.json_schema/PklProject")
-  ["uri"] = import("../pkl.experimental.uri/PklProject")
-  ["syntax"] = import("../pkl.experimental.syntax/PklProject")
-  ["inflect"] = import("../inflect/PklProject")
-}
-
 package {
-  version = "1.2.3"
+  name = "inflect"
+  version = "1.0.0"
 }
