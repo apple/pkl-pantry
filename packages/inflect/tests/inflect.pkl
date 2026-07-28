@@ -710,6 +710,7 @@ local pluralCases: Listing<Pair<String, String>> = new {
   Pair("automatum", "automata")
   Pair("thou", "you")
   Pair("passerby", "passersby")
+  Pair("settings", "settings")
 }
 
 /// //////////////////////////////////////////////////////////////////////////////

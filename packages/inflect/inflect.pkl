@@ -268,7 +268,8 @@ local _singularizationRules: Map<Regex, String> =
 /// Rules for pluralizing a word.
 // language=regexp
 hidden pluralizationRules: Mapping<String(isRegex), String> = new {
-  [#"s?$"#] = "s"
+  [#"$"#] = "s"
+  [#"s$"#] = "s"
   [#"[^\u0000-\u007F]$"#] = "$0"
   [#"([^aeiou]ese)$"#] = "$1"
   [#"(ax|test)is$"#] = "$1es"
