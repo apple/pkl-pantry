@@ -10,7 +10,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.9.1",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.9.2",
       "path": "../packages/com.github.actions"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped@1": {

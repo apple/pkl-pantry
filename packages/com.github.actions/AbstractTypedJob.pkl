@@ -54,12 +54,12 @@
 /// }
 /// ```
 /** gha-fork */
-module com.github.actions.AbstractTypedJob
+abstract module com.github.actions.AbstractTypedJob
 
 extends "AbstractJob.pkl"
 
 /// The inputs to the job.
-abstract with: Typed
+with: Typed
 
 /// Secrets that are passed to the called workflow.
 ///
