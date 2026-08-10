@@ -19,4 +19,21 @@ examples {
     
     """
   }
+  ["pullRequestBranchName.pkl"] {
+    """
+    version: 2
+    updates:
+    - package-ecosystem: npm
+      directory: /
+      pull-request-branch-name:
+        separator: '-'
+        template: '{prefix}/{package_manager}/{dependency}-{version}'
+        word-separator: '-'
+        branch-name-case: lowercase
+        max-length: 80
+      schedule:
+        interval: weekly
+    
+    """
+  }
 }

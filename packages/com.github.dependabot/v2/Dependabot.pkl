@@ -102,7 +102,18 @@ class Update {
   /// Default if undefined: `5`
   `open-pull-requests-limit`: Int(isPositive)?
 
-  /// Pull request branch name preferences
+  /// Dependabot generates a branch for each pull request.
+  ///
+  /// Each branch name includes dependabot, as well as the name of the package manager and the dependency to be updated.
+  /// By default, these parts of the branch name are separated by a `/` symbol, for example:
+  ///
+  ///  * `dependabot/npm_and_yarn/next_js/acorn-6.4.1`
+  ///
+  /// You can customize branch names using the [`pull-request-branch-name`] option with the following parameters:
+  /// `separator`, `prefix`, `max-length`, `word-separator`, `branch-name-case`, and `template`.
+  /// All options are composable, and you can combine any of them.
+  ///
+  /// See <https://docs.github.com/en/code-security/tutorials/secure-your-dependencies/customizing-dependabot-prs#customizing-pull-request-branch-names>
   `pull-request-branch-name`: PullRequestBranchName?
 
   /// Disable automatic rebasing. 'auto' is the default and Dependabot will rebase open pull requests
@@ -230,11 +241,50 @@ class Ignore {
 }
 
 /// Pull request branch name preferences
+/// You can combine separator, word-separator, branch-name-case, max-length, and template to produce branch names that
+/// meet your system's requirements.
+/// For example, Docker tag compatibility, Azure Container Registry naming, or Kubernetes branch length limits.
+///
+/// When [template] is set alongside other options, formatting is applied as post-processing after template rendering in
+/// this order: separator replacement, word-separator replacement, case transformation, then max-length truncation.
+///
+/// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#pull-request-branch-name-->
 class PullRequestBranchName {
   /// Change separator for PR branch name
   ///
   /// Default if undefined: `"/"`
-  separator: "-" | "_" | "/"
+  ///
+  /// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#separator>
+  separator: ("-" | "_" | "/")?
+
+  /// Custom format template using placeholders.
+  ///
+  /// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#template>
+  template: String(length <= 200)?
+
+  /// String prepended to the branch name.
+  ///
+  /// Default if undefined: `"dependabot"`
+  ///
+  /// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#prefix-1>
+  prefix: String?
+
+  /// Character to replace underscores (`_`) in branch name content after the prefix.
+  ///
+  /// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#word-separator>
+  `word-separator`: Char?
+
+  /// Apply case transformation to the branch name content after the prefix.
+  ///
+  /// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#branch-name-case>
+  `branch-name-case`: ("lowercase" | "uppercase")?
+
+  /// Maximum character length of the branch name.
+  ///
+  /// Default if not set: `100`
+  ///
+  /// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#max-length>
+  `max-length`: Int(isBetween(20, 244))?
 }
 
 /// Schedule preferences
@@ -326,7 +376,9 @@ class MultiEcosystemGroup {
   `commit-message`: MultiEcosystemGroupCommitMessage?
 
   /// Pull request branch name preferences for the group
-  `pull-request-branch-name`: MultiEcosystemGroupPullRequestBranchName?
+  ///
+  /// See <https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#pull-request-branch-name-->
+  `pull-request-branch-name`: PullRequestBranchName?
 }
 
 /// Schedule preferences for the group
@@ -359,13 +411,8 @@ class MultiEcosystemGroupCommitMessage {
   include: "scope"?
 }
 
-/// Pull request branch name preferences for the group
-class MultiEcosystemGroupPullRequestBranchName {
-  /// Change separator for PR branch name
-  ///
-  /// Default if undefined: `"/"`
-  separator: "-" | "_" | "/"
-}
+@Deprecated { replaceWith = "PullRequestBranchName"; message = "Use PullRequestBranchName instead" }
+typealias MultiEcosystemGroupPullRequestBranchName = PullRequestBranchName
 
 typealias Timezone =
   "Africa/Abidjan"
