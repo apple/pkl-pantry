@@ -2,7 +2,7 @@
 pkl = "0.32.1"
 ktfmt = "0.64"
 kotlin = "2.4.20"
-spotless = "8.8.0"
+spotless = "8.10.2"
 
 [plugins]
 pkl = { id = "org.pkl-lang", version.ref = "pkl" }
