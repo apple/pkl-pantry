@@ -197,7 +197,7 @@ class Parser {
   local _lineBreakHint: String =
     if (!input.contains(lineBreak) && input.contains("\n"))
       let (escaped = lineBreak.replaceAll("\r", "\\r").replaceAll("\n", "\\n"))
-        " The input contains no \"\(escaped)\" line breaks, so it was parsed as a single row. If it uses \"\\n\" line breaks, set `lineBreak = \"\\n\"`."
+        #" The input contains no "\#(escaped)" line breaks, so it was parsed as a single row. If it uses "\n" line breaks, set `lineBreak = "\n"`."#
     else
       ""
 
