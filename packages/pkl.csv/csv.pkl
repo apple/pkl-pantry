@@ -192,6 +192,15 @@ class Parser {
     (clazz.superclass.ifNonNull((zuper) -> allProps(zuper as reflect.Class)) ?? Map())
       + clazz.properties.filter((_, p) -> !p.modifiers.contains("hidden"))
 
+  /// If the input contains no [lineBreak], it is parsed as a single row. A common cause is input that uses `"\n"`
+  /// with the default `"\r\n"`, which turns empty cells in later lines into "empty header columns".
+  local _lineBreakHint: String =
+    if (!input.contains(lineBreak) && input.contains("\n"))
+      let (escaped = lineBreak.replaceAll("\r", "\\r").replaceAll("\n", "\\n"))
+        #" The input contains no "\#(escaped)" line breaks, so it was parsed as a single row. If it uses "\n" line breaks, set `lineBreak = "\n"`."#
+    else
+      ""
+
   local _parsed =
     let (self = this)
     let (
@@ -208,7 +217,18 @@ class Parser {
     )
     let (
       header: List<String>? =
-        (if (includeHeader) stringyResult[0] else properties?.keys)?.toList() as List<String>?
+        if (includeHeader)
+          let (headerRow = stringyResult[0])
+          let (emptyColumn = headerRow.findIndexOrNull((it) -> it == null))
+            if (emptyColumn == null)
+              headerRow as List<String>
+            else
+              throw(
+                "Column \(emptyColumn + 1) of the header row is empty, so it can't be used as a column name."
+                  + _lineBreakHint
+              )
+        else
+          properties?.keys?.toList()
     )
       if (header == null)
         stringyResult.map((rawRow) -> rawRow.toDynamic())
