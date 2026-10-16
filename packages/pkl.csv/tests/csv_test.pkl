@@ -238,6 +238,24 @@ facts {
     }.parsed == homogeneousListing.toList()
   }
 
+  ["Parsing with an empty header column"] {
+    module.catch(() -> new csv.Parser { input = "A,,C\r\n1,2,3\r\n"; includeHeader = true }.parsed)
+      == "Column 2 of the header row is empty, so it can't be used as a column name."
+
+    // With the default `"\r\n"` line break, `"\n"`-separated input is a single row, so the empty cell ends up in the
+    // header.
+    module
+      .catch(() -> new csv.Parser { input = "A,B,C\n1,,3"; includeHeader = true }.parsed)
+      .endsWith("If it uses \"\\n\" line breaks, set `lineBreak = \"\\n\"`.")
+
+    new csv.Parser {
+      input = "A,B,C\n1,,3"
+      includeHeader = true
+      lineBreak = "\n"
+    }.parsed
+      == List(new Dynamic { A = "1"; B = null; C = "3" })
+  }
+
   ["Rendering and parsing CRLF alternatives"] {
     for (break in List("\n", "\r", "\t", "😀", "\r\r\n\n")) {
       ...new Listing {
