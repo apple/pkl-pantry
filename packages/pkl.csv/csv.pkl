@@ -192,8 +192,8 @@ class Parser {
     (clazz.superclass.ifNonNull((zuper) -> allProps(zuper as reflect.Class)) ?? Map())
       + clazz.properties.filter((_, p) -> !p.modifiers.contains("hidden"))
 
-  // If the input contains no [lineBreak], it is parsed as a single row. A common cause is input that uses `"\n"`
-  // with the default `"\r\n"`, which turns empty cells in later lines into "empty header columns".
+  /// If the input contains no [lineBreak], it is parsed as a single row. A common cause is input that uses `"\n"`
+  /// with the default `"\r\n"`, which turns empty cells in later lines into "empty header columns".
   local _lineBreakHint: String =
     if (!input.contains(lineBreak) && input.contains("\n"))
       let (escaped = lineBreak.replaceAll("\r", "\\r").replaceAll("\n", "\\n"))
