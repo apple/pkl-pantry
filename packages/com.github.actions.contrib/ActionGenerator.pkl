@@ -99,17 +99,23 @@ pathPrefix: String?
 githubActionsPackageName: String =
   "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@\(comGithubActionsVerison)#"
 
+local const actionMetadataRoot =
+  if (read?("prop:pkl-pantry.testMode") != null)
+    "tests/fixtures"
+  else
+    "https://raw.githubusercontent.com"
+
 local actionYamlUrl =
   if (subpath == null)
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/tags/\(version)/action.yml"
   else
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)/\(subpath)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/tags/\(version)/\(subpath)/action.yml"
 
 local actionYamlUrl2 =
   if (subpath == null)
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/heads/\(version)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/heads/\(version)/action.yml"
   else
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/heads/\(version)/\(subpath)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/heads/\(version)/\(subpath)/action.yml"
 
 local actionYamlUrl3 = actionYamlUrl.replaceLast(".yml", ".yaml")
 

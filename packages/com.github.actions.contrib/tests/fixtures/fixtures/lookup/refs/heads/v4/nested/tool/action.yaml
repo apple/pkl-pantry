@@ -1,0 +1,4 @@
+name: Lookup fixture
+description: nested-branch-yaml
+inputs: {}
+runs: {using: node20, main: index.js}
