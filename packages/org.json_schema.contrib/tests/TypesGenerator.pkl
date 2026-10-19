@@ -224,6 +224,17 @@ examples {
       )
       .render("")
   }
+  ["untyped schema"] {
+    TypesGenerator.generateTypeNode(new JsonSchema {}, Map()).render("")
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { description = "Any JSON value" }, Map())
+      .render("")
+  }
+  ["null enum"] {
+    TypesGenerator
+      .generateTypeNode(new JsonSchema { enum = new Listing { null } }, Map())
+      .render("")
+  }
   ["allOf"] {
     TypesGenerator
       .generateTypeNode(

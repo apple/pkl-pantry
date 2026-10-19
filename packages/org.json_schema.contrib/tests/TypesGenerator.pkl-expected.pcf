@@ -66,6 +66,13 @@ examples {
   ["null"] {
     "Null"
   }
+  ["untyped schema"] {
+    "Any"
+    "Any"
+  }
+  ["null enum"] {
+    "Null(this == null)"
+  }
   ["allOf"] {
     "String(length.isBetween(5, 10))"
   }

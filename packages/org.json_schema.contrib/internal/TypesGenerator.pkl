@@ -64,14 +64,19 @@ function generateTypeNode(schema: JsonSchema.Schema, typeNames: Type.TypeNames):
       utils.declaredType1(type, type.moduleName != enclosingModuleName)
     // Edge case: if `type` includes `"null"`, treat this as a nullable type.
   else if (schema.type is Listing && schema.type.toList().contains("null"))
+    let (otherTypes = schema.type.toList().filter((t) -> t != "null"))
     let (
       subtype =
-        generateTypeNode(
-          (schema) {
-            type = schema.type.toList().filter((t) -> t != "null").toListing()
-          },
-          typeNames
-        )
+        // Only `"null"` was listed, so the schema is the null type.
+        if (otherTypes.isEmpty)
+          utils.declaredType("Null")
+        else
+          generateTypeNode(
+            (schema) {
+              type = otherTypes.toListing()
+            },
+            typeNames
+          )
     )
       new TypeNode.NullableTypeNode {
         typeNode = subtype
@@ -787,9 +792,13 @@ local function isMappingSchema(schema: JsonSchema) =
     type == "object" || schema.properties != null || schema.additionalProperties != null
 
 /// Tells if the [schema] should be generated as a [Null].
+///
+/// A schema that has no [JsonSchema.type] and no [JsonSchema.enum] constrains nothing, so it is not
+/// a null schema. It is generated as [Any].
 local function isNullSchema(schema: JsonSchema) =
   let (type = unwrappedSingularType(schema))
-    type == "null" || constOrEnumsMatch(schema, (elem) -> elem is Null)
+    type == "null"
+      || (schema.enum is Listing && !schema.enum.isEmpty && schema.enum.every((elem) -> elem is Null))
 
 /// Generates the basic declared type (Int, Float, etc).
 ///
