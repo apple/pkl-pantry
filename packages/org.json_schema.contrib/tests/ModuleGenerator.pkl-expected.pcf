@@ -178,7 +178,7 @@ examples {
       bar: String?
     }
     
-    typealias Foo = Null
+    typealias Foo = Any
     
     """
   }

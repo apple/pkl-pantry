@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,15 +63,20 @@ function generateTypeNode(schema: JsonSchema.Schema, typeNames: Type.TypeNames):
     let (type = typeNames[(schema._inline_?.getOrNull("__ref_orig__") ?? schema) as JsonSchema])
       utils.declaredType1(type, type.moduleName != enclosingModuleName)
     // Edge case: if `type` includes `"null"`, treat this as a nullable type.
+    // If only `"null"` is listed, the schema is the null type.
   else if (schema.type is Listing && schema.type.toList().contains("null"))
+    let (otherTypes = schema.type.toList().filter((t) -> t != "null"))
     let (
       subtype =
-        generateTypeNode(
-          (schema) {
-            type = schema.type.toList().filter((t) -> t != "null").toListing()
-          },
-          typeNames
-        )
+        if (otherTypes.isEmpty)
+          utils.declaredType("Null")
+        else
+          generateTypeNode(
+            (schema) {
+              type = otherTypes.toListing()
+            },
+            typeNames
+          )
     )
       new TypeNode.NullableTypeNode {
         typeNode = subtype
@@ -787,9 +792,15 @@ local function isMappingSchema(schema: JsonSchema) =
     type == "object" || schema.properties != null || schema.additionalProperties != null
 
 /// Tells if the [schema] should be generated as a [Null].
+///
+/// A schema that has no [JsonSchema.type] and no [JsonSchema.enum] constrains nothing, so it is not
+/// a null schema. It is generated as [Any].
 local function isNullSchema(schema: JsonSchema) =
   let (type = unwrappedSingularType(schema))
-    type == "null" || constOrEnumsMatch(schema, (elem) -> elem is Null)
+    type == "null"
+      || (
+        schema.enum is Listing && !schema.enum.isEmpty && schema.enum.every((elem) -> elem is Null)
+      )
 
 /// Generates the basic declared type (Int, Float, etc).
 ///
