@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,11 +63,11 @@ function generateTypeNode(schema: JsonSchema.Schema, typeNames: Type.TypeNames):
     let (type = typeNames[(schema._inline_?.getOrNull("__ref_orig__") ?? schema) as JsonSchema])
       utils.declaredType1(type, type.moduleName != enclosingModuleName)
     // Edge case: if `type` includes `"null"`, treat this as a nullable type.
+    // If only `"null"` is listed, the schema is the null type.
   else if (schema.type is Listing && schema.type.toList().contains("null"))
     let (otherTypes = schema.type.toList().filter((t) -> t != "null"))
     let (
       subtype =
-        // Only `"null"` was listed, so the schema is the null type.
         if (otherTypes.isEmpty)
           utils.declaredType("Null")
         else
@@ -798,7 +798,9 @@ local function isMappingSchema(schema: JsonSchema) =
 local function isNullSchema(schema: JsonSchema) =
   let (type = unwrappedSingularType(schema))
     type == "null"
-      || (schema.enum is Listing && !schema.enum.isEmpty && schema.enum.every((elem) -> elem is Null))
+      || (
+        schema.enum is Listing && !schema.enum.isEmpty && schema.enum.every((elem) -> elem is Null)
+      )
 
 /// Generates the basic declared type (Int, Float, etc).
 ///
