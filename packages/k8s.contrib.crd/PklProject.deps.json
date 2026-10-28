@@ -15,7 +15,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1.2.5",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@1.2.6",
       "path": "../org.json_schema.contrib"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/inflect@1": {
@@ -25,7 +25,7 @@
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1": {
       "type": "local",
-      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.2.1",
+      "uri": "projectpackage://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax@1.2.2",
       "path": "../pkl.experimental.syntax"
     },
     "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri@1": {

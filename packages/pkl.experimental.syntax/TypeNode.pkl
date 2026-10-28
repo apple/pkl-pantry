@@ -104,4 +104,6 @@ class UnionTypeNode extends TypeNode {
 }
 
 // TODO fill me in
-class FunctionTypeNode extends TypeNode {}
+class FunctionTypeNode extends TypeNode {
+  function render(_) = TODO()
+}
