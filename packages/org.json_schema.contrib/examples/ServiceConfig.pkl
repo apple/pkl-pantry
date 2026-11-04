@@ -1,0 +1,104 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Configuration for a web service.
+module org.json_schema.contrib.examples.ServiceConfig
+
+import "../SchemaGenerator.pkl"
+
+/// The name of the service.
+name: String
+
+/// The port to listen on.
+port: UInt16 = 8080
+
+/// The environment this service runs in.
+environment: "dev" | "staging" | "prod"
+
+/// How verbose logging is.
+logLevel: ("debug" | "info" | "warn")?
+
+/// The upstream services this service calls.
+upstreams: Listing<Upstream>
+
+/// Labels attached to every metric.
+labels: Mapping<String, String>
+
+/// Feature flags, keyed by flag name.
+features: Mapping<"search" | "checkout", Boolean>
+
+/// The routing tree.
+routes: Route?
+
+/// How long to wait for a graceful shutdown.
+shutdownTimeout: Duration = 30.s
+
+/// Use [upstreams] instead.
+@Deprecated
+backend: String?
+
+/// An upstream service.
+class Upstream {
+  /// The host name of the upstream.
+  host: String
+
+  /// The port of the upstream.
+  port: UInt16
+
+  /// Retry policy for calls to this upstream.
+  retry: RetryPolicy?
+}
+
+/// How failed calls are retried.
+class RetryPolicy {
+  /// Maximum number of attempts, including the first.
+  attempts: Int8 = 3
+
+  /// Backoff multiplier.
+  backoff: Float = 1.5
+}
+
+/// A route, which may contain nested routes.
+class Route {
+  /// The path prefix matched by this route.
+  prefix: String
+
+  /// Routes nested under this route.
+  children: Listing<Route>
+}
+
+/// The generated JSON Schema for this module.
+///
+/// Durations are rendered as strings by [output], so the generator is told the same.
+/// [SchemaGenerator.useDefaults] makes properties with defaults optional, as they are when writing
+/// this config in Pkl.
+hidden schema =
+  new SchemaGenerator {
+    useDefaults = true
+    converters {
+      [Duration] {
+        type = "string"
+        pattern = #"^\d+(\.\d+)?\.(ns|us|ms|s|min|h|d)$"#
+      }
+    }
+  }.generate(module.getClass())
+
+output {
+  renderer = new JsonRenderer {
+    converters {
+      [Duration] = (it) -> it.toString()
+    }
+  }
+}

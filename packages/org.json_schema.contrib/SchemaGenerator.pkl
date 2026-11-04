@@ -1,0 +1,630 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// Generates a [JSON Schema](https://json-schema.org) (draft 2020-12) document from a Pkl module,
+/// class, or typealias.
+///
+/// This is the reverse of `generate.pkl`: it lets Pkl be the source of truth for a
+/// configuration format, while editors, linters, and CI pipelines that understand JSON Schema
+/// validate and autocomplete the JSON or YAML that Pkl renders.
+///
+/// Usage:
+/// ```
+/// // jsonSchema.pkl
+/// import "package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@<version>#/SchemaGenerator.pkl"
+///
+/// import "AppConfig.pkl"
+///
+/// output = SchemaGenerator.generate(AppConfig).output
+/// ```
+///
+/// Running `pkl eval jsonSchema.pkl -o AppConfig.schema.json` writes the schema to disk.
+///
+/// How Pkl types map to JSON Schema:
+///
+/// * Every class reachable from the root (other than the root itself) is emitted once under
+///   `$defs` and referenced with `$ref`. This keeps the output compact and allows recursive
+///   classes; a reference back to the root becomes `{"$ref": "#"}`.
+///   If two classes share a simple name, their `$defs` keys are qualified with the module name.
+/// * Class properties become `properties`, and properties that are not nullable are `required`
+///   (see [useDefaults] to take default values into account).
+///   Function-typed and `hidden` properties are skipped, because they are never rendered.
+/// * Classes that are not `open` or `abstract` set `additionalProperties` to `false`.
+///   An `open` or `abstract` class may be instantiated through a subclass that adds properties,
+///   so its schema allows additional properties.
+/// * Doc comments become `description`, class and typealias names become `title`, and the
+///   `@Deprecated` annotation becomes `deprecated`.
+/// * `T?` becomes `"type": [T, "null"]` (or an `anyOf` with `{"type": "null"}` for complex
+///   schemas), unions become `anyOf`, a union of string literals becomes `enum`, and a single
+///   string literal becomes `const`.
+/// * [Listing] and [List] become arrays, [Set] becomes an array with `uniqueItems`, and [Pair]
+///   becomes an array of exactly two items.
+///   [Mapping] and [Map] become objects whose values are described by `additionalProperties`;
+///   string literal key types become `propertyNames`.
+/// * The standard library's bounded integer typealiases ([Int8], [Int16], [Int32], [UInt8],
+///   [UInt16], [UInt32], [UInt]) become integer ranges, and [Char] becomes a one-character string.
+///
+/// Known limitations:
+///
+/// * Type constraints other than the well-known ones listed above are not available through
+///   `pkl:reflect`, so they are not encoded into the schema.
+/// * [Duration], [DataSize], and other classes without a natural JSON representation are emitted
+///   as objects with their properties. Use [converters] to describe how your renderer outputs them.
+/// * Mappings and maps must have string keys, because JSON object keys are strings.
+@ModuleInfo { minPklVersion = "0.25.0" }
+module org.json_schema.contrib.SchemaGenerator
+
+import "pkl:math"
+import "pkl:reflect"
+
+import "@jsonschema/JsonSchema.pkl"
+
+/// The value of `$schema` in generated documents.
+hidden schemaVersion: JsonSchema.JsonSchemaVersion = "https://json-schema.org/draft/2020-12/schema"
+
+/// The `$id` of generated documents, if any.
+///
+/// It is best practice to set this to an absolute URI that the schema will be published at.
+hidden id: String?
+
+/// Whether to use the default values of properties.
+///
+/// By default, every property that is not nullable is `required`, because Pkl always renders it.
+/// This describes the output of Pkl, and suits tools that consume rendered configuration.
+///
+/// If [true], properties that have a default value are not `required`, and default values of type
+/// [String], [Boolean], [Int] and [Float] are emitted as `default`.
+/// This describes what a user has to write, and suits editors and hand-written input.
+///
+/// Default values are evaluated to do this, so generation fails if a default value depends on a
+/// property that has no value (for example `fullName = "\(firstName) \(lastName)"`).
+hidden useDefaults: Boolean = false
+
+/// Customize how specific classes or typealiases are converted.
+///
+/// This is useful if a type is rendered in a non-standard way, for example via a converter on
+/// the renderer.
+///
+/// To use converters, a new instance of [SchemaGenerator] must be initialized.
+///
+/// Example:
+/// ```
+/// generator = new SchemaGenerator {
+///   converters {
+///     [Duration] {
+///       type = "string"
+///       description = "A duration, for example `5.min`."
+///       pattern = #"^\d+(\.\d+)?\.(ns|us|ms|s|min|h|d)$"#
+///     }
+///   }
+/// }
+///
+/// output = generator.generate(MyConfig).output
+/// ```
+hidden converters: Mapping<Class | TypeAlias, JsonSchema>
+
+/// Given a module, class, or typealias, generates the equivalent JSON Schema document.
+///
+/// Example:
+/// ```
+/// class Person {
+///   /// The person's legal name.
+///   name: String
+///
+///   /// The person's friends.
+///   friends: Listing<Person>
+/// }
+///
+/// personSchema = SchemaGenerator.generate(Person)
+/// ```
+///
+/// `personSchema` renders as:
+///
+/// ```json
+/// {
+///   "$schema": "https://json-schema.org/draft/2020-12/schema",
+///   "title": "Person",
+///   "type": "object",
+///   "properties": {
+///     "name": {
+///       "description": "The person's legal name.",
+///       "type": "string"
+///     },
+///     "friends": {
+///       "description": "The person's friends.",
+///       "type": "array",
+///       "items": {
+///         "$ref": "#"
+///       }
+///     }
+///   },
+///   "additionalProperties": false,
+///   "required": [
+///     "name",
+///     "friends"
+///   ]
+/// }
+/// ```
+function generate(value: Module | Class | TypeAlias): JsonSchema =
+  let (
+    declaration =
+      if (value is Module)
+        reflect.Module(value)
+      else if (value is TypeAlias)
+        reflect.TypeAlias(value)
+      else
+        reflect.Class(value)
+  )
+  let (rootClass = getRootClass(declaration))
+  let (rootType = getRootType(declaration))
+  let (classes = collectType(rootType, List()).filter((c) -> c != rootClass))
+  let (ctx = new Context { root = rootClass; defNames = makeDefNames(classes) })
+  let (
+    rootSchema =
+      if (declaration is reflect.TypeAlias)
+        convertType(declaration.referent, ctx) |> addMetadata(declaration)
+      else
+        let (clazz = reflect.Class(rootClass!!))
+          convertClass(clazz, ctx)
+            |> addMetadata(if (declaration is reflect.Module) declaration else clazz)
+  )
+    (rootSchema) {
+      $schema = schemaVersion
+      $id = id
+      when (!classes.isEmpty) {
+        $defs {
+          for (clazz in classes) {
+            [ctx.defNames[clazz]] = convertClass(reflect.Class(clazz), ctx)
+          }
+        }
+      }
+    }
+
+/// State shared while converting a single document.
+local class Context {
+  /// The class that is converted at the document root, if any.
+  root: Class?
+
+  /// The `$defs` key of every non-root class in the document.
+  defNames: Map<Class, String>
+}
+
+local function getRootClass(declaration: reflect.Declaration): Class? =
+  if (declaration is reflect.Module)
+    declaration.moduleClass.reflectee
+  else if (declaration is reflect.Class)
+    declaration.reflectee
+  else
+    null
+
+local function getRootType(declaration: reflect.Declaration): reflect.Type =
+  if (declaration is reflect.Module)
+    reflect.DeclaredType(declaration.moduleClass)
+  else if (declaration is reflect.Class)
+    reflect.DeclaredType(declaration)
+  else
+    (declaration as reflect.TypeAlias).referent
+
+// region Class discovery
+
+/// Classes from the standard library that map to built-in JSON Schema types.
+local builtInClasses: Set<Class> =
+  Set(
+    Any,
+    Typed,
+    Dynamic,
+    Null,
+    Boolean,
+    Number,
+    Int,
+    Float,
+    String,
+    Listing,
+    List,
+    Set,
+    Mapping,
+    Map,
+    Pair
+  )
+
+/// Standard library typealiases that map to specific JSON Schema types.
+local builtInTypeAliases: Set<TypeAlias> =
+  Set(Int8, Int16, Int32, UInt8, UInt16, UInt32, UInt, Char)
+
+/// Tells if [clazz] is emitted as an object schema (and therefore needs a `$defs` entry).
+local function isObjectClass(clazz: Class): Boolean =
+  !builtInClasses.contains(clazz) && !converters.containsKey(clazz)
+
+/// Returns [seen] plus every object class reachable from [typ], in discovery order.
+local function collectType(typ: reflect.Type, seen: List<Class>): List<Class> =
+  if (typ is reflect.NullableType)
+    collectType(typ.member, seen)
+  else if (typ is reflect.UnionType)
+    typ.members.fold(seen, (acc, member) -> collectType(member, acc))
+  else if (typ is reflect.DeclaredType)
+    let (referent = typ.referent)
+      if (referent is reflect.TypeAlias)
+        if (
+          builtInTypeAliases.contains(referent.reflectee)
+            || converters.containsKey(referent.reflectee)
+        )
+          seen
+        else
+          collectType(referent.referent, seen)
+      else
+        let (clazz = (referent as reflect.Class).reflectee)
+        let (withArguments = typ.typeArguments.fold(seen, (acc, arg) -> collectType(arg, acc)))
+          if (!isObjectClass(clazz) || withArguments.contains(clazz))
+            withArguments
+          else
+            getProperties(reflect.Class(clazz))
+              .values
+              .fold(withArguments.add(clazz), (acc, prop) -> collectType(prop.type, acc))
+  else
+    seen
+
+/// Assigns a unique `$defs` key to every class.
+///
+/// Simple class names are used where they are unique, and qualified with the module name otherwise.
+local function makeDefNames(classes: List<Class>): Map<Class, String> =
+  let (simpleNames = classes.map((c) -> getTitle(reflect.Class(c))))
+    classes.toMap(
+      (c) -> c,
+      (c) ->
+        let (clazz = reflect.Class(c))
+        let (simpleName = getTitle(clazz))
+          if (simpleNames.count((n) -> n == simpleName) == 1)
+            simpleName
+          else if (isModuleClass(clazz))
+            clazz.enclosingDeclaration.name
+          else
+            "\(clazz.enclosingDeclaration.name).\(simpleName)"
+    )
+
+// endregion
+
+// region Conversion
+
+/// Adds `title`, `description`, and `deprecated` from [declaration] to a schema.
+local function addMetadata(declaration: reflect.Declaration): Mixin<JsonSchema> = new {
+  // The name of a property says nothing about its type, so only types get a title.
+  when (!(declaration is reflect.Property)) {
+    title = getTitle(declaration)
+  }
+  when (declaration.docComment != null) {
+    description = declaration.docComment
+  }
+  when (declaration.annotations.any((a) -> a is Deprecated)) {
+    deprecated = true
+  }
+}
+
+/// Returns the title of a type, using the module name for modules and module classes.
+local function getTitle(declaration: reflect.Declaration): String =
+  if (declaration is reflect.Module)
+    declaration.name.split(".").last
+  else if (declaration is reflect.Class && isModuleClass(declaration))
+    declaration.enclosingDeclaration.name.split(".").last
+  else
+    declaration.name
+
+local function isModuleClass(clazz: reflect.Class): Boolean =
+  clazz.enclosingDeclaration.moduleClass.reflectee == clazz.reflectee
+
+/// Converts a class into an object schema, regardless of whether it is the root or a `$defs` entry.
+local function convertClass(clazz: reflect.Class, ctx: Context): JsonSchema =
+  let (props = getProperties(clazz))
+  let (
+    requiredNames =
+      props.values
+        .filter((p) -> isRequired(p))
+        .map((p) -> p.name)
+  )
+    new JsonSchema {
+      type = "object"
+      when (!props.isEmpty) {
+        properties {
+          for (name, property in props) {
+            [name] = convertProperty(property, ctx)
+          }
+        }
+      }
+      when (!requiredNames.isEmpty) {
+        required {
+          for (name in requiredNames) {
+            name
+          }
+        }
+      }
+      when (!clazz.modifiers.contains("open") && !clazz.modifiers.contains("abstract")) {
+        additionalProperties = false
+      }
+    }
+      |> addMetadata(clazz)
+
+local function convertProperty(property: reflect.Property, ctx: Context): JsonSchema =
+  let (defaultValue = if (useDefaults) getDefault(property) else null)
+    (convertType(property.type, ctx)) {
+      when (property.docComment != null) {
+        description = property.docComment
+      }
+      when (property.annotations.any((a) -> a is Deprecated)) {
+        deprecated = true
+      }
+      when (defaultValue != null) {
+        default = defaultValue
+      }
+    }
+
+/// A property is required if it is not nullable (and, if [useDefaults] is set, has no default).
+local function isRequired(property: reflect.Property): Boolean =
+  !(property.type is reflect.NullableType)
+    && !(property.type is reflect.UnknownType)
+    && (!useDefaults || property.defaultValue == null)
+
+/// Returns the default value of [property] if it can be represented as a JSON Schema `default`.
+local function getDefault(property: reflect.Property): (String | Boolean | Int | Float)? =
+  let (value = property.defaultValue)
+    if (value is String | Boolean | Int || value is Float && value.isFinite) value else null
+
+/// Converts a Pkl type into a schema.
+local function convertType(typ: reflect.Type, ctx: Context): JsonSchema =
+  if (typ is reflect.NullableType)
+    makeNullable(convertType(typ.member, ctx))
+  else if (typ is reflect.UnionType)
+    convertUnion(typ, ctx)
+  else if (typ is reflect.StringLiteralType)
+    new {
+      `const` = typ.value
+    }
+  else if (typ is reflect.DeclaredType)
+    convertDeclaredType(typ, ctx)
+  else if (typ is reflect.ModuleType)
+    // `module` refers to the enclosing module, which is only known if it is the root.
+    if (ctx.root != null) new { $ref = "#" } else new {}
+  else if (typ is reflect.NothingType)
+    new {
+      not {}
+    }
+  else
+    // `UnknownType` and `TypeVariable` accept any value.
+    new {}
+
+local function convertUnion(typ: reflect.UnionType, ctx: Context): JsonSchema =
+  if (typ.members.every((it) -> it is reflect.StringLiteralType))
+    new {
+      type = "string"
+      enum = new Listing<JsonSchema.JsonSchemaValue> {
+        for (member in typ.members) {
+          (member as reflect.StringLiteralType).value
+        }
+      }
+    }
+  else
+    new {
+      anyOf {
+        for (member in typ.members) {
+          convertType(member, ctx)
+        }
+      }
+    }
+
+/// Allows `null` in addition to the values accepted by [schema].
+local function makeNullable(schema: JsonSchema): JsonSchema =
+  if (schema.type is String && schema.enum == null && schema.`const` == null)
+    (schema) {
+      type = new Listing<JsonSchema.JsonSchemaTypeName> {
+        schema.type as String
+        "null"
+      }
+    }
+  else if (schema.type == "string" && schema.enum is Listing)
+    (schema) {
+      type = new Listing<JsonSchema.JsonSchemaTypeName> {
+        "string"
+        "null"
+      }
+      enum {
+        null
+      }
+    }
+  else
+    new {
+      anyOf {
+        schema
+        new {
+          type = "null"
+        }
+      }
+    }
+
+local function convertDeclaredType(typ: reflect.DeclaredType, ctx: Context): JsonSchema =
+  let (referent = typ.referent)
+    if (converters.containsKey(referent.reflectee))
+      converters[referent.reflectee]
+    else if (referent is reflect.TypeAlias)
+      convertTypeAlias(referent)
+        ?? (convertType(referent.referent, ctx) |> addMetadata(referent))
+    else
+      convertClassType(typ, ctx)
+
+/// Converts the standard library's well-known typealiases, or returns [null] for other typealiases.
+local function convertTypeAlias(alias: reflect.TypeAlias): JsonSchema? =
+  let (reflectee = alias.reflectee)
+    if (reflectee == Int8)
+      intRange(math.minInt8, math.maxInt8)
+    else if (reflectee == Int16)
+      intRange(math.minInt16, math.maxInt16)
+    else if (reflectee == Int32)
+      intRange(math.minInt32, math.maxInt32)
+    else if (reflectee == UInt8)
+      intRange(0, math.maxUInt8)
+    else if (reflectee == UInt16)
+      intRange(0, math.maxUInt16)
+    else if (reflectee == UInt32)
+      intRange(0, math.maxUInt32)
+    else if (reflectee == UInt)
+      new {
+        type = "integer"
+        minimum = 0
+      }
+    else if (reflectee == Char)
+      new {
+        type = "string"
+        minLength = 1
+        maxLength = 1
+      }
+    else
+      null
+
+local function intRange(min: Int, max: Int): JsonSchema = new {
+  type = "integer"
+  minimum = min
+  maximum = max
+}
+
+local function convertClassType(typ: reflect.DeclaredType, ctx: Context): JsonSchema =
+  let (clazz = typ.referent.reflectee as Class)
+  let (args = typ.typeArguments)
+    if (clazz == Any || clazz == Typed)
+      new {}
+    else if (clazz == Null)
+      new {
+        type = "null"
+      }
+    else if (clazz == Boolean)
+      new {
+        type = "boolean"
+      }
+    else if (clazz == Int)
+      new {
+        type = "integer"
+      }
+    else if (clazz == Float || clazz == Number)
+      new {
+        type = "number"
+      }
+    else if (clazz == String)
+      new {
+        type = "string"
+      }
+    else if (clazz == Dynamic)
+      // A Dynamic renders as an array if it only has elements, and as an object otherwise.
+      new {
+        type = new Listing<JsonSchema.JsonSchemaTypeName> {
+          "object"
+          "array"
+        }
+      }
+    else if (clazz == Listing || clazz == List)
+      new {
+        type = "array"
+        items = convertType(args[0], ctx)
+      }
+    else if (clazz == Set)
+      new {
+        type = "array"
+        items = convertType(args[0], ctx)
+        uniqueItems = true
+      }
+    else if (clazz == Pair)
+      // Pairs render as two-element arrays.
+      // Without `prefixItems`, the best we can say is that each item matches either type.
+      new {
+        type = "array"
+        items =
+          if (args[0] == args[1] || args[1] is reflect.UnknownType)
+            convertType(args[0], ctx)
+          else
+            new JsonSchema {
+              anyOf {
+                convertType(args[0], ctx)
+                convertType(args[1], ctx)
+              }
+            }
+        minItems = 2
+        maxItems = 2
+      }
+    else if (clazz == Mapping || clazz == Map)
+      convertMapping(args[0], args[1], ctx)
+    else if (clazz == ctx.root)
+      new {
+        $ref = "#"
+      }
+    else
+      new {
+        $ref = "#/$defs/\(escapeJsonPointer(ctx.defNames[clazz]))"
+      }
+
+local function convertMapping(
+  keyType: reflect.Type,
+  valueType: reflect.Type,
+  ctx: Context
+): JsonSchema =
+  let (keySchema = convertType(keyType, ctx))
+    if (
+      keyType is reflect.UnknownType
+        || keySchema.type == "string" && keySchema.enum == null && keySchema.`const` == null
+    )
+      new {
+        type = "object"
+        additionalProperties = convertType(valueType, ctx)
+      }
+    else if (keySchema.type == "string" || keySchema.`const` is String)
+      new {
+        type = "object"
+        propertyNames = keySchema
+        additionalProperties = convertType(valueType, ctx)
+      }
+    else
+      throw(
+        "Invalid schema: JSON object keys are strings, so a Mapping or Map must have a String key type. Received: \(keyType)"
+      )
+
+/// Escapes a `$defs` key for use in a JSON pointer (RFC 6901).
+local function escapeJsonPointer(name: String): String =
+  name.replaceAll("~", "~0").replaceAll("/", "~1")
+
+// endregion
+
+// region Properties
+
+/// Given a class, return all of its properties, including properties of all inherited classes.
+///
+/// Excludes properties that are functions, and any hidden properties.
+local function getProperties(clazz: reflect.Class): Map<String, reflect.Property> =
+  getAllProperties(clazz)
+    .filter((_, prop) -> !prop.modifiers.contains("hidden"))
+    .filter((_, prop) -> !(prop.type is reflect.FunctionType))
+
+// noinspection TypeMismatch
+local function getAllProperties(clazz: reflect.Class): Map<String, reflect.Property> =
+  if (clazz.superclass == clazz || clazz.superclass == null)
+    clazz.properties
+  else
+    let (superProperties = getAllProperties(clazz.superclass!!))
+      clazz.properties.fold(superProperties, (
+        acc: Map<String, reflect.Property>,
+        key: String,
+        prop: reflect.Property
+      ) ->
+        // A property that is redeclared without a type (`foo = "bar"`) keeps the parent's type.
+        if (acc.containsKey(key) && prop.type is reflect.UnknownType)
+          acc
+        else
+          acc.put(key, prop)
+      )
+
+// endregion

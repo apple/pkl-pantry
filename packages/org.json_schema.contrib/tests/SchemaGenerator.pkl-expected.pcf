@@ -1,0 +1,246 @@
+examples {
+  ["service config"] {
+    #"""
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$defs": {
+        "Upstream": {
+          "title": "Upstream",
+          "description": "An upstream service.",
+          "type": "object",
+          "properties": {
+            "host": {
+              "description": "The host name of the upstream.",
+              "type": "string"
+            },
+            "port": {
+              "description": "The port of the upstream.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "retry": {
+              "description": "Retry policy for calls to this upstream.",
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RetryPolicy"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "host",
+            "port"
+          ]
+        },
+        "RetryPolicy": {
+          "title": "RetryPolicy",
+          "description": "How failed calls are retried.",
+          "type": "object",
+          "properties": {
+            "attempts": {
+              "description": "Maximum number of attempts, including the first.",
+              "default": 3,
+              "type": "integer",
+              "minimum": -128,
+              "maximum": 127
+            },
+            "backoff": {
+              "description": "Backoff multiplier.",
+              "default": 1.5,
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "Route": {
+          "title": "Route",
+          "description": "A route, which may contain nested routes.",
+          "type": "object",
+          "properties": {
+            "prefix": {
+              "description": "The path prefix matched by this route.",
+              "type": "string"
+            },
+            "children": {
+              "description": "Routes nested under this route.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Route"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "prefix"
+          ]
+        }
+      },
+      "title": "ServiceConfig",
+      "description": "Configuration for a web service.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The name of the service.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The port to listen on.",
+          "default": 8080,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "environment": {
+          "description": "The environment this service runs in.",
+          "type": "string",
+          "enum": [
+            "dev",
+            "staging",
+            "prod"
+          ]
+        },
+        "logLevel": {
+          "description": "How verbose logging is.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            null
+          ]
+        },
+        "upstreams": {
+          "description": "The upstream services this service calls.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Upstream"
+          }
+        },
+        "labels": {
+          "description": "Labels attached to every metric.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "features": {
+          "description": "Feature flags, keyed by flag name.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "search",
+              "checkout"
+            ]
+          }
+        },
+        "routes": {
+          "description": "The routing tree.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Route"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shutdownTimeout": {
+          "description": "How long to wait for a graceful shutdown.",
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?\\.(ns|us|ms|s|min|h|d)$"
+        },
+        "backend": {
+          "description": "Use [upstreams] instead.",
+          "deprecated": true,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "environment"
+      ]
+    }
+    
+    """#
+  }
+  ["recursive module"] {
+    """
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$defs": {
+        "Node": {
+          "title": "Node",
+          "description": "A node in a tree.",
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "parent": {
+              "description": "The parent of this node.",
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Node"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Node"
+              }
+            },
+            "owner": {
+              "description": "Points back at the module.",
+              "anyOf": [
+                {
+                  "$ref": "#"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "children"
+          ]
+        }
+      },
+      "title": "Recursive",
+      "type": "object",
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/Node"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "root"
+      ]
+    }
+    
+    """
+  }
+}
