@@ -1,0 +1,242 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+module org.json_schema.contrib.tests.SchemaGenerator
+
+amends "pkl:test"
+
+import "pkl:math"
+
+import "@jsonschema/JsonSchema.pkl"
+
+import "../examples/ServiceConfig.pkl"
+import "../SchemaGenerator.pkl"
+import "fixtures/Collisions.pkl"
+import "fixtures/Recursive.pkl"
+
+local service = ServiceConfig.schema
+
+local function prop(schema: JsonSchema, name: String): JsonSchema =
+  schema.properties!![name] as JsonSchema
+
+local function def(schema: JsonSchema, name: String): JsonSchema =
+  schema.$defs!![name] as JsonSchema
+
+open local class OpenThing {
+  a: String
+}
+
+abstract local class AbstractThing {
+  a: String
+}
+
+local class Kitchen {
+  pair: Pair<String, Int>
+  samePair: Pair<String, String>
+  set: Set<String>
+  char: Char
+  uint: UInt
+  int32: Int32
+  dynamic: Dynamic
+  anything: Any
+  number: Number
+  literal: "only"
+  nullableLiteral: "only"?
+  stringOrInt: String | Int
+  nullableUnion: (String | Int)?
+  nullableRef: OpenThing?
+  intList: List<Int>
+  map: Map<String, Float>
+  openThing: OpenThing
+  abstractThing: AbstractThing
+  never: nothing
+  withDefault: String = "hello"
+  withComputedDefault: String = "\(needsValue)!"
+  needsValue: String
+  function fn() = 1
+  lambda: () -> Int = () -> 1
+  hidden secret: String
+}
+
+local kitchen = SchemaGenerator.generate(Kitchen)
+
+local class IntKeys {
+  m: Mapping<Int, String>
+}
+
+/// A port number.
+local typealias Port = UInt16
+
+local typealias Ports = Listing<Port>
+
+facts {
+  ["document header"] {
+    service.$schema == "https://json-schema.org/draft/2020-12/schema"
+    service.title == "ServiceConfig"
+    service.description == "Configuration for a web service."
+    service.type == "object"
+    service.additionalProperties == false
+    new SchemaGenerator { id = "https://example.com/s.json" }.generate(Kitchen).$id
+      == "https://example.com/s.json"
+  }
+  ["non-nullable properties are required"] {
+    kitchen.required.toList()
+      == List(
+        "pair",
+        "samePair",
+        "set",
+        "char",
+        "uint",
+        "int32",
+        "dynamic",
+        "anything",
+        "number",
+        "literal",
+        "stringOrInt",
+        "intList",
+        "map",
+        "openThing",
+        "abstractThing",
+        "never",
+        "withDefault",
+        "withComputedDefault",
+        "needsValue"
+      )
+    // Defaults are not evaluated, so a default that depends on a missing value is fine.
+    prop(kitchen, "withComputedDefault").default == null
+  }
+  ["with useDefaults, properties with a default are optional"] {
+    service.required.toList() == List("name", "environment")
+    def(service, "RetryPolicy").required == null
+  }
+  ["with useDefaults, primitive defaults are emitted"] {
+    prop(service, "port").default == 8080
+    def(service, "RetryPolicy").properties!!["attempts"].default == 3
+    def(service, "RetryPolicy").properties!!["backoff"].default == 1.5
+    new SchemaGenerator { useDefaults = true }.generate(Recursive.Node).properties!!["children"]
+      .default
+      == null
+    prop(service, "shutdownTimeout").default == null
+  }
+  ["classes are emitted once under $defs and referenced"] {
+    service.$defs.toMap().keys == Set("Upstream", "RetryPolicy", "Route")
+    prop(service, "upstreams").items.$ref == "#/$defs/Upstream"
+    def(service, "Upstream").properties!!["retry"].anyOf[0].$ref == "#/$defs/RetryPolicy"
+    def(service, "Upstream").title == "Upstream"
+    def(service, "Upstream").description == "An upstream service."
+    def(service, "Upstream").additionalProperties == false
+  }
+  ["recursive classes reference themselves"] {
+    local schema = SchemaGenerator.generate(Recursive.Node)
+    schema.$defs == null
+    prop(schema, "children").items.$ref == "#"
+    prop(schema, "parent").anyOf[0].$ref == "#"
+    prop(schema, "parent").description == "The parent of this node."
+    def(service, "Route").properties!!["children"].items.$ref == "#/$defs/Route"
+  }
+  ["module types reference the root module"] {
+    local schema = SchemaGenerator.generate(Recursive)
+    def(schema, "Node").properties!!["owner"].anyOf[0].$ref == "#"
+  }
+  ["clashing class names are qualified with the module name"] {
+    local schema = SchemaGenerator.generate(Collisions)
+    schema.$defs.toMap().keys
+      == Set(
+        "Holder",
+        "org.json_schema.contrib.tests.fixtures.Collisions.Node",
+        "org.json_schema.contrib.tests.fixtures.Recursive.Node"
+      )
+  }
+  ["nullable types"] {
+    prop(service, "logLevel").type.toList() == List("string", "null")
+    prop(service, "logLevel").enum.toList() == List("debug", "info", "warn", null)
+    prop(kitchen, "nullableLiteral").anyOf[1].type == "null"
+    prop(kitchen, "nullableUnion").anyOf[1].type == "null"
+  }
+  ["unions and literals"] {
+    prop(service, "environment").enum.toList() == List("dev", "staging", "prod")
+    prop(kitchen, "literal").`const` == "only"
+    prop(kitchen, "stringOrInt").anyOf.toList().map((it) -> it.type) == List("string", "integer")
+  }
+  ["collections"] {
+    prop(kitchen, "set").uniqueItems == true
+    prop(kitchen, "intList").items.type == "integer"
+    prop(kitchen, "pair").minItems == 2
+    prop(kitchen, "pair").maxItems == 2
+    prop(kitchen, "pair").items.anyOf.toList().map((it) -> it.type) == List("string", "integer")
+    prop(kitchen, "samePair").items.type == "string"
+    prop(kitchen, "map").additionalProperties.type == "number"
+    prop(service, "labels").propertyNames == null
+    prop(service, "features").propertyNames.enum.toList() == List("search", "checkout")
+    prop(service, "features").additionalProperties.type == "boolean"
+  }
+  ["mappings must have string keys"] {
+    module
+      .catch(() -> SchemaGenerator.generate(IntKeys).output.text)
+      .contains("a Mapping or Map must have a String key type")
+  }
+  ["well-known typealiases"] {
+    prop(service, "port").minimum == 0
+    prop(service, "port").maximum == 65535
+    prop(kitchen, "int32").minimum == math.minInt32
+    prop(kitchen, "uint").minimum == 0
+    prop(kitchen, "uint").maximum == null
+    prop(kitchen, "char").minLength == 1
+    prop(kitchen, "char").maxLength == 1
+  }
+  ["open and abstract classes allow additional properties"] {
+    def(kitchen, "OpenThing").additionalProperties == null
+    def(kitchen, "AbstractThing").additionalProperties == null
+  }
+  ["functions, lambdas, and hidden properties are skipped"] {
+    !kitchen.properties.containsKey("fn")
+    !kitchen.properties.containsKey("lambda")
+    !kitchen.properties.containsKey("secret")
+  }
+  ["deprecated properties"] {
+    prop(service, "backend").deprecated == true
+    prop(service, "name").deprecated == null
+  }
+  ["converters"] {
+    prop(service, "shutdownTimeout").type == "string"
+    prop(service, "shutdownTimeout").description == "How long to wait for a graceful shutdown."
+    new SchemaGenerator { converters { [Port] { type = "integer"; minimum = 1024 } } }
+      .generate(Ports)
+      .items
+      .minimum == 1024
+  }
+  ["typealias roots"] {
+    local schema = SchemaGenerator.generate(Ports)
+    schema.title == "Ports"
+    schema.type == "array"
+    schema.items.title == "Port"
+    schema.items.description == "A port number."
+    schema.items.maximum == 65535
+  }
+  ["any, dynamic, and nothing"] {
+    prop(kitchen, "anything").type == null
+    prop(kitchen, "dynamic").type.toList() == List("object", "array")
+    prop(kitchen, "never").not != null
+  }
+}
+
+examples {
+  ["service config"] {
+    service.output.text
+  }
+  ["recursive module"] {
+    SchemaGenerator.generate(Recursive).output.text
+  }
+}
