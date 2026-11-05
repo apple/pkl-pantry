@@ -1,5 +1,5 @@
 //===----------------------------------------------------------------------===//
-// Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+// Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -154,5 +154,24 @@ examples {
       action = cacheAction
       discoverActionTypes = false
     }.result.replaceFirst(ghaVersion, "<VERSION>")
+  }
+}
+
+facts {
+  for (
+    fixtureAction, expectedDescription in
+      Map(
+        "fixtures/lookup@v1", "tag-yml",
+        "fixtures/lookup@v2", "branch-yml",
+        "fixtures/lookup@v3", "tag-yaml",
+        "fixtures/lookup/nested/tool@v4", "nested-branch-yaml"
+      )
+  ) {
+    ["metadata lookup for \(fixtureAction)"] {
+      new ActionGenerator {
+        actionName = fixtureAction
+        discoverActionTypes = false
+      }.result.contains("/// \(expectedDescription)\n")
+    }
   }
 }
