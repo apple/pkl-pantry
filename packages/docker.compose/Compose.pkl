@@ -1,0 +1,154 @@
+//===----------------------------------------------------------------------===//
+// Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
+/// A typed Docker Compose document and YAML renderer.
+module docker.compose
+
+/// Services in this Compose application, keyed by service name.
+services: Mapping<String, Service> = new {}
+
+/// Optional top-level network definitions.
+networks: Mapping<String, Network>? = null
+
+/// A Docker Compose service definition.
+class Service {
+  /// Optional explicit container name.
+  `container_name`: String? = null
+
+  /// Container image reference.
+  image: String(!isEmpty)
+
+  /// Optional command arguments.
+  command: Listing<String>? = null
+
+  /// Container restart policy.
+  restart: String? = null
+
+  /// Published host ports.
+  ports: Listing<Port> = new {}
+
+  /// Host and named volume mounts.
+  volumes: Listing<Volume> = new {}
+
+  /// Networks attached to the service.
+  networks: Listing<String> = new {}
+
+  /// Environment variables.
+  environment: Mapping<String, String>? = null
+
+  /// Devices exposed to the service.
+  devices: Listing<String> = new {}
+
+  /// Service dependencies.
+  `depends_on`: Mapping<String, Dependency>? = null
+
+  /// Optional health check configuration.
+  healthcheck: Healthcheck? = null
+
+  /// Optional container deployment resource settings.
+  deploy: Deploy? = null
+}
+
+/// A host-to-container port mapping.
+class Port {
+  /// Optional host interface to bind.
+  `host_ip`: String? = null
+
+  /// Port exposed on the host.
+  published: Int(isBetween(1, 65535))?
+
+  /// Port exposed by the container.
+  target: Int(isBetween(1, 65535))
+}
+
+/// A host and named volume mount.
+class Volume {
+  /// Compose volume type.
+  type: String(matches(Regex("bind|volume|tmpfs"))) = "bind"
+
+  /// Host path or named volume.
+  source: String(!isEmpty)
+
+  /// Path inside the container.
+  target: String(!isEmpty)
+
+  /// Whether the container can write to the mount.
+  `read_only`: Boolean = false
+}
+
+/// Container health-check configuration.
+class Healthcheck {
+  /// Command and arguments executed by the health check.
+  test: Listing<String>
+
+  /// Time between health checks.
+  interval: String? = null
+
+  /// Maximum time allowed for one check.
+  timeout: String? = null
+
+  /// Number of consecutive failures before unhealthy.
+  retries: Int(isBetween(1, 255))? = null
+}
+
+/// A dependency on another Compose service.
+class Dependency {
+  /// Optional dependency health condition.
+  condition: String? = null
+}
+
+/// A top-level Compose network definition.
+class Network {
+  /// Whether this network already exists outside the Compose project.
+  `external`: Boolean = false
+}
+
+/// Docker deployment resource settings.
+class Deploy {
+  /// Resource reservations.
+  resources: Resources? = null
+}
+
+/// Docker resource settings.
+class Resources {
+  /// Resource reservations.
+  reservations: Reservations? = null
+}
+
+/// Docker resource reservations.
+class Reservations {
+  /// Device reservations such as NVIDIA GPUs.
+  devices: Listing<Device> = new {}
+}
+
+/// A reserved host device.
+class Device {
+  /// Device driver, such as nvidia.
+  driver: String(!isEmpty)
+
+  /// Number of devices to reserve.
+  count: String(!isEmpty)
+
+  /// Device capabilities, such as gpu.
+  capabilities: Listing<String> = new {}
+}
+
+output {
+  value = new Dynamic {
+    services = module.services
+    networks = module.networks
+  }
+  renderer = new YamlRenderer {}
+}

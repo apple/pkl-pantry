@@ -1,0 +1,16 @@
+examples {
+  ["basic compose"] {
+    """
+    services:
+      nginx:
+        image: nginx:1.27
+        ports:
+        - published: 8080
+          target: 80
+        volumes: []
+        networks: []
+        devices: []
+    
+    """
+  }
+}
