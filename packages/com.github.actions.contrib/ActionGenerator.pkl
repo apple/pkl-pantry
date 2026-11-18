@@ -99,25 +99,37 @@ pathPrefix: String?
 githubActionsPackageName: String =
   "package://pkg.pkl-lang.org/pkl-pantry/com.github.action@\(comGithubActionsVerison)#"
 
+local const actionMetadataRoot =
+  if (read?("prop:pkl-pantry.testMode") != null)
+    "tests/fixtures"
+  else
+    "https://raw.githubusercontent.com"
+
 local actionYamlUrl =
   if (subpath == null)
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/tags/\(version)/action.yml"
   else
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/tags/\(version)/\(subpath)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/tags/\(version)/\(subpath)/action.yml"
 
 local actionYamlUrl2 =
   if (subpath == null)
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/heads/\(version)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/heads/\(version)/action.yml"
   else
-    "https://raw.githubusercontent.com/\(owner)/\(repo)/refs/heads/\(version)/\(subpath)/action.yml"
+    "\(actionMetadataRoot)/\(owner)/\(repo)/refs/heads/\(version)/\(subpath)/action.yml"
+
+local actionYamlUrl3 = actionYamlUrl.replaceLast(".yml", ".yaml")
+
+local actionYamlUrl4 = actionYamlUrl2.replaceLast(".yml", ".yaml")
 
 local yamlParser = new yaml.Parser { useMapping = true; mode = "1.2" }
 
 local actionYaml =
   read?(actionYamlUrl)
     ?? read?(actionYamlUrl2)
+    ?? read?(actionYamlUrl3)
+    ?? read?(actionYamlUrl4)
     ?? throw(
-      "Cannot import action.yml. Is this an action repository? Tried `\(actionYamlUrl)` and \(actionYamlUrl2)"
+      "Cannot import action.yml or action.yaml. Is this an action repository? Tried `\(actionYamlUrl)`, `\(actionYamlUrl2)`, `\(actionYamlUrl3)` and `\(actionYamlUrl4)`."
     )
 
 local effectiveAction =
