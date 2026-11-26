@@ -22,6 +22,40 @@ import "@com.github.actions/Workflow.pkl"
 import "../internal/LockfileGenerator.pkl"
 
 facts {
+  ["new lockfile; records action with a version without v prefix"] {
+    local generator: LockfileGenerator = new {
+      workflows =
+        List(new Workflow {
+          jobs {
+            ["foo"] {
+              steps {
+                new { uses = "foo@1.4.1" }
+              }
+            }
+          }
+        })
+      currentLocks = null
+    }
+    generator.lockfileWorkflow.output.text.contains("foo@abc123 # 1.4.1")
+  }
+  ["new lockfile; ignores local, docker and SHA-pinned actions"] {
+    local generator: LockfileGenerator = new {
+      workflows =
+        List(new Workflow {
+          jobs {
+            ["foo"] {
+              steps {
+                new { uses = "./local-action" }
+                new { uses = "docker://alpine:3.20" }
+                new { uses = "foo@d23441a48e516b6c34aea4fa41551a30e30af803" }
+              }
+            }
+          }
+        })
+      currentLocks = null
+    }
+    generator.locks.isEmpty
+  }
   ["new lockfile; records new action into lockfile"] {
     local generator: LockfileGenerator = new {
       workflows =
