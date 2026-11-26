@@ -67,8 +67,18 @@ local allActions =
     .flatMap((it) -> it.jobs.toMap().values)
     .flatMap((it) -> it.steps.toList())
     .mapNonNull((it) -> it.uses)
-    .filter((it) -> !it.startsWith("./") && it.contains("@v"))
+    .filter(isLockable)
     .toSet() as Set<String>
+
+/// Whether the argument refers to a remote action at a named version (tag or branch).
+///
+/// Local actions (`./`), Docker images (`docker://`) and refs that are already pinned to a full
+/// commit SHA are left as-is.
+local const isLockable = (uses: String) ->
+  !uses.startsWith("./")
+    && !uses.startsWith("docker://")
+    && uses.contains("@")
+    && !uses.split("@").last.matches(Regex(#"[0-9a-f]{40}"#))
 
 local newLocks: Mapping<String, LockEntry> =
   allActions
@@ -197,8 +207,8 @@ local class LockEntry {
   /// The base path of a `uses` block (e.g. `actions/checkout`)
   base: String
 
-  /// The named version (e.g. `v6`)
-  version: String(startsWith("v"))
+  /// The named version (e.g. `v6` or `1.4.1`)
+  version: String
 
   /// The git sha
   sha: String
