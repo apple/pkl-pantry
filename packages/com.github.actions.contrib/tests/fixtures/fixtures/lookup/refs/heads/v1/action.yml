@@ -1,0 +1,4 @@
+name: Lookup fixture
+description: branch-yml-not-selected
+inputs: {}
+runs: {using: node20, main: index.js}
